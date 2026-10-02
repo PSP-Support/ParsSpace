@@ -41,6 +41,7 @@ ADMIN_USERNAME=your_username
 ADMIN_PASSWORD=your_secure_password
 SECRET_KEY=your_secret_key
 ```
++در بخش Variable وارد شود
 
 ## اجرا
 
