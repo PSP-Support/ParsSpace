@@ -250,6 +250,8 @@ async def load_state():
             SUBS.update(data.get("subs", {}))
             USERS.update(data.get("users", {}))
             # Always load saved password hash (no secret-key guard — causes password reset bugs)
+            if "username" in data and str(data.get("username") or "").strip():
+                AUTH["username"] = str(data.get("username")).strip()
             if "password_hash" in data:
                 AUTH["password_hash"] = data["password_hash"]
             # Also store saved_secret so future saves remain consistent
@@ -434,6 +436,7 @@ async def save_state():
                 "nodes": dict(NODES),
                 "pending_node_deletions": dict(PENDING_NODE_DELETIONS),
                 "bot_orders": dict(BOT_ORDERS),
+                "username": AUTH.get("username", "admin"),
                 "password_hash": AUTH["password_hash"],
                 "saved_secret": CONFIG["secret"],
                 "saved_at": datetime.now().isoformat(),
@@ -663,17 +666,6 @@ TG_PROXY_INSTANCES: dict = {}
 PROTOCOLS = ("vless-ws", "xhttp-packet-up", "xhttp-stream-up", "xhttp-stream-one")
 
 USER_PROTOCOLS = ("vless", "vmess", "trojan", "shadowsocks", "reality")
-
-# Xray uTLS fingerprints exposed by the panel. The first ten are the common
-# GUI choices; native Hello* names remain valid when supplied explicitly.
-XRAY_FINGERPRINTS = (
-    "chrome", "firefox", "safari", "ios", "android", "edge", "360", "qq",
-    "random", "randomized", "randomizednoalpn", "unsafe",
-)
-
-def normalize_fingerprint(value: str | None) -> str:
-    fp = str(value or "chrome").strip() or "chrome"
-    return fp if fp.lower() in XRAY_FINGERPRINTS or fp.startswith("Hello") else "chrome"
 DEFAULT_PROTOCOL = "vless-ws"
 
 def log_activity(kind: str, message: str, level: str = "info"):
@@ -692,7 +684,7 @@ SESSION_TTL = 60 * 60 * 24 * 7
 def hash_password(pw: str) -> str:
     return hashlib.sha256(f"{pw}{CONFIG['secret']}".encode()).hexdigest()
 
-AUTH = {"password_hash": hash_password(os.environ.get("ADMIN_PASSWORD", "admin"))}
+AUTH = {"username": os.environ.get("ADMIN_USERNAME", "admin"), "password_hash": hash_password(os.environ.get("ADMIN_PASSWORD", "admin"))}
 SESSIONS: dict = {}
 SESSIONS_LOCK = asyncio.Lock()
 
@@ -1048,7 +1040,6 @@ async def startup():
                 "domain": _safe_host(SETTINGS.get("domain"), get_host()),
                 "external_domain": "", "sni": "", "external_port": "",
                 "fingerprint": "chrome", "reality_settings": {}, "xhttp_settings": {},
-                "sni": _safe_host(SETTINGS.get("domain"), get_host()),
                 "ws_settings": {"path": "/ws/{uuid}"},
                 "created_at": datetime.now().isoformat(),
             }
@@ -1064,11 +1055,39 @@ async def startup():
             ib["domain"] = _safe_host(ib.get("domain"), SETTINGS.get("domain"), get_host())
             ib["external_domain"] = ""
             ib["external_port"] = ""
-            ib["sni"] = _safe_host(ib.get("sni"), ib.get("domain"), SETTINGS.get("domain"), get_host())
-            ib["fingerprint"] = normalize_fingerprint(ib.get("fingerprint"))
-            ib["ws_settings"] = {"path": "/ws/{uuid}"}
-        # Only the managed VLESS + WebSocket inbound is automatic. Reality,
-        # VMess and Trojan inbounds are created explicitly by the operator.
+            ib.setdefault("ws_settings", {"path": "/ws/{uuid}"})
+        # Auto-create a default Reality+xhttp inbound (needs real Xray to serve)
+        has_reality = any(
+            ib.get("network") == "xhttp" and ib.get("protocol") == "reality"
+            for ib in INBOUNDS.values()
+        )
+        if not has_reality:
+            rs = _gen_reality_settings()
+            # Reality inbound: domain + ports are LEFT EMPTY — the admin fills
+            # them in (external domain + external port + listen port). The pbk
+            # keypair is auto-generated here so it's always ready.
+            INBOUNDS["default-reality"] = {
+                "name": "Reality+XHTTP پیش‌فرض",
+                "protocol": "reality",
+                "port": 8443,
+                "network": "xhttp",
+                "security": "reality",
+                "domain": "",
+                "external_domain": "",
+                "sni": "is1-ssl.mzstatic.com",
+                "external_port": "",
+                "fingerprint": "chrome",
+                "reality_settings": rs,
+                "xhttp_settings": {
+                    "path": "/",
+                    "xPaddingBytes": "100-1000",
+                    "mode": "stream-up",
+                    "scMaxEachPostBytes": "1000000",
+                },
+                "created_at": datetime.now().isoformat(),
+            }
+            asyncio.create_task(save_state())
+            log_activity("inbound", "اینباند پیش‌فرض Reality+XHTTP ساخته شد", "ok")
         # Auto-create / migrate the system Node selector inbound. It is NOT an
         # Xray listener: it only stores the Node relationship.
         node_selector = None
@@ -2066,6 +2085,34 @@ def _safe_host(*candidates: str) -> str:
     return get_host()
 
 
+def _is_ip_address(value: str) -> bool:
+    try:
+        import ipaddress
+        ipaddress.ip_address(str(value or '').strip())
+        return True
+    except Exception:
+        return False
+
+
+def _client_public_domain() -> str:
+    """Return a hostname suitable for client configs, never a literal IP.
+
+    The panel may know its public IP for diagnostics, but connection profiles
+    should use the operator's configured/public hostname. If no hostname exists
+    yet, fail closed instead of leaking the panel IP into a share link.
+    """
+    candidates = [
+        SETTINGS.get("domain"),
+        os.environ.get("SPIDER_PANEL_PUBLIC_DOMAIN"),
+        os.environ.get("SPIDER_PANEL_PUBLIC_URL"),
+    ]
+    for raw in candidates:
+        ep = _normalize_public_endpoint(str(raw or ""))
+        if ep and not _is_ip_address(ep.get("host", "")):
+            return ep["host"]
+    return ""
+
+
 DEFAULT_TLS_WS_INBOUND_NAME = "پیش‌فرض TLS + WS"
 LEGACY_TLS_WS_NAMES = {"VLESS+WS پیش‌فرض", "VLESS + WS پیش‌فرض", "پیش‌فرض VLESS+WS", "پیش‌فرض VLESS + WS"}
 
@@ -2160,7 +2207,7 @@ def remote_node_config(node: dict, user: dict, remark_tag: str | None = None) ->
     node_country = str(node.get("country") or "").strip()
     node_ip = str(node.get("public_ip") or node.get("remote_ip") or "").strip()
     node_identity = " ".join(x for x in (node_flag, node_country, node_ip) if x).strip()
-    remark = f"Spider-{user.get('username', 'user')} {node_identity}".strip()
+    remark = f"Pars Space - {user.get('username', 'user')} {node_identity}".strip()
     if node_label and node_label not in remark:
         remark += f" · {node_label}"
     if remark_tag and remark_tag not in remark:
@@ -2234,7 +2281,7 @@ def generate_random_path(prefix: str = "", length: int = 6) -> str:
 def now_ir() -> datetime:
     return datetime.now(IRAN_TZ)
 
-def generate_vless_link(uuid: str, host: str, remark: str = "Spider", protocol: str = DEFAULT_PROTOCOL) -> str:
+def generate_vless_link(uuid: str, host: str, remark: str = "Pars Space", protocol: str = DEFAULT_PROTOCOL) -> str:
     """می‌سازد VLESS share-link متناسب با پروتکل انتخاب‌شده."""
     host = _safe_host(host)
     if not host:
@@ -2363,6 +2410,60 @@ def generate_short_id() -> str:
     """Generate a shorter ID for user management."""
     return secrets.token_hex(6)
 
+def _generate_protocol_share_link(config_uuid: str, username: str, password: str, proto: str, host: str, port: str, transport: str, security: str, inbound: dict | None, user: dict, addr_ip: str | None = None, addr_port: str | None = None, alpn: str = "http/1.1") -> str:
+    """Generate a client share link matching the selected protocol/transport.
+
+    This deliberately emits VMess/Trojan links instead of pretending every
+    protocol is VLESS. The old implementation did exactly that, which is a
+    particularly creative way to make a protocol selector decorative.
+    """
+    host = addr_ip or host
+    port = addr_port or port
+    remark = quote(f"Pars Space - {username}")
+    fp = str((inbound or {}).get("fingerprint") or "chrome")
+    if transport == "ws":
+        ws = (inbound or {}).get("ws_settings") or {}
+        path = str(ws.get("path") or (inbound or {}).get("path") or f"/ws/{config_uuid}").strip()
+        if not path.startswith("/"): path = "/" + path
+        host_header = str(ws.get("host") or host).strip()
+        if proto == "vmess":
+            obj = {"v":"2","ps":f"Pars Space - {username}","add":host,"port":int(port or 443),"id":config_uuid,"aid":0,"scy":"auto","net":"ws","type":"none","host":host_header,"path":path,"tls":"tls" if security=="tls" else "","sni":host,"alpn":alpn}
+            return "vmess://" + base64.b64encode(json.dumps(obj,separators=(",",":"),ensure_ascii=False).encode()).decode()
+        if proto == "trojan":
+            pw = str(password or user.get("trojan_password") or config_uuid)
+            q = f"security={quote(security)}&type=ws&host={quote(host_header)}&path={quote(path,safe='')}&sni={quote(host)}&fp={quote(fp)}&alpn={quote(alpn)}"
+            return f"trojan://{quote(pw,safe='')}@{host}:{port}?{q}#{remark}"
+    elif transport == "grpc":
+        gs = (inbound or {}).get("grpc_settings") or {}
+        service = str(gs.get("serviceName") or gs.get("service_name") or "pars-space").strip()
+        if proto == "vmess":
+            obj = {"v":"2","ps":f"Pars Space - {username}","add":host,"port":int(port or 443),"id":config_uuid,"aid":0,"scy":"auto","net":"grpc","type":"none","host":host,"path":service,"tls":"tls" if security=="tls" else "","sni":host,"alpn":alpn}
+            return "vmess://" + base64.b64encode(json.dumps(obj,separators=(",",":"),ensure_ascii=False).encode()).decode()
+        if proto == "trojan":
+            pw = str(password or user.get("trojan_password") or config_uuid)
+            q = f"security={quote(security)}&type=grpc&serviceName={quote(service)}&sni={quote(host)}&fp={quote(fp)}&alpn={quote(alpn)}"
+            return f"trojan://{quote(pw,safe='')}@{host}:{port}?{q}#{remark}"
+    elif transport == "tcp":
+        if proto == "vmess":
+            obj = {"v":"2","ps":f"Pars Space - {username}","add":host,"port":int(port or 443),"id":config_uuid,"aid":0,"scy":"auto","net":"tcp","type":"none","host":"","path":"","tls":"tls" if security=="tls" else "","sni":host,"alpn":alpn}
+            return "vmess://" + base64.b64encode(json.dumps(obj,separators=(",",":"),ensure_ascii=False).encode()).decode()
+        if proto == "trojan":
+            pw = str(password or user.get("trojan_password") or config_uuid)
+            q = f"security={quote(security)}&type=tcp&sni={quote(host)}&fp={quote(fp)}&alpn={quote(alpn)}"
+            return f"trojan://{quote(pw,safe='')}@{host}:{port}?{q}#{remark}"
+    # Fallback for protocols not covered above.
+    return ""
+
+def _finalmask_query(inbound: dict | None) -> str:
+    fm = (inbound or {}).get("finalmask") or {}
+    if not isinstance(fm, dict) or not fm:
+        return ""
+    try:
+        return "&fm=" + quote(json.dumps(fm, separators=(",", ":"), ensure_ascii=False), safe="")
+    except Exception:
+        return ""
+
+
 def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr: str = None, remark_tag: str = None) -> str:
     """Build a VLESS config string for one inbound of a user.
 
@@ -2383,20 +2484,22 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
     proto = proto.lower()
     sec = (inbound.get("security") if inbound else None) or "tls"
     sec = sec.lower()
+    tls_cfg = (inbound.get("tls_settings") or {}) if inbound else {}
+    alpn = str(tls_cfg.get("alpn") or "http/1.1").strip() or "http/1.1"
 
     config_uuid = str(user.get("config_uuid", "") or user_id).strip()
     if not _is_valid_uuid(config_uuid):
         logger.warning("Skipping config for user %s: invalid config UUID %r", user_id, config_uuid)
         return ""
     username = user.get("username", user_id)
-    rem = f"Spider-{username}"
+    rem = f"Pars Space - {username}"
     if remark_tag:
         rem = f"{rem} {remark_tag}"
     remark = quote(rem)
 
     # Never generate a client-facing config until a real public hostname is known.
     # Returning an empty config lets the caller/UI retry while the resolver works.
-    panel_domain = _safe_host(SETTINGS.get("domain"), get_host())
+    panel_domain = _client_public_domain()
     if not panel_domain and proto not in ("worker", "reality", "telegram"):
         return ""
 
@@ -2422,75 +2525,6 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
         if not inbound:
             return ""
         return generate_telegram_proxy_link(user_id, user, inbound, remark_tag)
-
-    # ── VMESS / TROJAN ──
-    # These are native Xray protocols. VMess uses the user's UUID; Trojan uses
-    # a generated per-user protocol password. Both share the inbound transport
-    # and TLS/REALITY parameters instead of being downgraded to VLESS.
-    if proto in ("vmess", "trojan"):
-        if not inbound:
-            return ""
-        ib_proto = str(inbound.get("protocol") or proto).lower()
-        if ib_proto not in (proto, "reality"):
-            return ""
-        ext_domain = str(inbound.get("external_domain") or inbound.get("domain") or panel_domain).strip()
-        host = addr_ip or _safe_host(ext_domain, panel_domain)
-        port = addr_port or str(inbound.get("external_port") or inbound.get("port") or 443)
-        network = str(inbound.get("network") or "ws").strip().lower()
-        if sec == "reality" and network not in ("tcp", "xhttp", "grpc"):
-            network = "tcp"
-        if network not in ("ws", "xhttp", "tcp", "grpc"):
-            network = "ws"
-        sni = str(inbound.get("sni") or inbound.get("domain") or panel_domain).strip()
-        fp = normalize_fingerprint(inbound.get("fingerprint"))
-        params = []
-        if network == "ws":
-            ws = inbound.get("ws_settings") or {}
-            path = str(ws.get("path") or inbound.get("path") or f"/ws/{config_uuid}").strip()
-            if not path.startswith("/"): path = "/" + path
-            params += [("type", "ws"), ("host", str(ws.get("host") or sni)), ("path", path)]
-        elif network == "grpc":
-            gs = inbound.get("grpc_settings") or {}
-            service = str(gs.get("serviceName") or "grpc").strip() or "grpc"
-            params += [("type", "grpc"), ("serviceName", service)]
-        elif network == "xhttp":
-            xs = inbound.get("xhttp_settings") or {}
-            path = str(xs.get("path") or "/").strip() or "/"
-            if not path.startswith("/"): path = "/" + path
-            mode = str(xs.get("mode") or "stream-up").lower()
-            if mode == "auto" or mode not in ("packet-up", "stream-up", "stream-one"): mode = "stream-up"
-            extra = {"xPaddingBytes": xs.get("xPaddingBytes", "100-1000")}
-            if mode == "packet-up": extra["scMaxEachPostBytes"] = xs.get("scMaxEachPostBytes", "1000000")
-            params += [("type", "xhttp"), ("path", path), ("mode", mode), ("extra", json.dumps(extra, separators=(",", ":"), ensure_ascii=False))]
-        else:
-            params += [("type", "tcp")]
-        if sec == "reality":
-            rs = inbound.get("reality_settings") or SETTINGS.get("reality") or {}
-            priv = _xray_x25519_privkey_norm(str(rs.get("private_key") or ""))
-            pbk = _xray_x25519_public_key(priv) if priv else ""
-            sid = str(rs.get("short_id") or "").strip().lower()
-            if not pbk or not re.fullmatch(r"[0-9a-f]{2,16}", sid or "") or len(sid) % 2:
-                return ""
-            params += [("security", "reality"), ("sni", sni), ("fp", fp), ("pbk", pbk), ("sid", sid), ("spx", str(rs.get("spiderx") or "/"))]
-        else:
-            params += [("security", "tls" if sec == "tls" else "none"), ("sni", sni), ("fp", fp)]
-            if network in ("ws", "grpc", "xhttp"):
-                params.append(("alpn", "http/1.1" if network == "ws" else "h2,http/1.1"))
-        if proto == "vmess":
-            vm = {"v":"2", "ps":f"Spider-{username}", "add":host, "port":str(port), "id":config_uuid, "aid":"0", "scy":"auto", "net":network, "tls":"tls" if sec == "tls" else ("reality" if sec == "reality" else ""), "sni":sni, "fp":fp}
-            for k,v in params:
-                if k == "type": vm["type"] = v
-                elif k == "host": vm["host"] = v
-                elif k == "path": vm["path"] = v
-                elif k == "serviceName": vm["path"] = v
-                elif k == "mode": vm["mode"] = v
-                elif k == "extra": vm["extra"] = v
-            return "vmess://" + base64.b64encode(json.dumps(vm, ensure_ascii=False, separators=(",", ":")).encode()).decode()
-        trojan_pw = str(user.get("trojan_password") or "").strip()
-        if len(trojan_pw) < 8:
-            return ""
-        q = "&".join(f"{quote(str(k), safe='')}={quote(str(v), safe='')}" for k,v in params)
-        return f"trojan://{quote(trojan_pw, safe='')}@{host}:{port}?{q}#{remark}"
 
     # ── REALITY (served by Xray core) ──
     if proto == "reality" or sec == "reality":
@@ -2531,10 +2565,12 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
             rpath = "/"
         host = addr_ip or ext_domain
         port = addr_port or ext_port
+        if not host or _is_ip_address(host):
+            return ""
         # xhttp (default for reality inbound) or tcp
         if (inbound.get("network") or "xhttp") == "tcp":
             params = (f"encryption=none&security=reality&type=tcp"
-                      f"&sni={quote(sni)}&fp={fp}&alpn=h2,http/1.1"
+                      f"&sni={quote(sni)}&fp={fp}&alpn={quote(alpn)}"
                       f"&pbk={pbk}&sid={sid}&spx={spx}")
         else:
             xpb = xs.get("xPaddingBytes", "100-1000")
@@ -2556,11 +2592,21 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
                       f"&sni={quote(sni)}&fp={quote(str(fp), safe='')}"
                       f"&pbk={quote(pbk, safe='')}&sid={sid}&spx={quote(spx, safe='')}"
                       f"&type=xhttp{host_q}&path={quote(rpath, safe='')}&mode={xmod}&extra={extra}")
-        return f"vless://{config_uuid}@{host}:{port}?{params}#{remark}"
+        # VMess/Trojan can also run over Reality natively in Xray. Keep their
+        # protocol-specific share links instead of silently downgrading to VLESS.
+        if proto in ("vmess", "trojan"):
+            pw = str(user.get("trojan_password") or user.get("password") or config_uuid)
+            if proto == "trojan":
+                q = (f"security=reality&type=tcp&sni={quote(sni)}&fp={quote(str(fp), safe='')}"
+                     f"&pbk={quote(pbk, safe='')}&sid={sid}&spx={quote(spx, safe='')}")
+                return f"trojan://{quote(pw, safe='')}@{host}:{port}?{q}#{remark}"
+            obj = {"v":"2","ps":f"Pars Space - {username}","add":host,"port":int(port or 443),"id":config_uuid,"aid":0,"scy":"auto","net":"tcp","type":"none","tls":"reality","sni":sni,"fp":str(fp),"pbk":pbk,"sid":sid,"spx":spx}
+            return "vmess://" + base64.b64encode(json.dumps(obj,separators=(",",":"),ensure_ascii=False).encode()).decode()
+        return f"vless://{config_uuid}@{host}:{port}?{params}{_finalmask_query(inbound)}#{remark}"
 
     # ── TLS (WS default / XHTTP selectable) — served by the FastAPI relay ──
     # address/host/sni always = the panel main domain; port 443 (Railway TLS).
-    panel_domain = _safe_host(SETTINGS.get("domain"), get_host())
+    panel_domain = _client_public_domain()
 
     # ── TUNNEL (user → Railway → CF Worker → site) — path /tunnel/{uuid} ──
     if proto == "tunnel":
@@ -2574,29 +2620,31 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
             rpath = f"/reverse/{config_uuid}"
             params = ("encryption=none&security=tls&type=ws"
                       f"&host={quote(wdom)}&path={quote(rpath, safe='')}&sni={quote(wdom)}"
-                      "&fp=chrome&alpn=http/1.1")
-            rev_rem = quote(f"Spider-{username} Reverse".strip())
-            return f"vless://{config_uuid}@{wdom}:443?{params}#{rev_rem}"
+                      f"&fp=chrome&alpn={quote(alpn)}")
+            rev_rem = quote(f"Pars Space - {username} Reverse".strip())
+            return f"vless://{config_uuid}@{wdom}:443?{params}{_finalmask_query(inbound)}#{rev_rem}"
         # Plain tunnel: user → Railway → Worker → site (path /tunnel/{uuid},
         # addressed to the panel/Railway domain).
         tpath = f"/tunnel/{config_uuid}"
         params = ("encryption=none&security=tls&type=ws"
                   f"&host={quote(panel_domain)}&path={quote(tpath, safe='')}&sni={quote(panel_domain)}"
-                  "&fp=chrome&alpn=http/1.1")
-        tun_rem = quote(f"Spider-{username} Tunnel".strip())
-        return f"vless://{config_uuid}@{panel_domain}:443?{params}#{tun_rem}"
+                  f"&fp=chrome&alpn={quote(alpn)}")
+        tun_rem = quote(f"Pars Space - {username} Tunnel".strip())
+        return f"vless://{config_uuid}@{panel_domain}:443?{params}{_finalmask_query(inbound)}#{tun_rem}"
 
     # The exact default TLS+WS inbound is the only inbound served by the FastAPI
     # WebSocket relay. Other inbounds must use their own stored transport/domain/port.
     if is_default_tls_ws_inbound(inbound):
-        panel_domain = _safe_host(SETTINGS.get("domain"), get_host())
+        panel_domain = _client_public_domain()
         host = addr_ip or panel_domain
         port = addr_port or "443"
         transport = "ws"
         security = "tls"
     else:
         inbound_domain = str((inbound or {}).get("external_domain") or (inbound or {}).get("domain") or "").strip()
-        host = addr_ip or _safe_host(inbound_domain, SETTINGS.get("domain"), get_host())
+        host = addr_ip or _client_public_domain() or inbound_domain
+        if not host or (_is_ip_address(host) and not addr_ip):
+            return ""
         port = addr_port or str((inbound or {}).get("external_port") or (inbound or {}).get("port") or 443)
         network = str((inbound or {}).get("network") or "").strip().lower()
         # Use the selected inbound's transport first. The user's global transport_type
@@ -2619,17 +2667,17 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
         extra = quote(json.dumps(extra_obj, separators=(",", ":"), ensure_ascii=False), safe='')
         xpath = f"/xhttp-siz10/{xmode}/{config_uuid}"
         params = (f"encryption=none&security={security}&type=xhttp"
-                  f"&host={quote(host)}&path={quote(xpath, safe='')}&sni={quote(str((inbound or {}).get("sni") or host))}"
-                  f"&fp={quote(normalize_fingerprint((inbound or {}).get("fingerprint")), safe='')}&alpn=h2,http/1.1&mode={xmode}&extra={extra}")
+                  f"&host={quote(host)}&path={quote(xpath, safe='')}&sni={quote(host)}"
+                  f"&fp=chrome&alpn={quote(alpn)}&mode={xmode}&extra={extra}")
     elif transport == "grpc":
         gs = (inbound.get("grpc_settings") or {}) if inbound else {}
-        service = str(gs.get("serviceName") or gs.get("service_name") or "spider").strip() or "spider"
+        service = str(gs.get("serviceName") or gs.get("service_name") or "pars-space").strip() or "spider"
         params = (f"encryption=none&security={security}&type=grpc"
-                  f"&serviceName={quote(service)}&sni={quote(str((inbound or {}).get("sni") or host))}"
-                  f"&fp={quote(normalize_fingerprint((inbound or {}).get("fingerprint")), safe='')}&alpn=h2,http/1.1")
+                  f"&serviceName={quote(service)}&sni={quote(host)}"
+                  f"&fp=chrome&alpn={quote(alpn)}")
     elif transport == "tcp":
         params = (f"encryption=none&security={security}&type=tcp"
-                  f"&sni={quote(str((inbound or {}).get("sni") or host))}&fp={quote(normalize_fingerprint((inbound or {}).get("fingerprint")), safe='')}&alpn=h2,http/1.1")
+                  f"&sni={quote(host)}&fp=chrome&alpn={quote(alpn)}")
     else:  # ws
         # Only the exact default TLS+WS inbound may use /ws/{uuid}; other WS
         # inbounds keep their own configured path if present.
@@ -2639,9 +2687,16 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
         else:
             ws_path = configured_path if configured_path.startswith("/") else f"/{configured_path}"
         params = (f"encryption=none&security={security}&type=ws"
-                  f"&host={quote(host)}&path={quote(ws_path, safe='')}&sni={quote(str((inbound or {}).get("sni") or host))}"
-                  f"&fp={quote(normalize_fingerprint((inbound or {}).get("fingerprint")), safe='')}&alpn=http/1.1")
-    return f"vless://{config_uuid}@{host}:{port}?{params}#{remark}"
+                  f"&host={quote(host)}&path={quote(ws_path, safe='')}&sni={quote(host)}"
+                  f"&fp=chrome&alpn={quote(alpn)}")
+    if proto in ("vmess", "trojan"):
+        generated = _generate_protocol_share_link(
+            config_uuid, username, str(user.get("password") or user.get("trojan_password") or ""),
+            proto, host, port, transport, security, inbound, user, addr_ip, addr_port, alpn
+        )
+        if generated:
+            return generated
+    return f"vless://{config_uuid}@{host}:{port}?{params}{_finalmask_query(inbound)}#{remark}"
 
 
 def generate_custom_ip_configs(user_id: str, user: dict) -> dict:
@@ -2721,7 +2776,7 @@ def generate_status_config(user: dict, configs: list) -> str:
     config_uuid = user.get("config_uuid", "") or user_id
 
     # Use panel domain from discovery (required for TLS WS/XHTTP).
-    panel_domain = _safe_host(SETTINGS.get("domain"), get_host())
+    panel_domain = _client_public_domain()
     if not panel_domain:
         return ""
 
@@ -2827,7 +2882,7 @@ def _worker_configs(user_id: str, user: dict, inbound: dict, stored_path: str, b
     # Canonical route shared by the generator, Worker and every subscription.
     wpath = f"/ws/{cfg_uuid}"
     uname = str(user.get("username") or user_id)
-    remark = quote(f"Spider-{uname}{(' ' + str(base_remark)) if base_remark and not str(base_remark).startswith('Spider-') else ''}")
+    remark = quote(f"Pars Space - {uname}{(' ' + str(base_remark)) if base_remark and not str(base_remark).startswith('Pars Space -') else ''}")
 
     params = (
         "encryption=none"
@@ -2951,7 +3006,7 @@ async def deployment_ui_fixes(request: Request, call_next):
         logger.debug("Request public-endpoint discovery failed: %s", exc)
 
     if request.url.path == "/":
-        return RedirectResponse("/spider", status_code=307)
+        return RedirectResponse("/dashboard", status_code=307)
     response = await call_next(request)
     content_type = response.headers.get("content-type", "")
     if "text/html" not in content_type:
@@ -3214,8 +3269,8 @@ TGProxy = MTProtoProxyServer
 
 
 @app.get("/")
-async def root():
-    return {"service": "Spider Gateway", "version": "10.1", "status": "active"}
+async def root(request: Request):
+    return RedirectResponse(url="/dashboard")
 
 
 @app.get("/healthz")
@@ -3263,7 +3318,7 @@ async def _build_subscription_data_by_uuid(config_uuid: str):
             vless = generate_vless_link(
                 config_uuid,
                 host,
-                remark=f"Spider-{link['label']}",
+                remark=f"Pars Space - {link['label']}",
                 protocol=proto,
             )
             return {
@@ -3344,7 +3399,7 @@ async def _build_subscription_data_by_uuid(config_uuid: str):
                 if not str(ib.get("external_domain") or "").strip() or not str(ib.get("external_port") or "").strip():
                     continue
             if ib and p_ == "worker":
-                configs.extend(_worker_configs(uid, user, ib, stored_path_user, f"Spider-{user.get('username', uid)}"))
+                configs.extend(_worker_configs(uid, user, ib, stored_path_user, f"Pars Space - {user.get('username', uid)}"))
             else:
                 cfg = generate_user_config(uid, user, iid_)
                 if cfg:
@@ -3414,6 +3469,15 @@ async def _build_subscription_data_by_uuid(config_uuid: str):
         "vless_link": config,
         "config": config,
         "configs": all_configs,
+        "links": [{
+            "label": f"Pars Space - {user.get('username', uid)}" if i == 0 else f"Pars Space - {user.get('username', uid)} #{i+1}",
+            "protocol": str(c).split("://",1)[0] if "://" in str(c) else user.get("protocol", "vless"),
+            "active": is_active,
+            "used_fmt": fmt_bytes(used),
+            "limit_fmt": "∞" if limit == 0 else fmt_bytes(limit),
+            "vless_link": c,
+        } for i, c in enumerate(all_configs[1:] if len(all_configs) > 1 else all_configs) if c],
+        "sub_url": f"https://{SETTINGS.get('domain') or get_host()}/link/{user.get('config_uuid', config_uuid)}",
         "worker_configs": list(user.get("worker_configs") or []),
         "worker_countries": [],
         "inbound_ids": inbound_ids,
@@ -3460,7 +3524,7 @@ async def link_page(uuid: str, request: Request):
         headers={
             "profile-title": quote(username),
             "profile-update-interval": "12",
-            "support-url": "https://t.me/spider_vpn1",
+            "support-url": "Pars Space",
         },
     )
 
@@ -3471,7 +3535,7 @@ async def subscription_all(_=Depends(require_auth)):
     host = SETTINGS.get("domain") or get_host()
     async with LINKS_LOCK:
         lines = [
-            generate_vless_link(uid, host, remark=f"Spider-{d['label']}", protocol=d.get("protocol", DEFAULT_PROTOCOL))
+            generate_vless_link(uid, host, remark=f"Pars Space - {d['label']}", protocol=d.get("protocol", DEFAULT_PROTOCOL))
             for uid, d in LINKS.items()
             if is_link_allowed(d)
         ]
@@ -3506,7 +3570,7 @@ async def create_sub(request: Request, _=Depends(require_auth)):
         "sub_id": sub_id,
         **SUBS[sub_id],
         "public_url": f"https://{host}/p/{uuid_key}",
-        "sub_url": f"https://{host}/sub-group/{uuid_key}",
+        "sub_url": f"https://{host}/sub/{uuid_key}",
     }
 
 @app.get("/api/subs")
@@ -3531,7 +3595,7 @@ async def list_subs(_=Depends(require_auth)):
             "total_used_bytes": total_used,
             "total_used_fmt": fmt_bytes(total_used),
             "public_url": f"https://{host}/p/{s['uuid_key']}",
-            "sub_url": f"https://{host}/sub-group/{s['uuid_key']}",
+            "sub_url": f"https://{host}/sub/{s['uuid_key']}",
         })
     result.sort(key=lambda x: x["created_at"], reverse=True)
     return {"subs": result}
@@ -3609,11 +3673,21 @@ async def sub_group_subscription(uuid_key: str, request: Request):
     host = SETTINGS.get("domain") or get_host()
     link_ids = sub.get("link_ids", [])
     async with LINKS_LOCK:
-        lines = []
-        for lid in link_ids:
-            link = LINKS.get(lid)
-            if link and is_link_allowed(link):
-                lines.append(generate_vless_link(lid, host, remark=f"Spider-{link['label']}", protocol=link.get("protocol", DEFAULT_PROTOCOL)))
+        snap_links = dict(LINKS)
+    async with USERS_LOCK:
+        snap_users = dict(USERS)
+    lines = []
+    for lid in link_ids:
+        link = snap_links.get(lid)
+        if not link or not is_link_allowed(link):
+            continue
+        uid = link.get("user_id")
+        user = snap_users.get(uid) if uid else None
+        cfg = generate_user_config(uid, user, link.get("inbound_id") or user.get("inbound_id")) if uid and user else ""
+        if not cfg:
+            cfg = generate_vless_link(lid, host, remark=f"Pars-{link.get('label','user')}", protocol=link.get('protocol', DEFAULT_PROTOCOL))
+        if cfg:
+            lines.append(cfg)
 
     content = base64.b64encode("\n".join(lines).encode()).decode()
     return Response(
@@ -3621,19 +3695,25 @@ async def sub_group_subscription(uuid_key: str, request: Request):
         media_type="text/plain",
         headers={
             "profile-title": quote(sub["name"]),
-            "support-url": "https://t.me/spider_vpn1",
+            "support-url": "Pars Space",
             "profile-update-interval": "12",
         }
     )
+
+@app.get("/sub/{uuid_key}")
+async def pars_subscription_alias(uuid_key: str, request: Request):
+    return await sub_group_subscription(uuid_key, request)
+
 
 # ── Auth endpoints ────────────────────────────────────────────────────────────
 @app.post("/api/login")
 async def api_login(request: Request):
     body = await request.json()
     ip = client_ip(request)
-    if hash_password(str(body.get("password", ""))) != AUTH["password_hash"]:
+    username = str(body.get("username", "")).strip()
+    if username != str(AUTH.get("username") or "admin") or hash_password(str(body.get("password", ""))) != AUTH["password_hash"]:
         log_activity("auth", f"تلاش ورود ناموفق از {ip}", "err")
-        raise HTTPException(status_code=401, detail="رمز عبور اشتباه است")
+        raise HTTPException(status_code=401, detail="نام کاربری یا رمز عبور اشتباه است")
     token = await create_session()
     log_activity("auth", f"ورود موفق به پنل از {ip}", "ok")
     resp = JSONResponse({"ok": True})
@@ -3774,7 +3854,7 @@ async def api_me(request: Request):
     info = await _build_server_info(refresh=auth)
     async with SETTINGS_LOCK:
         key = _get_panel_api_key_sync()
-    return {"authenticated": auth, **info, "api_key": key}
+    return {"authenticated": auth, "username": AUTH.get("username", "admin"), **info, "api_key": key}
 
 
 @app.patch("/api/me")
@@ -3812,6 +3892,26 @@ async def api_change_password(request: Request, token=Depends(require_auth)):
     await save_state()
     log_activity("auth", "رمز عبور پنل تغییر کرد", "ok")
     return {"ok": True}
+
+@app.post("/api/change-credentials")
+async def api_change_credentials(request: Request, token=Depends(require_auth)):
+    body = await request.json()
+    current = str(body.get("current_password") or "")
+    if hash_password(current) != AUTH["password_hash"]:
+        raise HTTPException(status_code=400, detail="رمز فعلی اشتباه است")
+    username = str(body.get("username") or AUTH.get("username") or "admin").strip()
+    if not re.fullmatch(r"(?=(?:.*[A-Za-z]){2,})[A-Za-z0-9_-]+", username):
+        raise HTTPException(status_code=400, detail="نام کاربری باید حداقل دو حرف انگلیسی و فقط شامل A-Z، 0-9، _ یا - باشد")
+    new = str(body.get("new_password") or "")
+    if len(new) < 4:
+        raise HTTPException(status_code=400, detail="رمز جدید باید حداقل ۴ کاراکتر باشد")
+    AUTH["username"] = username
+    AUTH["password_hash"] = hash_password(new)
+    async with SESSIONS_LOCK:
+        SESSIONS.clear()
+        SESSIONS[token] = time.time() + SESSION_TTL
+    await save_state()
+    return {"ok":True,"username":username}
 
 # ── Stats ─────────────────────────────────────────────────────────────────────
 @app.get("/stats")
@@ -3990,7 +4090,7 @@ async def create_link(request: Request, _=Depends(require_auth)):
         "uuid": uid,
         **LINKS[uid],
         "expired": False,
-        "vless_link": generate_vless_link(uid, host, remark=f"Spider-{label}", protocol=protocol),
+        "vless_link": generate_vless_link(uid, host, remark=f"Pars Space - {label}", protocol=protocol),
         "sub_url": f"https://{host}/link/{uid}",
     }
 
@@ -4007,7 +4107,7 @@ async def list_links(_=Depends(require_auth)):
             **d,
             "protocol": proto,
             "expired": is_link_expired(d),
-            "vless_link": generate_vless_link(uid, host, remark=f"Spider-{d['label']}", protocol=proto),
+            "vless_link": generate_vless_link(uid, host, remark=f"Pars Space - {d['label']}", protocol=proto),
             "sub_url": f"https://{host}/link/{uid}",
         })
     result.sort(key=lambda x: x["created_at"], reverse=True)
@@ -4254,7 +4354,6 @@ async def create_inbound(request: Request, auth=Depends(require_replication_auth
                     "domain": _safe_host(SETTINGS.get("domain"), get_host()),
                     "external_domain": "", "sni": "", "external_port": "",
                     "fingerprint": "chrome", "ws_settings": {"path": "/ws/{uuid}"},
-                    "sni": _safe_host(SETTINGS.get("domain"), get_host()),
                     "reality_settings": {}, "xhttp_settings": {},
                     "created_at": datetime.now().isoformat(),
                 }
@@ -4285,16 +4384,6 @@ async def create_inbound(request: Request, auth=Depends(require_replication_auth
     domain = str(body.get("domain") or "").strip()
     external_domain = str(body.get("external_domain") or "").strip()
     sni = str(body.get("sni") or "").strip()
-    if protocol in ("vless", "vmess", "trojan") and not sni:
-        sni = _safe_host(domain, external_domain, SETTINGS.get("domain"), get_host())
-    if protocol in ("vless", "vmess", "trojan") and security == "reality" and not sni:
-        sni = "is1-ssl.mzstatic.com"
-    if protocol == "trojan" and security == "none":
-        raise HTTPException(status_code=400, detail="Trojan عمومی باید TLS یا Reality داشته باشد")
-    if security == "reality" and protocol in ("vmess", "trojan") and network == "ws":
-        network = "tcp"
-    if protocol == "vless" and not network:
-        network = "ws"
     destination = str(body.get("destination") or "").strip()
     server_name = str(body.get("server_name") or "").strip()
     # A "worker" inbound is a special type: it is addressed to the deployed
@@ -4318,13 +4407,15 @@ async def create_inbound(request: Request, auth=Depends(require_replication_auth
         port = int(body.get("port") or 443)
         external_port = int(body.get("external_port") or 443)
 
-    fingerprint = normalize_fingerprint(body.get("fingerprint"))
+    fingerprint = str(body.get("fingerprint") or "chrome").strip()
     spoof_ip = str(body.get("spoof_ip") or "").strip()
     reality_settings = body.get("reality_settings", {}) if isinstance(body.get("reality_settings"), dict) else {}
     xhttp_settings = body.get("xhttp_settings", {}) if isinstance(body.get("xhttp_settings"), dict) else {}
+    finalmask = body.get("finalmask") if isinstance(body.get("finalmask"), dict) else {}
     ws_settings = body.get("ws_settings", {}) if isinstance(body.get("ws_settings"), dict) else {}
     grpc_settings = body.get("grpc_settings", {}) if isinstance(body.get("grpc_settings"), dict) else {}
     telegram_settings = body.get("telegram_settings", {}) if isinstance(body.get("telegram_settings"), dict) else {}
+    tls_settings = body.get("tls_settings", {}) if isinstance(body.get("tls_settings"), dict) else {}
     if protocol == "telegram":
         # Telegram Proxy does not use Xray Reality fields.
         sni = ""
@@ -4365,8 +4456,10 @@ async def create_inbound(request: Request, auth=Depends(require_replication_auth
         if _pub:
             reality_settings["public_key"] = _pub
         reality_settings.setdefault("spiderx", "/")
-        reality_settings.setdefault("mldsa65_seed", fresh["mldsa65_seed"])
-        reality_settings.setdefault("mldsa65_verify", fresh["mldsa65_verify"])
+        if fresh.get("mldsa65_seed"):
+            reality_settings.setdefault("mldsa65_seed", fresh["mldsa65_seed"])
+        if fresh.get("mldsa65_verify"):
+            reality_settings.setdefault("mldsa65_verify", fresh["mldsa65_verify"])
         # SNI from frontend is used as dest, server_names, and sni
         if not reality_settings.get("dest"):
             reality_settings["dest"] = (sni or "is1-ssl.mzstatic.com") + ":443"
@@ -4414,9 +4507,11 @@ async def create_inbound(request: Request, auth=Depends(require_replication_auth
             "fingerprint": fingerprint,
             "reality_settings": reality_settings,
             "xhttp_settings": xhttp_settings,
+            "finalmask": finalmask,
             "ws_settings": ws_settings,
             "grpc_settings": grpc_settings,
             "telegram_settings": telegram_settings,
+            "tls_settings": tls_settings,
             "node_ids": [str(x).strip() for x in (body.get("node_ids") or []) if str(x).strip()],
             "enabled_node_ids": [str(x).strip() for x in (body.get("enabled_node_ids") or body.get("node_ids") or []) if str(x).strip()],
             "created_at": datetime.now().isoformat(),
@@ -4521,7 +4616,7 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
             _ev = str(body["external_port"] or "").strip()
             ib["external_port"] = int(_ev) if _ev else ""
         if "fingerprint" in body:
-            ib["fingerprint"] = normalize_fingerprint(body["fingerprint"])
+            ib["fingerprint"] = str(body["fingerprint"]).strip()
         if "reality_settings" in body and isinstance(body["reality_settings"], dict):
             incoming_rs = dict(body["reality_settings"])
             if incoming_rs.get("short_id") in (None, "") and incoming_rs.get("short_ids") not in (None, ""):
@@ -4542,6 +4637,11 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
             ib["reality_settings"] = current_rs
         if "xhttp_settings" in body and isinstance(body["xhttp_settings"], dict):
             ib["xhttp_settings"] = body["xhttp_settings"]
+        if "finalmask" in body:
+            if isinstance(body["finalmask"], dict):
+                ib["finalmask"] = body["finalmask"]
+            elif body["finalmask"] in (None, "", False):
+                ib["finalmask"] = {}
         if "ws_settings" in body and isinstance(body["ws_settings"], dict):
             ib["ws_settings"] = body["ws_settings"]
         if "grpc_settings" in body and isinstance(body["grpc_settings"], dict):
@@ -4702,11 +4802,10 @@ async def delete_inbound(inbound_id: str, _=Depends(require_auth)):
         ib = INBOUNDS.pop(inbound_id, None)
         if not ib:
             raise HTTPException(status_code=404, detail="inbound not found")
-        # Protect the managed default and system Node from deletion. Custom
-        # inbounds remain fully deletable.
-        if inbound_id == "Node" or ib.get("system") is True or is_default_tls_ws_inbound(ib):
+        # Protect system Inbound "Node" from deletion
+        if inbound_id == "Node" or ib.get("system") is True:
             INBOUNDS[inbound_id] = ib
-            raise HTTPException(status_code=400, detail="اینباند پیش‌فرض/سیستمی قابل حذف نیست")
+            raise HTTPException(status_code=400, detail="سیستمی قابل حذف نیست")
         name = ib.get("name", inbound_id)
     # Stop Telegram Proxy if this was a telegram inbound
     if (ib.get("protocol") or "").lower() == "telegram":
@@ -4761,6 +4860,7 @@ async def list_users(_=Depends(require_auth)):
             "config_url": f"https://{host}/api/users/{uid}/config",
             "qr_url": f"https://{host}/api/users/{uid}/qr",
             "subscription_url": f"https://{host}/link/{u.get('config_uuid')}",
+            "subscription_type": "per-user",
             "connections": sum(1 for c in connections.values() if c.get("uuid") == u.get("config_uuid")),
             "node_configs": dict(u.get("node_configs") or {}),
             "node_sync_state": dict(u.get("node_sync_state") or {}),
@@ -4790,16 +4890,22 @@ async def _upsert_remote_user(body: dict) -> dict:
     if not username or not config_uuid or not _is_valid_uuid(config_uuid):
         raise HTTPException(status_code=400, detail="username و valid config_uuid الزامی است")
     default_iid = find_default_tls_ws_inbound_id()
-    requested_iid = str(body.get("remote_inbound_id") or body.get("inbound_id") or "").strip()
-    remote_protocol_hint = str(body.get("protocol") or "vless").lower()
-    selected_iid = requested_iid if requested_iid in INBOUNDS else default_iid
-    if not selected_iid or selected_iid not in INBOUNDS:
-        raise HTTPException(status_code=409, detail="Inbound مناسب برای این پروتکل روی Node پیدا نشد")
-    selected_ib = INBOUNDS.get(selected_iid) or {}
-    selected_proto = str(selected_ib.get("protocol") or "vless").lower()
-    if remote_protocol_hint in ("vmess", "trojan") and selected_proto != remote_protocol_hint:
-        raise HTTPException(status_code=409, detail=f"Inbound پروتکل {remote_protocol_hint.upper()} روی Node پیدا نشد")
-    default_iid = selected_iid
+    if not default_iid:
+        async with INBOUNDS_LOCK:
+            default_iid = find_default_tls_ws_inbound_id()
+            if not default_iid:
+                default_iid = "default" if "default" not in INBOUNDS else generate_short_id()
+                INBOUNDS[default_iid] = {
+                    "name": DEFAULT_TLS_WS_INBOUND_NAME,
+                    "protocol": "vless", "inbound_type": "transport",
+                    "port": 443, "network": "ws", "security": "tls",
+                    "domain": _safe_host(SETTINGS.get("domain"), get_host()),
+                    "external_domain": "", "sni": "", "external_port": "",
+                    "fingerprint": "chrome", "ws_settings": {"path": "/ws/{uuid}"},
+                    "reality_settings": {}, "xhttp_settings": {},
+                    "created_at": datetime.now().isoformat(),
+                }
+                asyncio.create_task(_xray_apply())
     traffic_limit_gb = float(body.get("traffic_limit_gb") or 0)
     traffic_limit_bytes = int(traffic_limit_gb * 1024 ** 3) if traffic_limit_gb > 0 else 0
     expire_at = body.get("expire_at")
@@ -4807,23 +4913,10 @@ async def _upsert_remote_user(body: dict) -> dict:
         expire_days = int(body.get("expire_days") or 0)
         expire_at = (datetime.now() + timedelta(days=expire_days)).isoformat() if expire_days > 0 else None
     concurrent = max(0, int(body.get("concurrent_connections") or 0))
-    remote_protocol = str(body.get("protocol") or "vless").lower()
-    if remote_protocol not in ("vless", "vmess", "trojan"):
-        remote_protocol = "vless"
-    remote_trojan_password = str(body.get("trojan_password") or "").strip()
-    if remote_protocol == "trojan" and len(remote_trojan_password) < 8:
-        remote_trojan_password = secrets.token_urlsafe(24)
-    remote_sni = str(body.get("sni") or "").strip()
-    remote_fingerprint = normalize_fingerprint(body.get("fingerprint"))
     status = str(body.get("status") or "active").lower()
     if status not in ("active", "disabled", "expired"):
         status = "active"
-    selected_network = str(selected_ib.get("network") or "ws").lower()
-    selected_security = str(selected_ib.get("security") or "tls").lower()
-    selected_is_relay = remote_protocol == "vless" and selected_iid == find_default_tls_ws_inbound_id()
-    path = str((selected_ib.get("path") or (selected_ib.get("ws_settings") or {}).get("path") or f"/ws/{config_uuid}")).strip()
-    if selected_network == "ws" and (not path or path == "/" or "{uuid}" in path):
-        path = f"/ws/{config_uuid}"
+    path = f"/ws/{config_uuid}"
     subscription_uuid = str(body.get("subscription_uuid") or secrets.token_urlsafe(16))
     password = str(body.get("password") or secrets.token_urlsafe(18))
     reset_traffic = bool(body.get("reset_traffic"))
@@ -4839,10 +4932,7 @@ async def _upsert_remote_user(body: dict) -> dict:
             **existing,
             "username": username,
             "password_hash": hash_password(password),
-            "protocol": remote_protocol,
-            "trojan_password": remote_trojan_password if remote_protocol == "trojan" else "",
-            "fingerprint": remote_fingerprint,
-            "sni": remote_sni,
+            "protocol": "vless",
             "traffic_limit_bytes": traffic_limit_bytes,
             "traffic_used_bytes": traffic_used,
             "expire_at": expire_at,
@@ -4852,10 +4942,9 @@ async def _upsert_remote_user(body: dict) -> dict:
             "server": existing.get("server") or "remote-node",
             "config_uuid": config_uuid,
             "subscription_uuid": subscription_uuid,
-            "sni": str(body.get("sni") or selected_ib.get("sni") or selected_ib.get("domain") or "").strip(),
-            "fingerprint": normalize_fingerprint(body.get("fingerprint") or selected_ib.get("fingerprint")),
+            "sni": "",
             "path": path,
-            "transport_type": "reality" if selected_security == "reality" else selected_network,
+            "transport_type": "ws",
             "inbound_id": default_iid,
             "inbound_ids": [default_iid],
             "node_sync_password": existing.get("node_sync_password") or secrets.token_urlsafe(18),
@@ -4878,12 +4967,12 @@ async def _upsert_remote_user(body: dict) -> dict:
             "note": f"Remote Node: {from_node or 'unknown'}",
             "is_default": False,
             "sub_id": None,
-            "protocol": ("reality" if selected_security == "reality" else (remote_protocol + "-" + selected_network)),
+            "protocol": "vless-ws",
             "path": path,
             "user_id": target_uid,
             "inbound_id": default_iid,
-            "relay_enabled": selected_is_relay,
-            "relay_inbound_id": default_iid if selected_is_relay else "",
+            "relay_enabled": True,
+            "relay_inbound_id": default_iid,
         })
         PATH_INDEX[config_uuid] = config_uuid
         PATH_INDEX[path.lstrip("/")] = config_uuid
@@ -4899,7 +4988,7 @@ async def _upsert_remote_user(body: dict) -> dict:
         "config_uuid": config_uuid,
         "subscription_uuid": subscription_uuid,
         "inbound_id": default_iid,
-        "inbound_name": selected_ib.get("name") or default_iid,
+        "inbound_name": DEFAULT_TLS_WS_INBOUND_NAME,
         "traffic_used_bytes": traffic_used,
         "traffic_limit_bytes": traffic_limit_bytes,
         "status": status,
@@ -4918,13 +5007,11 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
     _raw_name = (body.get("username") or "").strip()[:40]
     _auto_name = not _raw_name
     username = _raw_name or f"user-{secrets.token_hex(3)}"
-    # The panel no longer asks for a separate config password. Account auth is
-    # internal; Trojan gets its own generated protocol credential when needed.
     password = str(body.get("password") or secrets.token_urlsafe(12))
-    trojan_password = str(body.get("trojan_password") or "").strip()
     traffic_limit_gb = float(body.get("traffic_limit_gb") or 0)
     expire_days = int(body.get("expire_days") or 0)
     protocol = str(body.get("protocol") or "vless").lower()
+    trojan_password = str(body.get("trojan_password") or (password if protocol == "trojan" else ""))
     _cc_raw = body.get("concurrent_connections")
     concurrent_connections = int(_cc_raw) if _cc_raw is not None else 0
     server = (body.get("server") or "IR-Tehran-01").strip()[:40]
@@ -4996,8 +5083,6 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
     user_id = generate_short_id()
     config_uuid = generate_uuid()
     subscription_uuid = secrets.token_urlsafe(16)
-    if protocol == "trojan" and len(trojan_password) < 8:
-        trojan_password = secrets.token_urlsafe(24)
     traffic_limit_bytes = int(traffic_limit_gb * 1024 ** 3) if traffic_limit_gb > 0 else 0
     expire_at = (datetime.now() + timedelta(days=expire_days)).isoformat() if expire_days > 0 else None
 
@@ -5039,18 +5124,6 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
         primary_inbound = INBOUNDS.get(inbound_id) if inbound_id else None
         primary_inbound_proto = (primary_inbound.get("protocol") if primary_inbound else "").lower()
         primary_inbound_network = (primary_inbound.get("network") if primary_inbound else "").lower()
-        if inbound_id and not primary_inbound:
-            raise HTTPException(status_code=400, detail="Inbound انتخاب‌شده پیدا نشد")
-        if primary_inbound and protocol in ("vmess", "trojan") and primary_inbound_proto not in (protocol, "reality"):
-            raise HTTPException(status_code=400, detail=f"برای {protocol.upper()} باید Inbound همان پروتکل را انتخاب کنید")
-        if primary_inbound and protocol == "vless" and primary_inbound_proto in ("vmess", "trojan"):
-            raise HTTPException(status_code=400, detail=f"Inbound انتخاب‌شده {primary_inbound_proto.upper()} است؛ پروتکل کاربر را با آن هماهنگ کنید")
-        if primary_inbound:
-            if not sni:
-                sni = str(primary_inbound.get("sni") or primary_inbound.get("domain") or "").strip()
-            body_fp = normalize_fingerprint(body.get("fingerprint") or primary_inbound.get("fingerprint"))
-        else:
-            body_fp = normalize_fingerprint(body.get("fingerprint"))
         worker_selected = any(((INBOUNDS.get(iid) or {}).get("protocol") or "").lower() == "worker" for iid in inbound_ids)
         relay_default_id = find_default_tls_ws_inbound_id()
         relay_enabled = bool(relay_default_id and relay_default_id in inbound_ids)
@@ -5081,9 +5154,7 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
         USERS[user_id] = {
             "username": username,
             "password_hash": hash_password(password),
-            "trojan_password": trojan_password if protocol == "trojan" else "",
             "protocol": protocol,
-            "fingerprint": body_fp,
             "traffic_limit_bytes": traffic_limit_bytes,
             "traffic_used_bytes": 0,
             "expire_at": expire_at,
@@ -5093,6 +5164,7 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
             "server": server,
             "config_uuid": config_uuid,
             "subscription_uuid": subscription_uuid,
+            "trojan_password": trojan_password,
             "sni": sni,
             "proxy_ip": proxy_ip,
             "proxy_ips": proxy_ips,
@@ -5488,6 +5560,7 @@ async def get_user_config(user_id: str, _=Depends(require_auth)):
         "config_url": f"https://{host}/api/users/{user_id}/config",
         "qr_url": f"https://{host}/api/users/{user_id}/qr",
         "subscription_url": f"https://{host}/link/{u.get('config_uuid')}",
+            "subscription_type": "per-user",
     }
 
 @app.get("/api/users/{user_id}/qr")
@@ -5562,19 +5635,137 @@ async def get_user_subscription(user_id: str, _=Depends(require_auth)):
 # ── Public sub page ───────────────────────────────────────────────────────────
 @app.get("/p/{uuid_key}", response_class=HTMLResponse)
 async def public_sub_page(uuid_key: str, request: Request):
-    from public_page import get_public_page_html
+    """Pars Space branded public subscription page.
+
+    The page is static and reads its live data from /api/public/sub/{uuid_key}.
+    Keeping the HTML here avoids a fragile optional public_page.py dependency.
+    """
     async with SUBS_LOCK:
-        sub = next(({"sub_id": sid, **s} for sid, s in SUBS.items() if s.get("uuid_key") == uuid_key), None)
+        sub = next((s for s in SUBS.values() if s.get("uuid_key") == uuid_key), None)
     if not sub:
-        return HTMLResponse("<h2 style='font-family:sans-serif;padding:40px'>گروه پیدا نشد</h2>", status_code=404)
-    return HTMLResponse(content=get_public_page_html(uuid_key))
+        return HTMLResponse("<h2 style='font-family:sans-serif;padding:40px'>اشتراک پیدا نشد</h2>", status_code=404)
+    static_sub = _os.path.join(_STATIC_DIR, "sub.html")
+    return FileResponse(static_sub)
+
+@app.post("/api/tools/test-config")
+async def test_config(request: Request, _=Depends(require_auth)):
+    """Basic reachability test for a generated client config.
+
+    This validates the URL shape and checks the configured host/port from the
+    server side. It does not claim that a full Xray handshake succeeded.
+    """
+    from urllib.parse import urlparse
+    import ssl as _ssl
+    body = await request.json()
+    raw = str(body.get("config") or "").strip()
+    if not raw or not re.match(r"^(vless|vmess|trojan)://", raw, re.I):
+        raise HTTPException(status_code=400, detail="A generated VLESS/VMess/Trojan config is required")
+    u = urlparse(raw)
+    host = u.hostname
+    port = int(u.port or 443)
+    if not host or not (1 <= port <= 65535):
+        raise HTTPException(status_code=400, detail="Config host/port is invalid")
+    start = time.perf_counter()
+    try:
+        reader, writer = await asyncio.wait_for(asyncio.open_connection(host, port), timeout=5)
+        latency = round((time.perf_counter() - start) * 1000, 1)
+        writer.close()
+        try:
+            await writer.wait_closed()
+        except Exception:
+            pass
+        return {"ok": True, "host": host, "port": port, "latency_ms": latency, "message": f"TCP reachable · {latency} ms"}
+    except Exception as exc:
+        latency = round((time.perf_counter() - start) * 1000, 1)
+        return {"ok": False, "host": host, "port": port, "latency_ms": latency, "message": f"TCP check failed: {str(exc)[:180]}"}
+
+@app.get("/api/tools/speed-test")
+async def speed_test(bytes: int = 524288, _=Depends(require_auth)):
+    """Return a bounded uncached payload for a browser-side throughput test."""
+    size = max(65536, min(int(bytes or 524288), 2 * 1024 * 1024))
+    return Response(content=b"0" * size, media_type="application/octet-stream", headers={"Cache-Control":"no-store, no-cache, must-revalidate", "X-Pars-Space-Speed-Test":str(size)})
+
+
+# ── Authenticated Linux terminal ────────────────────────────────────────────
+@app.get("/api/terminal/info")
+async def terminal_info(_=Depends(require_auth)):
+    import getpass, platform, shutil
+    return {
+        "ok": True,
+        "enabled": os.environ.get("PARS_TERMINAL_ENABLED", "1").lower() not in ("0", "false", "no"),
+        "shell": "/bin/bash" if Path("/bin/bash").exists() else "/bin/sh",
+        "user": getpass.getuser(),
+        "hostname": platform.node(),
+        "platform": platform.platform(),
+        "cwd": os.getcwd(),
+        "bash": shutil.which("bash") or "",
+    }
+
+@app.post("/api/terminal/exec")
+async def terminal_exec(request: Request, _=Depends(require_auth)):
+    """Run an authenticated Linux shell command as the panel service user.
+
+    This is deliberately an admin-only terminal, not an anonymous remote shell.
+    It never grants sudo/root and caps execution/output so a forgotten command
+    cannot pin the web worker indefinitely.
+    """
+    if os.environ.get("PARS_TERMINAL_ENABLED", "1").lower() in ("0", "false", "no"):
+        raise HTTPException(status_code=403, detail="terminal disabled")
+    body = await request.json()
+    command = str(body.get("command") or "").strip()
+    if not command:
+        raise HTTPException(status_code=400, detail="command is required")
+    if len(command) > 4000:
+        raise HTTPException(status_code=400, detail="command too long")
+    cwd = str(body.get("cwd") or os.getcwd()).strip()
+    if not Path(cwd).is_dir():
+        cwd = os.getcwd()
+    shell = "/bin/bash" if Path("/bin/bash").exists() else "/bin/sh"
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            shell, "-lc", command, cwd=cwd,
+            stdin=asyncio.subprocess.DEVNULL,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+        )
+        try:
+            raw = await asyncio.wait_for(proc.stdout.read(24000), timeout=30)
+            timed_out = False
+        except asyncio.TimeoutError:
+            timed_out = True
+            try:
+                proc.kill()
+            except Exception:
+                pass
+            raw = await proc.stdout.read(24000)
+        try:
+            await asyncio.wait_for(proc.wait(), timeout=2)
+        except Exception:
+            pass
+        text_out = raw.decode("utf-8", errors="replace")
+        if len(text_out) > 24000:
+            text_out = text_out[:24000] + "\n… output truncated …"
+        return {"ok": proc.returncode == 0 and not timed_out, "code": proc.returncode, "timed_out": timed_out, "cwd": cwd, "output": text_out}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)[:300])
 
 @app.get("/api/public/sub/{uuid_key}")
 async def public_sub_data(uuid_key: str, request: Request):
     async with SUBS_LOCK:
         sub_entry = next(((sid, s) for sid, s in SUBS.items() if s.get("uuid_key") == uuid_key), None)
     if not sub_entry:
-        raise HTTPException(status_code=404, detail="not found")
+        # /link/{config_uuid} is also a real per-user subscription. The same
+        # graphical Pars Space page is used for both group and personal links.
+        try:
+            data = await _build_subscription_data_by_uuid(uuid_key)
+            data["name"] = data.get("username") or "Pars Space"
+            data["desc"] = "Personal Pars Space subscription"
+            data["sub_url"] = f"https://{SETTINGS.get('domain') or get_host()}/link/{uuid_key}"
+            data["total_used_fmt"] = data.get("traffic_used_fmt", "0 B")
+            data["active_connections"] = sum(1 for c in connections.values() if c.get("uuid") == uuid_key)
+            return data
+        except HTTPException:
+            raise HTTPException(status_code=404, detail="not found")
     sub_id, sub = sub_entry
 
     has_pw = sub.get("password_hash") is not None
@@ -5587,6 +5778,8 @@ async def public_sub_data(uuid_key: str, request: Request):
     link_ids = sub.get("link_ids", [])
     async with LINKS_LOCK:
         snap = dict(LINKS)
+    async with USERS_LOCK:
+        snap_users = dict(USERS)
 
     links_out = []
     active_conns = 0
@@ -5608,7 +5801,7 @@ async def public_sub_data(uuid_key: str, request: Request):
             "limit_bytes": link.get("limit_bytes", 0),
             "limit_fmt": "∞" if link.get("limit_bytes", 0) == 0 else fmt_bytes(link["limit_bytes"]),
             "expires_at": link.get("expires_at"),
-            "vless_link": generate_vless_link(lid, host, remark=f"Spider-{link['label']}", protocol=proto),
+            "vless_link": (generate_user_config(link.get("user_id"), snap_users.get(link.get("user_id"), {}), link.get("inbound_id")) if link.get("user_id") and snap_users.get(link.get("user_id")) else generate_vless_link(lid, host, remark=f"Pars-{link['label']}", protocol=proto)),
             "sub_url": f"https://{host}/link/{lid}",
             "connections": conn_count,
         })
@@ -5618,11 +5811,144 @@ async def public_sub_data(uuid_key: str, request: Request):
         "locked": False,
         "name": sub["name"],
         "desc": sub.get("desc", ""),
-        "sub_url": f"https://{host}/sub-group/{uuid_key}",
+        "sub_url": f"https://{host}/sub/{uuid_key}",
         "active_connections": active_conns,
         "total_used_fmt": fmt_bytes(total_used),
         "links": links_out,
     }
+
+# ══════════════════════════════════════════════════════════════════════════════
+# PARS SPACE API v1
+# Thin public contract over the existing local data model. The dashboard uses
+# this namespace only, so its frontend no longer depends on Spider-named routes.
+# ══════════════════════════════════════════════════════════════════════════════
+PARS_API_KEY = str(SETTINGS.get("pars_api_key") or "").strip()
+if not PARS_API_KEY.startswith("psp_"):
+    PARS_API_KEY = "psp_" + secrets.token_urlsafe(24)
+    SETTINGS["pars_api_key"] = PARS_API_KEY
+    SETTINGS.setdefault("pars_panel_id", "pars_" + secrets.token_hex(6))
+
+async def _pars_v1_auth(request: Request):
+    key = str(request.headers.get("x-pars-key") or "").strip()
+    authz = str(request.headers.get("authorization") or "")
+    if authz.lower().startswith("bearer "):
+        key = authz[7:].strip()
+    if key and secrets.compare_digest(key, str(SETTINGS.get("pars_api_key") or PARS_API_KEY)):
+        return {"kind":"api_key"}
+    if await is_valid_session(request.cookies.get(SESSION_COOKIE)):
+        return {"kind":"session"}
+    raise HTTPException(status_code=401, detail="Pars API authentication required")
+
+def _pars_host():
+    return SETTINGS.get("domain") or get_host()
+
+@app.get("/api/pars/v1/identity")
+async def pars_identity(request: Request):
+    await _pars_v1_auth(request)
+    return {"panel_id": SETTINGS.get("pars_panel_id") or "pars-local", "name":"Pars Space", "version":"1.0"}
+
+@app.get("/api/pars/v1/health")
+async def pars_health(request: Request):
+    await _pars_v1_auth(request)
+    return {"ok":True,"status":"online","host":_pars_host(),"uptime":uptime()}
+
+@app.get("/api/pars/v1/stats")
+async def pars_stats(request: Request):
+    await _pars_v1_auth(request)
+    async with USERS_LOCK: users=list(USERS.values())
+    async with INBOUNDS_LOCK: ibs=list(INBOUNDS.values())
+    async with LINKS_LOCK: links=list(LINKS.values())
+    return {"active_users":sum(1 for u in users if is_user_allowed(u)),"connections":len(connections),"inbounds":len(ibs),"total_traffic":sum(int(u.get("traffic_used_bytes") or 0) for u in users),"total_traffic_fmt":fmt_bytes(sum(int(u.get("traffic_used_bytes") or 0) for u in users)),"subscriptions":len(links)}
+
+@app.get("/api/pars/v1/users")
+async def pars_users(request: Request):
+    await _pars_v1_auth(request)
+    return await list_users()
+
+@app.post("/api/pars/v1/users")
+async def pars_create_user(request: Request):
+    await _pars_v1_auth(request)
+    return await create_user(request, {"kind":"session"})
+
+@app.get("/api/pars/v1/inbounds")
+async def pars_inbounds(request: Request):
+    await _pars_v1_auth(request)
+    return await list_inbounds({"kind":"session"})
+
+@app.post("/api/pars/v1/inbounds")
+async def pars_create_inbound(request: Request):
+    await _pars_v1_auth(request)
+    return await create_inbound(request, {"kind":"session"})
+
+@app.get("/api/pars/v1/subscriptions")
+async def pars_subscriptions(request: Request):
+    await _pars_v1_auth(request)
+    return await list_subs()
+
+@app.post("/api/pars/v1/subscriptions")
+async def pars_create_subscription(request: Request):
+    await _pars_v1_auth(request)
+    return await create_sub(request, {"kind":"session"})
+
+@app.get("/api/pars/v1/activity")
+async def pars_activity(request: Request):
+    await _pars_v1_auth(request)
+    rows = list(error_logs)[-50:]
+    return {"activity":[{"message":str(x.get("message") or x.get("error") or x),"created_at":x.get("time") or x.get("created_at") or ""} for x in reversed(rows)]}
+
+@app.get("/api/pars/v1/nodes")
+async def pars_nodes(request: Request):
+    await _pars_v1_auth(request)
+    return await list_nodes()
+
+@app.post("/api/pars/v1/nodes/connect")
+async def pars_connect_node(request: Request):
+    await _pars_v1_auth(request)
+    body=await request.json()
+    # The current remote-node contract remains compatible with existing panels.
+    return await add_node_from_pars(body)
+
+async def add_node_from_pars(body: dict):
+    payload = dict(body)
+    payload["api_key"] = payload.get("api_key") or payload.get("pars_api_key")
+    # Existing node storage currently uses spdr_ credentials. Accept psp_ at the
+    # Pars Space boundary and keep a local compatibility credential internally.
+    key = str(payload.get("api_key") or "")
+    if key.startswith("psp_"):
+        payload["api_key"] = "spdr_" + secrets.token_urlsafe(24)
+    class _Req:
+        async def json(self): return payload
+    return await add_node(_Req(), None)
+
+@app.post("/api/pars/v1/nodes/{node_id}/ping")
+async def pars_node_ping(node_id: str, request: Request):
+    await _pars_v1_auth(request)
+    return await node_health(node_id)
+
+@app.post("/api/pars/v1/nodes/{node_id}/sync")
+async def pars_node_sync(node_id: str, request: Request):
+    await _pars_v1_auth(request)
+    # Reuse the existing full-node refresh/sync reconciliation.
+    result = await refresh_node(node_id)
+    return {"ok":True,"sent":0,"total":0,"node":result.get("node",{})}
+
+@app.delete("/api/pars/v1/nodes/{node_id}")
+async def pars_node_delete(node_id: str, request: Request):
+    await _pars_v1_auth(request)
+    return await delete_node(node_id)
+
+@app.get("/api/pars/v1/credentials")
+async def pars_credentials(request: Request):
+    await _pars_v1_auth(request)
+    return {"api_key":SETTINGS.get("pars_api_key") or PARS_API_KEY,"panel_id":SETTINGS.get("pars_panel_id")}
+
+@app.post("/api/pars/v1/credentials/regenerate")
+async def pars_regenerate_credentials(request: Request):
+    await _pars_v1_auth(request)
+    new_key="psp_"+secrets.token_urlsafe(24)
+    SETTINGS["pars_api_key"]=new_key
+    await save_state()
+    return {"api_key":new_key,"panel_id":SETTINGS.get("pars_panel_id")}
 
 # ── HTML Pages (SPA) ───────────────────────────────────────────────────────
 import os as _os
@@ -5636,23 +5962,23 @@ app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     if await is_valid_session(request.cookies.get(SESSION_COOKIE)):
-        return RedirectResponse(url="/spider")
+        return RedirectResponse(url="/dashboard")
     return FileResponse(_os.path.join(_STATIC_DIR, "login.html"))
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard_redirect(request: Request):
-    return RedirectResponse(url="/spider")
-
-@app.get("/spider", response_class=HTMLResponse)
-async def spider_panel(request: Request):
     if not await is_valid_session(request.cookies.get(SESSION_COOKIE)):
         return RedirectResponse(url="/login")
     await ensure_default_link()
     return FileResponse(_os.path.join(_STATIC_DIR, "index.html"))
 
+@app.get("/spider", response_class=HTMLResponse)
+async def spider_panel(request: Request):
+    return RedirectResponse(url="/dashboard", status_code=307)
+
 @app.get("/test-ws", response_class=HTMLResponse)
 async def test_ws_redirect():
-    return HTMLResponse(content="<script>location.href='/spider'</script>")
+    return HTMLResponse(content="<script>location.href='/dashboard'</script>")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -5853,6 +6179,7 @@ async def set_global_settings(request: Request, _=Depends(require_auth)):
 @app.get("/api/settings")
 async def get_settings(_=Depends(require_auth)):
     """Return all settings, masking the security token."""
+    SETTINGS.setdefault("panel_alias", "Pars Space")
     async with SETTINGS_LOCK:
         s = dict(SETTINGS)
         masked = _get_panel_api_key_sync()
@@ -5869,7 +6196,7 @@ async def update_settings(request: Request, _=Depends(require_auth)):
     allowed_keys = {
         "websocket_mode", "xhttp_mode", "default_connection_mode",
         "max_ip_per_user", "bandwidth_limit_mbps", "live_monitoring",
-        "auto_ip_rotation", "server_ip", "country", "country_code", "country_flag",
+        "auto_ip_rotation", "server_ip", "country", "country_code", "country_flag", "panel_alias",
     }
     async with SETTINGS_LOCK:
         for k, v in body.items():
@@ -5938,6 +6265,7 @@ def _build_backup_payload() -> dict:
             "nodes": dict(NODES),
             "pending_node_deletions": dict(PENDING_NODE_DELETIONS),
             "bot_orders": dict(BOT_ORDERS),
+            "username": AUTH.get("username", "admin"),
             "password_hash": AUTH.get("password_hash", ""),
             "saved_secret": CONFIG.get("secret", ""),
         },
@@ -6168,24 +6496,10 @@ def _node_public_view(node_id: str, node: dict) -> dict:
         ids = ib.get("enabled_node_ids") if isinstance(ib.get("enabled_node_ids"), list) else ib.get("node_ids")
         if isinstance(ids, list) and node_id in [str(x) for x in ids]:
             enabled_count += 1
-    assigned_users = []
-    node_traffic_total = 0
-    for uid, u in USERS.items():
-        cfgs = u.get("node_configs") if isinstance(u.get("node_configs"), dict) else {}
-        if node_id in cfgs:
-            used = int((u.get("node_traffic") or {}).get(node_id) or 0)
-            node_traffic_total += used
-            assigned_users.append({
-                "user_id": uid,
-                "username": u.get("username") or uid,
-                "protocol": u.get("protocol") or "vless",
-                "config": cfgs.get(node_id) or "",
-                "traffic_used_bytes": used,
-                "last_sync": (u.get("node_sync_state") or {}).get(node_id, {}).get("last_sync"),
-                "sync_status": (u.get("node_sync_state") or {}).get(node_id, {}).get("status") or "unknown",
-            })
-    assigned_users.sort(key=lambda x: x.get("username") or "")
-    synced_users = len(assigned_users)
+    synced_users = sum(
+        1 for u in USERS.values()
+        if isinstance(u.get("node_configs"), dict) and node_id in u.get("node_configs", {})
+    )
     return {
         "node_id": node_id,
         "name": node.get("name") or node.get("domain") or node_id,
@@ -6203,8 +6517,6 @@ def _node_public_view(node_id: str, node: dict) -> dict:
         "last_sync": node.get("last_sync"),
         "enabled_inbound_count": enabled_count,
         "synced_user_count": synced_users,
-        "assigned_users": assigned_users,
-        "node_traffic_used_bytes": node_traffic_total,
         "remote_users": int(node.get("remote_users") or 0),
         # Legacy aliases kept for the existing frontend and old saved state.
         "remote_host": node.get("remote_host", ""),
@@ -7902,26 +8214,6 @@ async def _sync_user_to_selected_nodes(user_id: str, user: dict, selected_overri
         if not node:
             continue
         if nid in selected:
-            # Pick an already-existing inbound on the remote Node that matches
-            # the user's protocol. Never create a new inbound as a side effect.
-            remote_inbound_id = ""
-            try:
-                if str(user.get("protocol") or "vless").lower() in ("vmess", "trojan"):
-                    rr = await _remote_request(node, "GET", "/api/inbounds", timeout=10.0)
-                    if rr.status_code == 200:
-                        rows = rr.json().get("inbounds", []) if rr.content else []
-                        target_proto = str(user.get("protocol") or "vless").lower()
-                        for rib in rows if isinstance(rows, list) else []:
-                            if str(rib.get("protocol") or "").lower() == target_proto and not rib.get("system"):
-                                remote_inbound_id = str(rib.get("inbound_id") or rib.get("id") or "")
-                                if remote_inbound_id:
-                                    break
-                    if not remote_inbound_id:
-                        sync_states[nid] = {"status":"error", "last_sync":sync_states.get(nid, {}).get("last_sync"), "last_error":f"Inbound {target_proto.upper()} روی Node مقصد پیدا نشد", "traffic_used_bytes":node_traffic.get(nid,0)}
-                        continue
-            except Exception as exc:
-                sync_states[nid] = {"status":"error", "last_sync":sync_states.get(nid, {}).get("last_sync"), "last_error":f"Node inbound lookup failed: {str(exc)[:120]}", "traffic_used_bytes":node_traffic.get(nid,0)}
-                continue
             payload = {
                 "username": user.get("username") or user_id,
                 "password": password,
@@ -7930,12 +8222,7 @@ async def _sync_user_to_selected_nodes(user_id: str, user: dict, selected_overri
                 "expire_days": _expire_days_from_user(user),
                 "concurrent_connections": int(user.get("concurrent_connections") or 0),
                 "status": user.get("status", "active"),
-                "protocol": user.get("protocol", "vless"),
-                "trojan_password": user.get("trojan_password", ""),
-                "sni": user.get("sni", ""),
-                "fingerprint": normalize_fingerprint(user.get("fingerprint")),
-                "remote_inbound_id": remote_inbound_id or inbound_default,
-                "inbound_id": remote_inbound_id or inbound_default,
+                "inbound_id": inbound_default,
                 "inbound_ids": [inbound_default] if inbound_default else [],
                 "subscription_uuid": user.get("subscription_uuid") or "",
                 "path": f"/ws/{cuuid}",
@@ -9228,23 +9515,16 @@ def generate_xray_server_config(inbound_id: str = None) -> dict:
 def _add_inbound_to_xray(cfg: dict, ib: dict, iid: str, host: str):
     """Add a single inbound to an Xray config dict.
 
-    Only REALITY inbounds are served by Xray: WS/XHTTP TLS inbounds are handled
-    by the FastAPI relay (Railway terminates TLS on the public port), and the
-    Worker inbound is handled by the Cloudflare Worker. Adding TLS inbounds with
-    a fake /etc/xray/cert.pem made Xray fail on Railway (no cert file), which
-    took down Reality too.
+    Reality inbounds are served natively by Xray. Native VMess/Trojan inbounds
+    are also emitted when they use Reality security. Plain VMess can be emitted
+    on a dedicated TCP port. Ordinary public TLS VMess/Trojan still requires a
+    real certificate on the Xray host, so the panel never invents certificate paths.
     """
-    protocol = str(ib.get("protocol", "vless") or "vless").lower()
-    security = str(ib.get("security", "tls") or "tls").lower()
+    protocol = ib.get("protocol", "vless")
+    security = ib.get("security", "tls")
     is_reality = protocol == "reality" or security == "reality"
-    # VLESS/Trojan/VMess can be served natively by Xray. Worker and the exact
-    # managed VLESS WS relay remain outside Xray. Native TLS requires real certs.
-    if protocol in ("worker", "telegram", "node") or (protocol == "vless" and is_default_tls_ws_inbound(ib)):
-        return
-    if security == "tls" and not (Path("/etc/xray/cert.pem").exists() and Path("/etc/xray/key.pem").exists()):
-        return
-    if protocol == "trojan" and security == "none":
-        return
+    if not is_reality and protocol not in ("vmess", "trojan"):
+        return  # TLS WS/XHTTP + worker inbounds are handled by their relays
     # A reality inbound without a configured port is not ready yet — skip it
     # so Xray doesn't start on a wrong/default port.
     _raw_port = str(ib.get("port") or "").strip()
@@ -9262,14 +9542,18 @@ def _add_inbound_to_xray(cfg: dict, ib: dict, iid: str, host: str):
     xh_settings = ib.get("xhttp_settings", {})
     grpc_settings = ib.get("grpc_settings", {})
     
+    xray_protocol = "vless" if protocol == "reality" else protocol
+    inbound_settings = {"clients": []}
+    if xray_protocol == "vless":
+        inbound_settings["decryption"] = "none"
     inbound_obj = {
         "tag": f"inbound-{iid}",
         "listen": "0.0.0.0",
         "port": port,
-        # Xray has no "reality" protocol id — Reality is a security layer on top
-        # of VLESS, so reality inbounds must declare protocol "vless".
-        "protocol": "vless" if protocol == "reality" else protocol,
-        "settings": {"clients": [], "decryption": "none"},
+        # Reality is a security layer. A Reality inbound declared as protocol
+        # `reality` is invalid in Xray, so only that case maps to VLESS.
+        "protocol": xray_protocol,
+        "settings": inbound_settings,
         "streamSettings": {}
     }
 
@@ -9280,23 +9564,27 @@ def _add_inbound_to_xray(cfg: dict, ib: dict, iid: str, host: str):
     # are served — expired/disabled/quota-exceeded users are dropped so Xray
     # rejects their connections (real expiry/volume enforcement for Reality).
     if protocol in ("vless", "reality", "vmess", "trojan"):
-        clients = []
+        client_ids = set()
         for u in USERS.values():
             uids = u.get("inbound_ids") or ([u.get("inbound_id")] if u.get("inbound_id") else [])
-            if iid not in [str(x) for x in uids] or not is_user_allowed(u):
-                continue
-            uid = str(u.get("config_uuid") or "").strip()
-            if not uid:
-                continue
-            email = str(u.get("username") or uid)
+            if iid in uids and u.get("config_uuid") and is_user_allowed(u):
+                client_ids.add(u["config_uuid"])
+        if not client_ids:
+            # Keep a valid placeholder only when the inbound currently has no
+            # active users. Never add a malformed/legacy user UUID.
+            client_ids.add(str(uuid.uuid4()))
+        clients = []
+        for uid in client_ids:
+            matched_user = next((uu for uu in USERS.values() if uu.get("config_uuid") == uid), {})
             if protocol in ("vless", "reality"):
-                clients.append({"id": uid, "flow": "", "email": email, "level": 0})
+                client = {"id": uid, "flow": ""}
             elif protocol == "vmess":
-                clients.append({"id": uid, "alterId": 0, "security": "auto", "email": email, "level": 0})
+                client = {"id": uid, "alterId": 0, "security": "auto"}
             elif protocol == "trojan":
-                pw = str(u.get("trojan_password") or "").strip()
-                if len(pw) >= 8:
-                    clients.append({"password": pw, "email": email, "level": 0})
+                # Trojan authenticates by password. A VLESS/VMess UUID field
+                # is not part of a Trojan client and can make Xray reject it.
+                client = {"password": str(matched_user.get("trojan_password") or matched_user.get("config_uuid") or uid)}
+            clients.append(client)
         inbound_obj["settings"]["clients"] = clients
 
     # Transport / Stream settings
@@ -9337,6 +9625,9 @@ def _add_inbound_to_xray(cfg: dict, ib: dict, iid: str, host: str):
             "security": "reality",
             "realitySettings": reality_settings,
         }
+        _fm = ib.get("finalmask") or {}
+        if isinstance(_fm, dict) and _fm:
+            inbound_obj["streamSettings"]["finalmask"] = _fm
         if network == "xhttp":
             _xhttp_path = str(xh_settings.get("path") or "/").strip()
             if not _xhttp_path.startswith("/") or "#" in _xhttp_path or "?" in _xhttp_path:
@@ -9353,12 +9644,23 @@ def _add_inbound_to_xray(cfg: dict, ib: dict, iid: str, host: str):
                 "scMaxBufferedPosts": xh_settings.get("scMaxBufferedPosts", 30),
                 "scStreamUpServerSecs": xh_settings.get("scStreamUpServerSecs", "20-80"),
             }
+    elif protocol in ("vmess", "trojan") and security == "none":
+        inbound_obj["streamSettings"] = {"network": network if network in ("tcp", "ws", "grpc") else "tcp", "security": "none"}
+        if network == "ws":
+            inbound_obj["streamSettings"]["wsSettings"] = {"path": ws_settings.get("path", "/"), "headers": {"Host": ws_settings.get("host", domain)}}
+        elif network == "grpc":
+            inbound_obj["streamSettings"]["grpcSettings"] = {"serviceName": grpc_settings.get("serviceName", "pars-space")}
     elif security == "tls":
+        # Native TLS requires certificate files explicitly supplied to Xray.
+        cert_file = os.environ.get("XRAY_CERT_FILE", "/etc/xray/cert.pem")
+        key_file = os.environ.get("XRAY_KEY_FILE", "/etc/xray/key.pem")
+        if not os.path.exists(cert_file) or not os.path.exists(key_file):
+            logger.warning("Skipping native TLS %s inbound %s: certificate files are not present", protocol, iid)
+            return
         inbound_obj["streamSettings"] = {
             "network": network,
             "security": "tls",
             "tlsSettings": {
-                "serverName": str(ib.get("sni") or ib.get("domain") or host),
                 "certificates": [{
                     "certificateFile": "/etc/xray/cert.pem",
                     "keyFile": "/etc/xray/key.pem"
@@ -9388,6 +9690,10 @@ def _add_inbound_to_xray(cfg: dict, ib: dict, iid: str, host: str):
         if network == "ws":
             inbound_obj["streamSettings"]["wsSettings"] = {"path": ws_settings.get("path", "/")}
     
+    _fm = ib.get("finalmask") or {}
+    if isinstance(_fm, dict) and _fm:
+        inbound_obj["streamSettings"]["finalmask"] = _fm
+
     # Add sniffing
     inbound_obj["sniffing"] = {
         "enabled": True,
@@ -9413,16 +9719,32 @@ def _validate_xray_server_config(config: dict) -> list[str]:
         if key in seen:
             errors.append(f"{ib.get('tag')}: duplicate listener {listen}:{port}")
         seen.add(key)
-        if ib.get("protocol") != "vless":
-            errors.append(f"{ib.get('tag')}: Reality inbound must use VLESS protocol")
-            continue
+        protocol = str(ib.get("protocol") or "")
         clients = ((ib.get("settings") or {}).get("clients") or [])
-        for client in clients:
-            uid = str(client.get("id") or "")
-            try:
-                uuid.UUID(uid)
-            except Exception:
-                errors.append(f"{ib.get('tag')}: invalid VLESS client UUID {uid!r}")
+        if protocol == "vless":
+            for client in clients:
+                uid = str(client.get("id") or "")
+                try:
+                    uuid.UUID(uid)
+                except Exception:
+                    errors.append(f"{ib.get('tag')}: invalid VLESS client UUID {uid!r}")
+        elif protocol == "vmess":
+            for client in clients:
+                uid = str(client.get("id") or "")
+                try:
+                    uuid.UUID(uid)
+                except Exception:
+                    errors.append(f"{ib.get('tag')}: invalid VMess client UUID {uid!r}")
+                if "password" in client:
+                    errors.append(f"{ib.get('tag')}: VMess client must not use Trojan password")
+        elif protocol == "trojan":
+            for client in clients:
+                if not str(client.get("password") or "").strip():
+                    errors.append(f"{ib.get('tag')}: Trojan client password is empty")
+                if "id" in client:
+                    errors.append(f"{ib.get('tag')}: Trojan client must not contain UUID id")
+        else:
+            errors.append(f"{ib.get('tag')}: unsupported native Xray protocol {protocol!r}")
         ss = ib.get("streamSettings") or {}
         if ss.get("security") != "reality":
             errors.append(f"{ib.get('tag')}: security must be reality")
@@ -9616,9 +9938,42 @@ async def gen_xray_keys(_=Depends(require_auth)):
 # SERVER STATS (HTTP polling)
 # ══════════════════════════════════════════════════════════════════════════════
 
+TRAFFIC_HISTORY = deque(maxlen=31 * 24 * 60)
+_LAST_TRAFFIC_SAMPLE = {"ts": 0.0, "bytes": 0}
+
+
+def _record_traffic_sample():
+    now = time.time()
+    total = int(stats.get("total_bytes", 0) or 0)
+    if not TRAFFIC_HISTORY or now - float(TRAFFIC_HISTORY[-1]["ts"]) >= 10:
+        TRAFFIC_HISTORY.append({"ts": now, "bytes": total, "connections": len(connections)})
+
+
+def _traffic_window_seconds(name: str) -> int:
+    return {"hour": 3600, "day": 86400, "week": 7 * 86400, "month": 30 * 86400}.get(name, 86400)
+
+
+@app.get("/api/dashboard/traffic")
+async def dashboard_traffic(range: str = "day", _=Depends(require_auth)):
+    _record_traffic_sample()
+    now = time.time()
+    seconds = _traffic_window_seconds(str(range).lower())
+    rows = [x for x in TRAFFIC_HISTORY if now - float(x["ts"]) <= seconds]
+    if not rows:
+        rows = [{"ts": now, "bytes": int(stats.get("total_bytes", 0) or 0), "connections": len(connections)}]
+    base = rows[0]["bytes"]
+    total = max(0, int(rows[-1]["bytes"]) - int(base))
+    avg_conn = sum(float(x.get("connections", 0)) for x in rows) / max(len(rows), 1)
+    peak_conn = max(int(x.get("connections", 0)) for x in rows)
+    points = []
+    for x in rows[-80:]:
+        points.append({"ts": x["ts"], "bytes": max(0, int(x["bytes"]) - int(base)), "connections": int(x.get("connections", 0))})
+    return {"range": range, "seconds": seconds, "total_bytes": total, "total_fmt": fmt_bytes(total), "average_connections": round(avg_conn, 1), "peak_connections": peak_conn, "current_connections": len(connections), "points": points}
+
 @app.get("/api/server/stats")
 async def server_stats_http(_=Depends(require_auth)):
     """One-shot HTTP response with live server stats (for polling clients)."""
+    _record_traffic_sample()
     return get_live_stats()
 
 
