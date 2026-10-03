@@ -1,41 +1,151 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Pars Space · Login</title>
-<style>
-:root{--bg:#f3f4f6;--card:rgba(255,255,255,.78);--text:#111;--muted:#70747b;--line:rgba(0,0,0,.09);--soft:#eceef1;--accent:#111;--accentText:#fff}
-[data-theme=dark]{--bg:#0c0d0f;--card:rgba(25,26,29,.8);--text:#f5f5f5;--muted:#999da5;--line:rgba(255,255,255,.1);--soft:#222428;--accent:#f5f5f5;--accentText:#111}
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;background:var(--bg);color:var(--text)}
-body{min-height:100vh;display:grid;place-items:center;overflow:hidden}.bg{position:fixed;inset:-10%;background:radial-gradient(circle at 20% 20%,rgba(255,255,255,.7),transparent 35%),var(--bg)}
-[data-theme=dark] .bg{background:radial-gradient(circle at 20% 20%,rgba(255,255,255,.04),transparent 35%),var(--bg)}
-.bg:after{content:"";position:absolute;width:46vw;height:46vw;border:1px solid var(--line);border-radius:50%;left:-10vw;bottom:-18vw;animation:loginOrb 14s ease-in-out infinite}@keyframes loginOrb{50%{transform:translate(4vw,-3vw) scale(1.05)}}.shell{direction:ltr;position:relative;width:min(1080px,94vw);min-height:650px;display:grid;grid-template-columns:.95fr 1.05fr;border:1px solid var(--line);border-radius:32px;overflow:hidden;background:var(--card);backdrop-filter:blur(34px) saturate(145%);box-shadow:0 35px 110px rgba(0,0,0,.18)}
-.visual{position:relative;overflow:hidden;min-height:650px;background:#090b0f}.visual:before{content:"";position:absolute;inset:-30%;background:linear-gradient(120deg,transparent 40%,rgba(255,255,255,.09) 50%,transparent 60%);z-index:1;animation:loginSweep 9s ease-in-out infinite}@keyframes loginSweep{55%,100%{transform:translateX(35%)}}.visual:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.05),rgba(0,0,0,.18) 55%,rgba(0,0,0,.62))}.visual img{width:100%;height:100%;object-fit:cover;image-rendering:auto;filter:saturate(.85) contrast(1.04);opacity:.96}.visualText{position:absolute;z-index:2;left:35px;bottom:32px;color:white}.visualText small{letter-spacing:.22em;font-size:10px;opacity:.65}.visualText h2{margin:8px 0 0;font-size:34px;letter-spacing:-.06em}
-.formSide{direction:rtl;text-align:right;padding:52px 46px;display:flex;flex-direction:column;justify-content:center}.brand{font-weight:900;letter-spacing:-.06em;font-size:17px;display:flex;align-items:center;gap:10px}.logo{width:42px;height:42px;border-radius:14px;background:var(--accent);color:var(--accentText);display:grid;place-items:center;font-weight:900}.eyebrow{margin-top:50px;color:var(--muted);font-size:11px;letter-spacing:.18em}.title{font-size:48px;line-height:.95;letter-spacing:-.075em;margin:10px 0 12px}.desc{color:var(--muted);font-size:13px;line-height:1.8;margin-bottom:28px}.field{display:grid;gap:7px;margin-bottom:13px}.field label{font-size:11px;color:var(--muted)}input{width:100%;padding:14px 15px;border-radius:14px;border:1px solid var(--line);background:var(--soft);color:var(--text);font:inherit;outline:none}input:focus{border-color:var(--text);box-shadow:0 0 0 4px rgba(0,0,0,.06)}.submit{position:relative;overflow:hidden;width:100%;border:0;border-radius:15px;padding:14px;background:var(--accent);color:var(--accentText);font:inherit;font-weight:800;cursor:pointer;margin-top:7px}.submit:before{content:"";position:absolute;inset:-100% 40%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.32),transparent);transform:translateX(-160%);transition:transform .5s}.submit:hover:before{transform:translateX(160%)}.submit:hover{transform:translateY(-2px);box-shadow:0 16px 35px rgba(0,0,0,.18)}.tool:hover{transform:translateY(-2px);background:var(--soft);color:var(--text)}.submit:disabled{opacity:.6}.error{min-height:20px;margin-top:12px;color:#b42318;font-size:12px}.tools{display:flex;gap:7px;margin-top:25px}.tool{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:12px;padding:8px 10px;cursor:pointer}
-@media(max-width:800px){.shell{grid-template-columns:1fr;min-height:auto}.visual{display:block;min-height:230px;max-height:260px}.visualText{left:22px;bottom:20px}.formSide{padding:32px 24px}.formSide{padding:38px 25px}html[dir=ltr] .formSide{direction:ltr;text-align:left}.eyebrow{margin-top:38px}.title{font-size:42px}}
-html[dir=ltr] .formSide{direction:ltr;text-align:left}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login Panel</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* سیستم فونت آیفون (SF Pro) */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #030304;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* افکت مایع شیشه‌ای - iOS 26 Liquid Glass */
+        .liquid-glass-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 30, 39, 0.03) 100%), rgba(12, 12, 16, 0.55);
+            backdrop-filter: blur(40px) saturate(220%);
+            -webkit-backdrop-filter: blur(40px) saturate(220%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 
+                0 30px 80px -10px rgba(0, 0, 0, 0.9),
+                0 0 50px -10px rgba(255, 30, 39, 0.25),
+                inset 0 1px 1px rgba(255, 255, 255, 0.3),
+                inset 0 -1px 2px rgba(255, 30, 39, 0.3);
+            animation: cardFloat 6s ease-in-out infinite alternate;
+        }
+
+        /* ورودی‌های بیضی‌شکل کشیده شیشه‌ای */
+        .glass-pill-input {
+            background: rgba(20, 20, 25, 0.4);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .glass-pill-input:focus-within {
+            background: rgba(30, 30, 38, 0.6);
+            border-color: rgba(255, 30, 39, 0.8);
+            box-shadow: 
+                0 0 25px rgba(255, 30, 39, 0.4),
+                inset 0 0 10px rgba(255, 30, 39, 0.15);
+            transform: scale(1.02);
+        }
+
+        /* دکمه اکشن با انیمیشن لمس آیفونی (Haptic Feedback) */
+        .ios-action-btn {
+            background: linear-gradient(135deg, #FF1E27 0%, #990007 100%);
+            box-shadow: 
+                0 10px 30px rgba(255, 30, 39, 0.4),
+                inset 0 1px 1px rgba(255, 255, 255, 0.4);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .ios-action-btn:active {
+            transform: scale(0.94);
+            box-shadow: 0 4px 15px rgba(255, 30, 39, 0.6);
+        }
+
+        /* شناوری ملایم کارت */
+        @keyframes cardFloat {
+            0% { transform: translateY(0px); }
+            100% { transform: translateY(-8px); }
+        }
+
+        /* نور پس‌زمینه پویا */
+        .ambient-glow-red {
+            background: radial-gradient(circle, rgba(255, 30, 39, 0.22) 0%, rgba(0,0,0,0) 70%);
+            animation: pulseGlow 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+            0% { opacity: 0.6; transform: scale(1); }
+            100% { opacity: 1; transform: scale(1.15); }
+        }
+    </style>
 </head>
-<body><div class="bg"></div>
-<div class="shell">
- <section class="visual"><img src="/static/pars-space-pixel.jpg" alt="Pars Space"><div class="visualText"><small>PARS SPACE</small><h2>Persian legacy.<br>Modern control.</h2></div></section>
- <section class="formSide">
-  <div class="brand"><span class="logo">P</span><span>PARS SPACE</span></div>
-  <div class="eyebrow" id="welcomeEyebrow">CONTROL CENTER</div><div class="title" id="welcomeTitle">Welcome<br>back.</div>
-  <div class="desc">وارد پنل مدیریتی Pars Space شوید.</div>
-  <form id="loginForm">
-   <div class="field"><label>نام کاربری</label><input id="username" autocomplete="username" placeholder="admin" required></div>
-   <div class="field"><label>رمز عبور</label><input id="password" type="password" autocomplete="current-password" placeholder="••••••••" required></div>
-   <button class="submit" id="submit">ورود به پنل</button><div class="error" id="error"></div>
-  </form>
-  <div class="tools"><button class="tool" id="theme">◐ تم</button><button class="tool" id="lang">EN</button></div>
- </section>
-</div>
-<script>
-const $=s=>document.querySelector(s);let theme=localStorage.getItem('ps_theme')||'system';
-function applyTheme(){let t=theme;if(t==='system')t=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';document.documentElement.dataset.theme=t}
-applyTheme();const welcomes=['Welcome\nback.','Good to see you.','Ready when you are.','Control starts here.'];let w=welcomes[Math.floor(Math.random()*welcomes.length)].split('\n');$('#welcomeTitle').innerHTML=w.join('<br>');$('#theme').onclick=()=>{theme=theme==='dark'?'light':'dark';localStorage.setItem('ps_theme',theme);applyTheme()};
-$('#lang').onclick=()=>{document.documentElement.lang='en';document.documentElement.dir='ltr';document.querySelector('.desc').textContent='Sign in to your Pars Space control center.';document.querySelector('.eyebrow').textContent='CONTROL CENTER';document.querySelector('.submit').textContent='Sign in';document.querySelectorAll('.field label')[0].textContent='Username';document.querySelectorAll('.field label')[1].textContent='Password';$('#lang').textContent='FA'};
-$('#loginForm').onsubmit=async e=>{e.preventDefault();$('#error').textContent='';$('#submit').disabled=true;try{let r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({username:$('#username').value.trim(),password:$('#password').value})});let d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.detail||'ورود ناموفق بود');location.href='/dashboard'}catch(err){$('#error').textContent=err.message}finally{$('#submit').disabled=false}};
-</script>
-</body></html>
+<body class="w-screen h-screen flex items-center justify-center relative text-white bg-black">
+
+    <!-- هاله‌های نوری شناور پس‌زمینه -->
+    <div class="absolute w-[500px] h-[500px] ambient-glow-red rounded-full blur-3xl pointer-events-none"></div>
+
+    <!-- قالب اصلی مربع‌طور (Liquid Glass Card) -->
+    <main class="liquid-glass-card relative z-10 w-[90%] max-w-[400px] aspect-square rounded-[42px] p-7 flex flex-col justify-between items-center">
+        
+        <!-- لوگوی مینیمال عنکبوت قرمز و مشکی -->
+        <div class="flex flex-col items-center mt-1">
+            <div class="relative w-14 h-14 rounded-2xl bg-gradient-to-b from-zinc-900 to-black border border-red-600/30 flex items-center justify-center shadow-lg shadow-red-950/60 mb-2">
+                <svg class="w-9 h-9 text-red-600 drop-shadow-[0_0_10px_rgba(255,30,39,0.9)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <!-- بدنه و سر عنکبوت -->
+                    <ellipse cx="12" cy="15" rx="3" ry="4" fill="#09090b" stroke="#FF1E27"/>
+                    <circle cx="12" cy="9" r="2" fill="#FF1E27" stroke="#FF1E27"/>
+                    <!-- پاهای عنکبوت -->
+                    <path d="M9 9C6 7 4 8 3 10" />
+                    <path d="M15 9C18 7 20 8 21 10" />
+                    <path d="M9 13C5 12 3 14 2 17" />
+                    <path d="M15 13C19 12 21 14 22 17" />
+                    <path d="M9 15C5 16 3 19 2 22" />
+                    <path d="M15 15C19 16 21 19 22 22" />
+                </svg>
+            </div>
+            
+            <!-- فونت خوشامدگویی به ادمین -->
+            <h1 class="text-xl font-extrabold tracking-tight text-white/95 drop-shadow-sm">Welcome Admin</h1>
+            <p class="text-[11px] text-zinc-400 font-medium mt-0.5">وارد حساب کاربری خود شوید</p>
+        </div>
+
+        <!-- فرم ورود (دو ورودی بیضی‌شکل) -->
+        <form class="w-full flex flex-col gap-3.5 my-auto" onsubmit="event.preventDefault();">
+            
+            <!-- ورودی نام کاربری -->
+            <div class="glass-pill-input w-full h-11 rounded-full px-5 flex items-center gap-3">
+                <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <input type="text" placeholder="نام کاربری" required
+                    class="bg-transparent w-full h-full text-xs text-white placeholder-zinc-500 focus:outline-none text-right">
+            </div>
+
+            <!-- ورودی رمز عبور -->
+            <div class="glass-pill-input w-full h-11 rounded-full px-5 flex items-center gap-3">
+                <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <input type="password" placeholder="رمز عبور" required
+                    class="bg-transparent w-full h-full text-xs text-white placeholder-zinc-500 focus:outline-none text-right">
+            </div>
+
+            <!-- دکمه ورود آیفونی -->
+            <button type="submit" 
+                class="ios-action-btn w-full h-11 rounded-full font-bold text-xs tracking-wide text-white mt-1 flex items-center justify-center gap-2 cursor-pointer">
+                <span>ورود</span>
+                <svg class="w-4 h-4 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+            </button>
+        </form>
+
+        <!-- زیرنویس امنیتی -->
+        <div class="flex items-center gap-1.5 opacity-40 hover:opacity-80 transition-opacity cursor-default">
+            <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+            <span class="text-[9px] text-zinc-400 font-mono tracking-wider">SYSTEM SECURED</span>
+        </div>
+    </main>
+
+</body>
+</html>
