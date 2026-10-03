@@ -42,7 +42,7 @@ main{padding:26px 0 60px}.view{display:none;animation:enter .38s cubic-bezier(.2
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:18px;z-index:90}.modal.open{display:flex}.modalBox{width:min(720px,100%);max-height:90vh;overflow:auto;padding:22px;border-radius:25px;background:var(--surface2);border:1px solid var(--line);box-shadow:0 30px 100px rgba(0,0,0,.22);animation:pop .28s ease}@keyframes pop{from{opacity:0;transform:scale(.97) translateY(10px)}to{opacity:1;transform:none}}
 .close{float:left;border:0;background:var(--soft);color:var(--text);width:34px;height:34px;border-radius:10px;cursor:pointer}
 @media(max-width:1000px){.hero,.cols,.split{grid-template-columns:1fr}.grid4{grid-template-columns:1fr 1fr}.nav{order:3;flex-basis:100%}.top{flex-wrap:wrap}.tools{margin-right:auto}}
-@media(max-width:600px){.app{padding:9px}.top{top:6px;border-radius:17px}.userHide{display:none}.heroMain{padding:26px}h1{font-size:43px}.grid4{grid-template-columns:1fr 1fr}.form{grid-template-columns:1fr}.field.full{grid-column:auto}.actions{grid-template-columns:1fr}.cardPad{padding:17px}}
+@media(max-width:600px){.app{padding:9px}.top{top:6px;border-radius:17px}.userHide{display:none}.heroMain{padding:26px}h1{font-size:43px}.grid4{grid-template-columns:1fr 1fr}.form{grid-template-columns:1fr}.field.full{grid-column:auto}.actions{grid-template-columns:1fr}.cardPad{padding:17px}}\n@media(max-width:600px){.card{backdrop-filter:blur(12px) saturate(110%);-webkit-backdrop-filter:blur(12px) saturate(110%)}.ambient .orb{filter:blur(30px);opacity:.35}.heroMain:after{animation:none}.tableWrap{content-visibility:auto;contain-intrinsic-size:500px}.view{content-visibility:auto;contain-intrinsic-size:600px}}
 
 /* Pars Space direction-safe layout + compact mobile */
 html[dir="ltr"] .table th{text-align:left}html[dir="rtl"] .table th{text-align:right}
@@ -86,7 +86,7 @@ html[dir="ltr"] .close{float:right}html[dir="rtl"] .close{float:left}
 <main>
 <section class="view active" id="overview">
  <div class="hero">
-  <article class="card heroMain"><span class="eyebrow">PARS SPACE CONTROL</span><h1 data-i18n="heroTitle">Everything,<br>under control.</h1><span class="status"><i class="dot"></i><span data-i18n="operational">All systems operational</span></span></article>
+  <article class="card heroMain"><span class="eyebrow" id="welcomeText">خوش اومدی</span><h1 data-i18n="heroTitle">Everything,<br>under control.</h1><span class="status"><i class="dot"></i><span data-i18n="operational">All systems operational</span></span></article>
   <article class="card heroSide"><div><span class="muted" data-i18n="traffic">Current traffic</span><div class="big" id="heroTraffic">0 B</div></div><span class="muted" data-i18n="liveData">Live data from panel</span></article>
  </div>
  <div class="grid4">
@@ -176,7 +176,7 @@ ls -la"></textarea></div>
    <button class="btn dark" style="margin-top:13px" onclick="changeCredentials()" data-i18n="save">Save changes</button>
   </div>
   <div class="card cardPad" style="margin-top:14px"><div class="head"><div><h2 data-i18n="panelAlias">نام مستعار پنل</h2><p data-i18n="panelAliasDesc">نامی که در داشبورد و بخش‌های مدیریتی نمایش داده می‌شود.</p></div></div><div class="form"><div class="field full"><label data-i18n="panelAlias">Panel alias</label><input id="panelAlias" placeholder="Pars Space"></div></div><button class="btn dark" style="margin-top:12px" onclick="savePanelAlias()" data-i18n="save">ذخیره</button></div>
-  <div class="card cardPad" style="margin-top:14px"><div class="head"><div><h2 data-i18n="activityTitle">Activity & Logs</h2><p data-i18n="activityDesc">لاگ‌ها و فعالیت‌های اخیر اینجا نمایش داده می‌شوند.</p></div><button class="btn" onclick="loadActivity()">↻</button></div><div id="activityList" class="list"></div></div>
+  <details class="card cardPad" style="margin-top:14px"><summary style="cursor:pointer;font-weight:800" data-i18n="activityTitle">فعالیت و لاگ‌ها</summary><div class="toolbar" style="margin-top:12px"><button class="btn" onclick="loadActivity()">↻</button></div><div id="activityList" class="list" style="margin-top:10px"></div></details>
   <div class="card cardPad" style="margin-top:14px"><div class="head"><div><h2 data-i18n="helpTitle">آموزش کامل پنل</h2><p data-i18n="helpDesc">راهنمای سریع مدیریت کاربران، اینباند، SNI، کانفیگ و تنظیمات.</p></div></div><div class="list"><div class="row"><b>۱. کاربران</b><span class="muted">از «ایجاد کاربر + کانفیگ» استفاده کن. در حالت عادی فقط لیست کاربران نمایش داده می‌شود.</span></div><div class="row"><b>۲. پروتکل‌ها</b><span class="muted">Reality برای Xray native است. VMess و Trojan باید با Inbound سازگار خودشان ساخته شوند.</span></div><div class="row"><b>۳. SNI Scanner</b><span class="muted">لیست داخلی پنل را تست کن و سریع‌ترین SNIها را ذخیره کن.</span></div><div class="row"><b>۴. لینک اشتراک</b><span class="muted">لینک شخصی کاربر را به کلاینت بده. IP خام پنل در کانفیگ تولید نمی‌شود.</span></div><div class="row"><b>۵. تنظیمات</b><span class="muted">تم، زبان، نام مستعار، اطلاعات کشور و لاگ‌ها در همین تب هستند.</span></div></div></div>
   <div class="card cardPad" style="margin-top:14px"><div class="head"><div><h2>Panel network</h2><p>Live public IP and detected location.</p></div><button class="btn small" onclick="loadServerInfo()">↻</button></div><div id="serverInfo" class="list"><div class="empty">Loading…</div></div></div>
   <div class="card cardPad" style="margin-top:14px"><div class="head"><div><h2 data-i18n="parsApi">Pars Space API</h2><p data-i18n="parsApiDesc">This is the current panel API key used for node connections.</p></div><button class="btn" onclick="regenerateParsKey()" data-i18n="regenerate">Regenerate</button></div><div class="field"><label>Pars API Key</label><input id="parsApiKey" dir="ltr" readonly value="Loading..." onclick="this.select()"></div><div class="toolbar" style="margin-top:10px"><button class="btn dark" onclick="copyParsKey()" data-i18n="copyKey">Copy API key</button><span class="muted" data-i18n="apiPrefix">Prefix: psp_</span></div></div>
@@ -188,11 +188,12 @@ ls -la"></textarea></div>
 <div class="modal" id="clientBuilderModal"><div class="modalBox"><button class="close" onclick="closeClientBuilder()">×</button><div class="head"><div><h2 data-i18n="createUserConfig">ایجاد کاربر + کانفیگ</h2><p class="muted">کاربر، اینباند و کانفیگ در یک مرحله ساخته می‌شوند.</p></div></div>
 <div class="form">
 <div class="field"><label data-i18n="username">Username</label><input id="uName" placeholder="khosrow"></div>
-<div class="field"><label data-i18n="password">Password</label><input id="uPass" placeholder="Auto generated if empty"></div>
 <div class="field"><label data-i18n="protocol">Protocol</label><select id="uProtocol" onchange="updateClientProtocolFields()"><option value="vless">VLESS</option><option value="vmess">VMess</option><option value="trojan">Trojan</option><option value="reality">Reality</option></select></div>
 <div class="field"><label data-i18n="inbound">Inbound</label><select id="uInbound"><option value="">Auto / dedicated</option></select></div>
 <div class="field"><label data-i18n="trafficLimit">Traffic limit (GB)</label><input id="uTraffic" type="number" min="0" value="0"></div>
 <div class="field"><label data-i18n="expireDays">Expire days</label><input id="uExpire" type="number" min="0" value="30"></div>
+<div class="field"><label data-i18n="deviceLimit">دستگاه همزمان</label><select id="uConcurrent"><option value="0">نامحدود</option><option value="1">۱ دستگاه</option><option value="2">۲ دستگاه</option><option value="3">۳ دستگاه</option><option value="4">۴ دستگاه</option><option value="5">۵ دستگاه</option><option value="10">۱۰ دستگاه</option><option value="custom">سفارشی</option></select></div>
+<div class="field" id="uConcurrentCustomWrap" style="display:none"><label>تعداد دلخواه</label><input id="uConcurrentCustom" type="number" min="1" max="999" value="1"></div>
 <div class="field"><label data-i18n="server">Server</label><input id="uServer" value=""></div>
 <div class="field"><label data-i18n="sni">SNI</label><input id="uSni" placeholder="example.com"></div>
 <div class="field full"><label data-i18n="path">Path</label><input id="uPath" placeholder="/ws/..."></div>
@@ -201,7 +202,7 @@ ls -la"></textarea></div>
 <div class="field" id="cfNetwork"><label>Network</label><select id="cNetwork" onchange="updateClientProtocolFields()"><option value="ws">WebSocket</option><option value="grpc">gRPC</option><option value="tcp">TCP</option><option value="xhttp">XHTTP</option></select></div>
 <div class="field" id="cfSecurity"><label>Security</label><select id="cSecurity" onchange="updateClientProtocolFields()"><option value="tls">TLS</option><option value="none">None</option><option value="reality">Reality</option></select></div>
 <div class="field" id="cfPort"><label>Port</label><input id="cPort" type="number" value="443"></div>
-<div class="field" id="cfFingerprint"><label>Fingerprint</label><select id="cFingerprint"><option value="chrome">chrome</option><option value="firefox">firefox</option><option value="safari">safari</option><option value="edge">edge</option></select></div>
+<div class="field" id="cfFingerprint"><label>Fingerprint</label><select id="cFingerprint"><option>chrome</option><option>firefox</option><option>safari</option><option>ios</option><option>android</option><option>edge</option><option>360</option><option>qq</option><option>random</option><option>randomized</option></select></div>
 <div class="field" id="cfSni"><label>SNI</label><input id="cSni" placeholder="example.com"></div>
 <div class="field" id="cfAlpn"><label>TLS ALPN</label><input id="cAlpn" value="http/1.1"></div>
 <div class="field" id="cfWsPath"><label>WS Path</label><input id="cWsPath" value="/ws/{uuid}"></div>
@@ -210,19 +211,18 @@ ls -la"></textarea></div>
 <div class="field" id="cfRealityPort"><label>Reality external port</label><input id="cRealityPort" type="number" value="443"></div>
 <div class="field" id="cfRealityDest"><label>Reality destination</label><input id="cRealityDest" placeholder="is1-ssl.mzstatic.com:443"></div>
 <div class="field" id="cfRealitySid"><label>Reality short ID</label><input id="cRealitySid" placeholder="auto"></div>
-<div class="field" id="cfTrojanPass"><label>Trojan password</label><input id="cTrojanPass" type="password" placeholder="Uses user password if empty"></div>
 <div class="field full"><label>Final Mask · Pattern NG</label><textarea id="cFinalMask" class="finalmask" placeholder='{"tcp":[],"udp":[]}'></textarea></div>
 </div></div></div>
 <div class="toolbar" style="margin-top:14px"><button class="btn dark" onclick="createClient()" data-i18n="createUserConfig">ایجاد کاربر + کانفیگ</button><button class="btn" onclick="clearClientForm()" data-i18n="clear">Clear</button><span class="spacer"></span><span class="muted" id="clientMsg"></span></div>
 <div class="configBox"><div class="output" id="clientOut">کانفیگ بعد از ساخت اینجا نمایش داده می‌شود.</div><div class="configActions"><button class="btn small" onclick="copyText($('#clientOut').textContent)" data-i18n="copy">کپی کانفیگ</button></div></div>
 </div></div>
-<div class="modal" id="userEditModal"><div class="modalBox"><button class="close" onclick="closeUserEdit()">×</button><div class="head"><div><h2>Edit user</h2><p>تغییر اطلاعات، وضعیت و محدودیت کاربر</p></div></div><input type="hidden" id="editUserId"><div class="form"><div class="field"><label>Username</label><input id="editUsername"></div><div class="field"><label>Status</label><select id="editStatus"><option value="active">Active</option><option value="disabled">Disabled</option><option value="expired">Expired</option></select></div><div class="field"><label>Traffic GB</label><input id="editTraffic" type="number" min="0"></div><div class="field"><label>Expire days</label><input id="editExpire" type="number" min="0"></div><div class="field full"><label>SNI</label><input id="editSni"></div></div><div class="toolbar" style="margin-top:14px"><button class="btn dark" onclick="saveUserEdit()">Save</button><button class="btn" onclick="resetUserTrafficFromEdit()">Reset traffic</button></div></div></div>
+<div class="modal" id="userEditModal"><div class="modalBox"><button class="close" onclick="closeUserEdit()">×</button><div class="head"><div><h2>Edit user</h2><p>تغییر اطلاعات، وضعیت و محدودیت کاربر</p></div></div><input type="hidden" id="editUserId"><div class="form"><div class="field"><label>Username</label><input id="editUsername"></div><div class="field"><label>Status</label><select id="editStatus"><option value="active">Active</option><option value="disabled">Disabled</option><option value="expired">Expired</option></select></div><div class="field"><label>Traffic GB</label><input id="editTraffic" type="number" min="0"></div><div class="field"><label>Expire days</label><input id="editExpire" type="number" min="0"></div><div class="field full"><label>SNI</label><input id="editSni"></div><div class="field"><label>دستگاه همزمان</label><input id="editConcurrent" type="number" min="0" value="0"></div></div><div class="toolbar" style="margin-top:14px"><button class="btn dark" onclick="saveUserEdit()">Save</button><button class="btn" onclick="resetUserTrafficFromEdit()">Reset traffic</button></div></div></div>
 <div class="modal" id="userQrModal"><div class="modalBox" style="max-width:430px;text-align:center"><button class="close" onclick="closeUserQR()">×</button><h2>Pars Space QR</h2><img id="userQrImage" style="width:280px;max-width:90%;border-radius:18px;background:#fff;padding:10px" alt="QR"><div class="output" id="userQrLink" style="margin-top:12px"></div><div class="toolbar" style="justify-content:center;margin-top:10px"><button class="btn dark" onclick="copyText($('#userQrLink').textContent)">Copy subscription</button></div></div></div>
 <div class="modal" id="inboundModal"><div class="modalBox">
 <button class="close" onclick="closeInbound()">×</button><input type="hidden" id="ibEditId"><h2 id="ibModalTitle" data-i18n="createInbound">Create inbound</h2><p class="muted" data-i18n="createInboundDesc">Only the settings relevant to the selected protocol are shown.</p>
 <div class="form" style="margin-top:15px">
 <div class="field"><label data-i18n="name">Name</label><input id="ibName" placeholder="Main inbound"></div>
-<div class="field"><label data-i18n="protocol">Protocol</label><select id="ibProtocol" onchange="renderInboundProtocolFields()"><option value="vless">VLESS</option><option value="vmess">VMess</option><option value="trojan">Trojan</option><option value="reality">Reality</option></select></div>
+<div class="field"><label data-i18n="protocol">Protocol</label><select id="ibProtocol" onchange="renderInboundProtocolFields()"><option value="vless">VLESS</option><option value="vmess">VMess</option><option value="trojan">Trojan</option><option value="reality">Reality</option><option value="node">Node</option></select></div>
 </div>
 <button type="button" class="foldToggle" style="margin-top:14px" onclick="toggleFold('ibProtocolBody',this)"><span>Protocol settings</span><span class="chev">⌄</span></button><div id="ibProtocolBody" class="foldBody"><div id="ibDynamic" class="form" style="margin-top:13px"></div></div>
 <div class="toolbar" style="margin-top:15px"><button class="btn dark" onclick="createInbound()" data-i18n="create">Create</button><button class="btn" onclick="closeInbound()" data-i18n="cancel">Cancel</button></div>
@@ -235,16 +235,16 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 let lang=localStorage.getItem('ps_lang')||'fa', theme=localStorage.getItem('ps_theme')||'system';
 const T={
 fa:{overview:'نمای کلی',configTest:'تست کانفیگ',clients:'کاربر و کانفیگ',inbounds:'اینباندها',subs:'اشتراک‌ها',nodes:'نودها',scanner:'اسکنر',terminal:'ترمینال',activity:'فعالیت',settings:'تنظیمات',ipScanner:'اسکنر IP',ipScannerDesc:'بررسی TCP برای مقصدهایی که مجاز به تست آن‌ها هستید.',sniScanner:'اسکنر SNI',sniScannerDesc:'لیست SNI را از فایل پنل می‌خواند و زمان Handshake را بررسی می‌کند.',targets:'مقصدها',scan:'اسکن',scanSni:'اسکن لیست',fastest:'سریع‌ترین',sniFile:'فایل SNI',sniFileDesc:'هر hostname در یک خط از data/sni_reality_for_scan.txt',terminalTitle:'ترمینال لینوکس',terminalDesc:'شل احراز هویت‌شده با کاربر سرویس پنل، بدون sudo/root.',run:'اجرا',
-heroTitle:'همه‌چیز،<br>تحت کنترل.',operational:'همه سیستم‌ها فعال هستند',traffic:'ترافیک فعلی',liveData:'داده زنده از پنل',activeUsers:'کاربران فعال',connections:'اتصالات',subscriptions:'اشتراک‌ها',
+welcome:'خوش اومدی',heroTitle:'همه‌چیز،<br>تحت کنترل.',operational:'همه سیستم‌ها فعال هستند',traffic:'ترافیک فعلی',liveData:'داده زنده از پنل',activeUsers:'کاربران فعال',connections:'اتصالات',subscriptions:'اشتراک‌ها',
 trafficOverview:'نمای ترافیک',last7:'وضعیت زنده پنل',quickActions:'دسترسی سریع',commonOps:'عملیات پرکاربرد',addUser:'＋ افزودن کاربر',createConfig:'ساخت کانفیگ',addInbound:'＋ افزودن اینباند',newSub:'＋ اشتراک جدید',subDesc:'لینک اختصاصی پنل',preferences:'⚙ تنظیمات',themeLang:'تم و زبان',
-usersConfig:'کاربر و Config Builder',usersConfigDesc:'ساخت کاربر و کانفیگ در یک فرآیند واحد.',username:'نام کاربری',password:'رمز عبور',protocol:'پروتکل',inbound:'اینباند',trafficLimit:'محدودیت ترافیک (GB)',expireDays:'مدت اعتبار (روز)',server:'سرور',sni:'SNI',path:'Path',createUserConfig:'ساخت کاربر + کانفیگ',clear:'پاک کردن',clientList:'لیست کاربران',clientListDesc:'کاربران واقعی از /api/users',
+usersConfig:'کاربر و Config Builder',usersConfigDesc:'ساخت کاربر و کانفیگ در یک فرآیند واحد.',username:'نام کاربری',password:'رمز عبور',protocol:'پروتکل',inbound:'اینباند',trafficLimit:'محدودیت ترافیک (GB)',expireDays:'مدت اعتبار (روز)',server:'سرور',sni:'SNI',path:'Path',deviceLimit:'محدودیت دستگاه',createUserConfig:'ساخت کاربر + کانفیگ',clear:'پاک کردن',clientList:'لیست کاربران',clientListDesc:'کاربران واقعی از /api/users',
 inboundTitle:'مدیریت اینباند',inboundDesc:'ساخت و مدیریت Listenerهای واقعی پنل',subTitle:'Pars Subscription',subTitleDesc:'گروه اشتراک واقعی با endpoint /sub-group',nodesTitle:'نودهای Pars Space',nodesDesc:'اتصال مستقیم پنل‌های Pars Space با API اختصاصی',activityTitle:'فعالیت',activityDesc:'رویدادهای اخیر پنل',addNode:'＋ افزودن نود',connectNode:'اتصال پنل Pars Space',connectNodeDesc:'آدرس HTTPS و کلید API پنل مقصد را وارد کنید.',nodeName:'نام نود',nodeUrl:'آدرس پنل',connect:'اتصال',parsApi:'Pars Space API',parsApiDesc:'کلید API پنل برای اتصال نود مقصد.',regenerate:'ساخت کلید جدید',copyKey:'کپی API Key',apiPrefix:'پیشوند: psp_',
 appearance:'ظاهر',appearanceDesc:'تنظیمات ظاهری روی همین دستگاه ذخیره می‌شود.',theme:'تم',language:'زبان',account:'حساب Administrator',accountDesc:'تغییر رمز عبور از endpoint واقعی پنل انجام می‌شود.',newUsername:'نام کاربری جدید',currentPassword:'رمز فعلی',newPassword:'رمز جدید',save:'ذخیره تغییرات',
 createInbound:'ساخت اینباند',createInboundDesc:'فقط تنظیمات مربوط به پروتکل انتخاب‌شده نمایش داده می‌شود.',protocolSettings:'تنظیمات پروتکل',protocolSettingsDesc:'اگر Inbound روی Auto / dedicated باشد، این تنظیمات برای ساخت Inbound استفاده می‌شوند.',name:'نام',network:'Network',security:'Security',port:'Port',externalPort:'External Port',domain:'Domain',wsPath:'WS Path',create:'ساخت',cancel:'لغو',noData:'داده‌ای وجود ندارد',copy:'کپی',delete:'حذف',online:'فعال'},
 en:{overview:'Overview',configTest:'Config Test',clients:'Users & Config',inbounds:'Inbounds',subs:'Subscriptions',nodes:'Nodes',scanner:'Scanner',terminal:'Terminal',activity:'Activity',settings:'Settings',ipScanner:'IP Scanner',ipScannerDesc:'TCP latency checker for authorized targets.',sniScanner:'SNI Scanner',sniScannerDesc:'Check TLS handshake latency for your SNI list.',targets:'Targets',scan:'Scan',scanSni:'Scan list',fastest:'Fastest',sniFile:'SNI list file',sniFileDesc:'One hostname per line in data/sni_reality_for_scan.txt.',terminalTitle:'Linux Terminal',terminalDesc:'Authenticated shell as the panel service user. No sudo/root escalation.',run:'Run',
-heroTitle:'Everything,<br>under control.',operational:'All systems operational',traffic:'Current traffic',liveData:'Live data from panel',activeUsers:'Active users',connections:'Connections',subscriptions:'Subscriptions',
+welcome:'Welcome back',heroTitle:'Everything,<br>under control.',operational:'All systems operational',traffic:'Current traffic',liveData:'Live data from panel',activeUsers:'Active users',connections:'Connections',subscriptions:'Subscriptions',
 trafficOverview:'Traffic overview',last7:'Live panel snapshot',quickActions:'Quick actions',commonOps:'Common operations',addUser:'＋ Add user',createConfig:'Create config',addInbound:'＋ Add inbound',newSub:'＋ New subscription',subDesc:'Custom panel link',preferences:'⚙ Preferences',themeLang:'Theme & language',
-usersConfig:'Users & Config Builder',usersConfigDesc:'User creation and config generation are one workflow.',username:'Username',password:'Password',protocol:'Protocol',inbound:'Inbound',trafficLimit:'Traffic limit (GB)',expireDays:'Expire days',server:'Server',sni:'SNI',path:'Path',createUserConfig:'Create user + config',clear:'Clear',clientList:'Client list',clientListDesc:'Real users from /api/users',
+usersConfig:'Users & Config Builder',usersConfigDesc:'User creation and config generation are one workflow.',username:'Username',password:'Password',protocol:'Protocol',inbound:'Inbound',trafficLimit:'Traffic limit (GB)',expireDays:'Expire days',server:'Server',sni:'SNI',path:'Path',deviceLimit:'Device limit',createUserConfig:'Create user + config',clear:'Clear',clientList:'Client list',clientListDesc:'Real users from /api/users',
 inboundTitle:'Inbound management',inboundDesc:'Create and manage real listeners.',subTitle:'Pars Subscription',subTitleDesc:'Real subscription groups using /sub-group.',nodesTitle:'Pars Space Nodes',nodesDesc:'Connect Pars Space panels through the private API.',activityTitle:'Activity & Logs',activityDesc:'Recent panel events.',panelAlias:'Panel alias',panelAliasDesc:'A friendly display name for this panel.',helpTitle:'Panel guide',helpDesc:'Quick guide to users, protocols, SNI, subscriptions and settings.',addNode:'＋ Add node',connectNode:'Connect Pars Space panel',connectNodeDesc:'Enter the HTTPS address and Panel API key from the remote panel.',nodeName:'Node name',nodeUrl:'Panel URL',connect:'Connect',parsApi:'Pars Space API',parsApiDesc:'Panel API key used to connect a remote panel node.',regenerate:'Regenerate',copyKey:'Copy API key',apiPrefix:'Prefix: psp_',
 appearance:'Appearance',appearanceDesc:'Appearance settings are saved locally.',theme:'Theme',language:'Language',account:'Administrator account',accountDesc:'Password changes use the real panel endpoint.',newUsername:'New username',currentPassword:'Current password',newPassword:'New password',save:'Save changes',
 createInbound:'Create inbound',createInboundDesc:'Only settings relevant to the selected protocol are shown.',protocolSettings:'Protocol settings',protocolSettingsDesc:'When Inbound is Auto / dedicated, these settings are used to create the matching inbound.',name:'Name',network:'Network',security:'Security',port:'Port',externalPort:'External port',domain:'Domain',wsPath:'WS path',create:'Create',cancel:'Cancel',noData:'No data',copy:'Copy',delete:'Delete',online:'Online',panelAlias:'Panel alias',panelAliasDesc:'A friendly display name for this panel.',helpTitle:'Panel guide',helpDesc:'Quick guide to users, protocols, SNI, subscriptions and settings.'}
@@ -252,11 +252,11 @@ createInbound:'Create inbound',createInboundDesc:'Only settings relevant to the 
 function tr(k){return (T[lang]||T.fa)[k]||k}
 function applyI18n(){document.documentElement.lang=lang;document.documentElement.dir=lang==='fa'?'rtl':'ltr';$$('[data-i18n]').forEach(e=>e.innerHTML=tr(e.dataset.i18n));$('#langBtn').textContent=lang==='fa'?'EN':'FA';$('#langSelect').value=lang}
 function applyTheme(){let x=theme;if(x==='system')x=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';document.documentElement.dataset.theme=x;$('#themeSelect').value=theme}
-function setLang(x){lang=x;localStorage.setItem('ps_lang',x);applyI18n();toast(x==='fa'?'زبان فارسی فعال شد':'English enabled')}
+function setLang(x){lang=x;localStorage.setItem('ps_lang',x);applyI18n();applyWelcome($('#adminUser')?.value||'');toast(x==='fa'?'زبان فارسی فعال شد':'English enabled')}
 function setTheme(x){theme=x;localStorage.setItem('ps_theme',x);applyTheme();toast('Theme updated')}
 $('#langBtn').onclick=()=>setLang(lang==='fa'?'en':'fa');$('#themeBtn').onclick=()=>setTheme(theme==='dark'?'light':'dark');$('#langSelect').onchange=e=>setLang(e.target.value);$('#themeSelect').onchange=e=>setTheme(e.target.value);
 $$('.nav button').forEach(b=>b.onclick=()=>go(b.dataset.view));
-function go(id){$$('.view').forEach(v=>v.classList.remove('active'));$('#'+id).classList.add('active');$$('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));window.scrollTo({top:0,behavior:'smooth'});if(id==='clients')loadClients();if(id==='inbounds')loadInbounds();if(id==='nodes')loadNodes();if(id==='scanner'){loadSniList();loadSniResults()}if(id==='terminal')loadTerminalInfo();if(id==='settings'){loadSettingsPanel();loadActivity()}}
+function go(id){$$('.view').forEach(v=>v.classList.remove('active'));$('#'+id).classList.add('active');$$('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));window.scrollTo({top:0,behavior:'smooth'});if(id==='clients')loadClients();if(id==='inbounds')loadInbounds();if(id==='nodes')loadNodes();if(id==='scanner'){loadSniList();loadSniResults()}if(id==='terminal')loadTerminalInfo();if(id==='settings'){loadSettingsPanel()}}
 let timer;function toast(m){let e=$('#toast');e.textContent=m;e.classList.add('show');clearTimeout(timer);timer=setTimeout(()=>e.classList.remove('show'),1900)}
 async function api(url,opt={}){let r=await fetch(url,{credentials:'same-origin',...opt,headers:{'Content-Type':'application/json',...(opt.headers||{})}});if(r.status===401){location.href='/login';throw Error('AUTH')}let txt=await r.text();let data;try{data=JSON.parse(txt)}catch{data=txt}if(!r.ok)throw Error(data?.detail||data?.message||txt||('HTTP '+r.status));return data}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -264,7 +264,16 @@ async function loadTraffic(){try{let range=$('#trafficRange')?.value||'day';let 
 
 async function loadOverview(){try{let s=await api('/api/server/stats');$('#sActive').textContent=s.active_users??s.total_users??0;$('#sConn').textContent=s.active_connections??0;let ib=await api('/api/inbounds');$('#sInbound').textContent=(ib.inbounds||[]).length;let q=await api('/api/pars/v1/subscriptions');$('#sSubs').textContent=(q.subs||q.subscriptions||[]).length;$('#heroTraffic').textContent=(s.total_traffic_used_gb||0)+' GB';loadTraffic()}catch(e){console.warn(e)}}
 let liveOverviewTimer=null;function startLiveOverview(){if(liveOverviewTimer)clearInterval(liveOverviewTimer);loadOverview();liveOverviewTimer=setInterval(loadOverview,3500)}
-async function loadInbounds(){try{let d=await api('/api/inbounds');let a=d.inbounds||[];$('#inboundBody').innerHTML=a.length?a.map(x=>`<tr><td><b>${esc(x.name||x.inbound_id)}</b></td><td>${esc(x.protocol||'-')}</td><td>${esc(x.network||'-')}</td><td>${esc(x.external_port||x.port||'-')}</td><td>${x.users_count??0}</td><td><span class="pill">${tr('online')}</span></td><td><button class="btn small" onclick="editInbound('${esc(x.inbound_id)}')">ویرایش</button></td></tr>`).join(''):`<tr><td colspan="7"><div class="empty">${tr('noData')}</div></td></tr>`;let sel=$('#uInbound');sel.innerHTML='<option value="">Auto / default</option>'+a.map(x=>`<option value="${esc(x.inbound_id)}">${esc(x.name||x.inbound_id)} · ${esc(x.protocol||'')}</option>`).join('')}catch(e){toast(e.message)}}
+async function loadInbounds(){
+ try{
+  let d=await api('/api/inbounds');let a=d.inbounds||[];
+  $('#inboundBody').innerHTML=a.length?a.map(x=>`<tr><td><b>${esc(x.name||x.inbound_id)}</b></td><td>${esc(x.protocol||'-')}</td><td>${esc(x.network||'-')}</td><td>${esc(x.external_port||x.port||'-')}</td><td>${x.users_count??0}</td><td><span class="pill">${tr('online')}</span></td><td><div class="toolbar"><button class="btn small" onclick="editInbound('${esc(x.inbound_id)}')">${(x.protocol||'').toLowerCase()==='node'?'انتخاب نود':'ویرایش'}</button>${(x.system?'':`<button class="btn small danger" onclick="deleteInbound('${esc(x.inbound_id)}')">${tr('delete')}</button>`)}</div></td></tr>`).join(''):`<tr><td colspan="7"><div class="empty">${tr('noData')}</div></td></tr>`;
+  const currentProto=$('#uProtocol')?.value||'vless';
+  const compatible=a.filter(x=>String(x.protocol||'').toLowerCase()===currentProto||String(x.protocol||'').toLowerCase()==='node');
+  $('#uInbound').innerHTML='<option value="">پیش‌فرض TLS + WS</option>'+compatible.map(x=>`<option value="${esc(x.inbound_id)}">${esc(x.name||x.inbound_id)} · ${esc(x.protocol||'')}</option>`).join('');
+ }catch(e){toast(e.message)}
+}
+
 async function loadClients(){try{let d=await api('/api/users');let a=d.users||[];$('#usersBody').innerHTML=a.length?a.map(u=>`<tr><td><b>${esc(u.username)}</b><div class="muted" dir="ltr">${esc(u.config_uuid||'')}</div></td><td>${esc(u.protocol||'-')}</td><td>${esc(u.traffic_used_fmt||'0 B')} / ${esc(u.traffic_limit_fmt||'∞')}</td><td><span class="pill">${esc(u.status)}</span></td><td><div class="toolbar"><button class="btn small" onclick="viewUserConfig('${esc(u.config_uuid||'')}')">Config</button><button class="btn small" onclick="copyText('${esc(u.subscription_url||'')}')">Sub</button><button class="btn small" onclick="showUserQR('${esc(u.user_id)}')">QR</button><button class="btn small" onclick="editUser('${esc(u.user_id)}')">Edit</button><button class="btn small" onclick="toggleUser('${esc(u.user_id)}')">${u.status==='disabled'?'Enable':'Disable'}</button><button class="btn small danger" onclick="deleteUser('${esc(u.user_id)}')">Delete</button></div></td></tr>`).join(''):`<tr><td colspan="5"><div class="empty">${tr('noData')}</div></td></tr>`;await loadInbounds()}catch(e){toast(e.message)}}
 function openClientBuilder(){ $('#clientBuilderModal').classList.add('open'); loadInbounds(); updateClientProtocolFields(); }
 function closeClientBuilder(){ $('#clientBuilderModal').classList.remove('open'); }
@@ -279,6 +288,7 @@ function updateClientProtocolFields(){
  show('#cfAlpn',!reality);show('#cfSecurity',p!=='reality');show('#cfRealityDomain',reality);show('#cfRealityPort',reality);show('#cfRealityDest',reality);show('#cfRealitySid',reality);show('#cfTrojanPass',p==='trojan');
  show('#cfWsPath',!reality && net==='ws');show('#cfGrpcService',!reality && net==='grpc');
  if(reality && $('#cNetwork').value==='ws') $('#cNetwork').value='tcp';
+ if(typeof loadInbounds==='function' && $('#uInbound')) setTimeout(loadInbounds,0);
 }
 
 function toggleFold(id,btn){const e=$('#'+id);if(!e)return;e.classList.toggle('open');btn.classList.toggle('open',e.classList.contains('open'))}
@@ -287,46 +297,38 @@ async function createClient(){
  try{
   const protocol=$('#uProtocol').value;
   let inboundId=$('#uInbound').value;
-  const dedicated=!inboundId;
-  if(dedicated){
-   const security=(protocol==='reality'||(protocol==='vmess'||protocol==='trojan')&&$('#cSecurity').value==='reality')?'reality':$('#cSecurity').value;
-   const network=(security==='reality' && $('#cNetwork').value==='ws')?'tcp':$('#cNetwork').value;
-   const ib={
-    name:($('#uName').value.trim()||'user')+' · '+protocol.toUpperCase(),protocol,network,security,
-    port:Number($('#cPort').value||443),external_port:protocol==='reality'?Number($('#cRealityPort').value||443):Number($('#cPort').value||443),
-    domain:$('#uServer').value.trim(),sni:$('#cSni').value.trim(),fingerprint:$('#cFingerprint').value,alpn:$('#cAlpn').value,
-    ws_settings:{path:$('#cWsPath').value||'/ws/{uuid}'},grpc_settings:{serviceName:$('#cGrpcService').value||'pars-space'},
-    reality_settings:{dest:$('#cRealityDest').value.trim(),sni:$('#cSni').value.trim(),short_id:$('#cRealitySid').value.trim(),fingerprint:$('#cFingerprint').value},tls_settings:{alpn:$('#cAlpn').value},finalmask:parseFinalMask($('#cFinalMask').value),
-    external_domain:$('#cRealityDomain').value.trim()
-   };
-   if(protocol==='reality' && !ib.external_domain) ib.external_domain=$('#uServer').value.trim();
-   const ir=await api('/api/pars/v1/inbounds',{method:'POST',body:JSON.stringify(ib)});
-   inboundId=ir.inbound_id;
-  }
-  const password=$('#uPass').value;
-  const body={username:$('#uName').value.trim(),password,protocol,traffic_limit_gb:Number($('#uTraffic').value||0),expire_days:Number($('#uExpire').value||0),server:$('#uServer').value,sni:$('#cSni').value||$('#uSni').value,path:$('#cWsPath').value,trojan_password:$('#cTrojanPass').value};
+  let concurrent=$('#uConcurrent').value;
+  if(concurrent==='custom') concurrent=Math.max(1,Number($('#uConcurrentCustom').value||1));
+  else concurrent=Number(concurrent||0);
+  // No dedicated inbound creation here. "Auto" uses the existing default inbound.
+  const body={username:$('#uName').value.trim(),protocol,traffic_limit_gb:Number($('#uTraffic').value||0),expire_days:Number($('#uExpire').value||0),concurrent_connections:concurrent,server:$('#uServer').value,sni:$('#cSni').value||$('#uSni').value,path:$('#cWsPath').value,fingerprint:$('#cFingerprint').value};
   if(inboundId) body.inbound_id=inboundId;
   const d=await api('/api/pars/v1/users',{method:'POST',body:JSON.stringify(body)});
   const link=d.config||d.vmess_link||d.trojan_link||d.vless_link||'';
   $('#clientOut').textContent=link||JSON.stringify(d,null,2);
-  if(d.subscription_url) $('#clientMsg').textContent=(lang==='fa'?'Sub: ':'Sub: ')+d.subscription_url;
-  toast(lang==='fa'?'کاربر ساخته شد و لینک مستقیم کانفیگ آماده است':'User created and direct config is ready');
+  if(d.subscription_url) $('#clientMsg').textContent='Sub: '+d.subscription_url;
+  toast(lang==='fa'?'کاربر ساخته شد و کانفیگ مستقیم آماده است':'User created and direct config is ready');
   loadClients();loadOverview();
  }catch(e){toast(e.message)}
 }
 
-function clearClientForm(){['uName','uPass','uSni','uPath'].forEach(id=>$('#'+id).value='');$('#uTraffic').value=0;$('#uExpire').value=30;$('#clientOut').textContent='Config / subscription URL will appear here.'}
+function clearClientForm(){['uName','uSni','uPath'].forEach(id=>{const e=$('#'+id);if(e)e.value=''});$('#uTraffic').value=0;$('#uExpire').value=30;$('#uConcurrent').value='0';$('#uConcurrentCustom').value=1;$('#uConcurrentCustomWrap').style.display='none';$('#clientOut').textContent=lang==='fa'?'کانفیگ / لینک اشتراک اینجا نمایش داده می‌شود.':'Config / subscription URL will appear here.'}
+async function deleteInbound(id){if(!confirm(lang==='fa'?'این اینباند حذف شود؟':'Delete this inbound?'))return;try{await api('/api/inbounds/'+encodeURIComponent(id),{method:'DELETE'});await loadInbounds();await loadOverview();toast(lang==='fa'?'اینباند حذف شد':'Inbound deleted')}catch(e){toast(e.message)}}
 function openInbound(){$('#ibEditId').value='';$('#ibModalTitle').textContent=tr('createInbound');$('#inboundModal').classList.add('open');renderInboundProtocolFields();let e=$('#ibProtocolBody'),b=e?.previousElementSibling;if(e){e.classList.remove('open');b?.classList.remove('open')}}function closeInbound(){$('#inboundModal').classList.remove('open')}
 function renderInboundProtocolFields(){
  const p=$('#ibProtocol').value;
  let html='';
+ if(p==='node'){
+  html=`<div class="field full"><label>انتخاب نودها</label><div id="ibNodeChoices" class="list"><div class="empty">در حال بارگذاری نودها…</div></div></div>`;
+  $('#ibDynamic').innerHTML=html; loadInboundNodeChoices(); return;
+ }
  if(p==='reality'){
   html=`<div class="field"><label>Network</label><select id="ibNetwork"><option value="tcp">TCP</option><option value="xhttp">XHTTP</option><option value="grpc">gRPC</option></select></div>
    <div class="field"><label>External port</label><input id="ibExtPort" type="number" value="443"></div>
    <div class="field"><label>External domain</label><input id="ibExtDomain" placeholder="reality.example.com"></div>
    <div class="field"><label>SNI</label><input id="ibSni" placeholder="is1-ssl.mzstatic.com"></div>
    <div class="field"><label>Destination</label><input id="ibDest" value="is1-ssl.mzstatic.com:443"></div>
-   <div class="field"><label>Fingerprint</label><select id="ibFp"><option>chrome</option><option>firefox</option><option>safari</option><option>edge</option></select></div>
+   <div class="field"><label>Fingerprint</label><select id="ibFp"><option>chrome</option><option>firefox</option><option>safari</option><option>ios</option><option>android</option><option>edge</option><option>360</option><option>qq</option><option>random</option><option>randomized</option></select></div>
    <div class="field"><label>Short ID</label><input id="ibSid" placeholder="Auto generate"></div>
    <div class="field full"><label>XHTTP Path</label><input id="ibXPath" value="/"></div>
    <div class="field full"><label>Final Mask · Pattern NG</label><textarea id="ibFinalMask" class="finalmask" placeholder='{"tcp":[],"udp":[]}'></textarea></div>`;
@@ -337,24 +339,47 @@ function renderInboundProtocolFields(){
    <div class="field"><label>Port</label><input id="ibPort" type="number" value="443"></div>
    <div class="field"><label>Domain</label><input id="ibDomain" placeholder="example.com"></div>
    <div class="field"><label>SNI</label><input id="ibSni" placeholder="example.com"></div>
-   <div class="field"><label>Fingerprint</label><select id="ibFp"><option>chrome</option><option>firefox</option><option>safari</option><option>edge</option></select></div>
+   <div class="field"><label>Fingerprint</label><select id="ibFp"><option>chrome</option><option>firefox</option><option>safari</option><option>ios</option><option>android</option><option>edge</option><option>360</option><option>qq</option><option>random</option><option>randomized</option></select></div>
    <div id="ibTransportExtras" class="field full"></div>
    <div class="field full"><label>Final Mask · Pattern NG</label><textarea id="ibFinalMask" class="finalmask" placeholder='{"tcp":[],"udp":[]}'></textarea></div>`;
  }
- $('#ibDynamic').innerHTML=html; renderTransportExtras('ib');
+ $('#ibDynamic').innerHTML=html; if((p==='vmess'||p==='trojan') && $('#ibSecurity')) $('#ibSecurity').value='reality'; renderTransportExtras('ib');
 }
 function renderTransportExtras(prefix){
- const net=$('#ibNetwork')?.value, box=$('#ibTransportExtras'); if(!box)return; const sec=$('#ibSecurity')?.value; const af=$('#ibAlpnField'); if(af) af.style.display=(sec==='tls'?'grid':'none'); if(sec==='reality' && $('#ibNetwork')) $('#ibNetwork').value='tcp';
+ const net=$('#ibNetwork')?.value, box=$('#ibTransportExtras'); if(!box)return;
+ const sec=$('#ibSecurity')?.value; const af=$('#ibAlpnField');
+ if(af) af.style.display=(sec==='tls'?'grid':'none');
+ if(sec==='reality'){
+   if($('#ibNetwork')) $('#ibNetwork').value='tcp';
+   box.innerHTML='<div class="form"><div class="field"><label>External port</label><input id="ibExtPort" type="number" value="443"></div><div class="field"><label>External domain</label><input id="ibExtDomain" placeholder="reality.example.com"></div><div class="field"><label>Reality destination</label><input id="ibDest" value="is1-ssl.mzstatic.com:443"></div><div class="field"><label>Reality short ID</label><input id="ibSid" placeholder="Auto"></div></div>';
+   return;
+ }
  if(net==='ws') box.innerHTML='<label>WS Path</label><input id="ibPath" value="/ws/{uuid}">';
  else if(net==='grpc') box.innerHTML='<label>gRPC Service Name</label><input id="ibGrpcService" value="pars-space">';
  else if(net==='xhttp') box.innerHTML='<label>XHTTP Path</label><input id="ibXPath2" value="/xhttp">';
  else box.innerHTML='<label>Transport</label><input value="TCP" disabled>';
 }
-async function editInbound(id){try{let d=await api('/api/inbounds');let ib=(d.inbounds||[]).find(x=>String(x.inbound_id)===String(id));if(!ib)throw Error('Inbound not found');$('#ibEditId').value=id;$('#ibModalTitle').textContent=lang==='fa'?'ویرایش اینباند':'Edit inbound';$('#ibName').value=ib.name||'';$('#ibProtocol').value=(ib.protocol||'vless').toLowerCase();renderInboundProtocolFields();setTimeout(()=>{let set=(id,v)=>{let e=$(id);if(e&&v!==undefined)e.value=v};set('#ibNetwork',ib.network||'tcp');set('#ibSecurity',ib.security||'tls');set('#ibPort',ib.port||443);set('#ibExtPort',ib.external_port||443);set('#ibDomain',ib.domain||'');set('#ibExtDomain',ib.external_domain||'');set('#ibSni',ib.sni||'');set('#ibFp',ib.fingerprint||'chrome');set('#ibPath',(ib.ws_settings||{}).path||ib.path||'/ws/{uuid}');set('#ibGrpcService',(ib.grpc_settings||{}).serviceName||'pars-space');set('#ibXPath2',(ib.xhttp_settings||{}).path||(ib.xhttp_settings||{}).path||'/xhttp');set('#ibXPath',(ib.xhttp_settings||{}).path||'/');set('#ibDest',(ib.reality_settings||{}).dest||'is1-ssl.mzstatic.com:443');set('#ibSid',(ib.reality_settings||{}).short_id||'');set('#ibFinalMask',JSON.stringify(ib.finalmask||{},null,2));renderTransportExtras('ib');},0);$('#inboundModal').classList.add('open')}catch(e){toast(e.message)}}
+
+async function loadInboundNodeChoices(){
+ try{
+  const d=await api('/api/nodes'); const nodes=d.nodes||[];
+  $('#ibNodeChoices').innerHTML=nodes.length?nodes.map(n=>`<label class="row" style="cursor:pointer"><span><b>${esc(n.country_flag||'🌐')} ${esc(n.name||n.node_id)}</b><small class="muted" style="display:block">${esc(n.public_ip||n.domain||'')} · ${esc(n.status||'unknown')}</small></span><input type="checkbox" class="ibNodeCheck" value="${esc(n.node_id)}"></label>`).join(''):`<div class="empty">${lang==='fa'?'اول یک نود اضافه کنید':'Add a node first'}</div>`;
+  const current=window._editingNodeIds||[];
+  $$('.ibNodeCheck').forEach(e=>e.checked=current.includes(e.value));
+ }catch(e){$('#ibNodeChoices').innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
+}
+async function editInbound(id){try{let d=await api('/api/inbounds');let ib=(d.inbounds||[]).find(x=>String(x.inbound_id)===String(id));if(!ib)throw Error('Inbound not found');$('#ibEditId').value=id;$('#ibModalTitle').textContent=lang==='fa'?'ویرایش اینباند':'Edit inbound';$('#ibName').value=ib.name||'';$('#ibProtocol').value=(ib.protocol||'vless').toLowerCase();window._editingNodeIds=ib.enabled_node_ids||ib.node_ids||[];renderInboundProtocolFields();if((ib.protocol||'').toLowerCase()==='node'){$('#inboundModal').classList.add('open');return;}setTimeout(()=>{let set=(id,v)=>{let e=$(id);if(e&&v!==undefined)e.value=v};set('#ibNetwork',ib.network||'tcp');set('#ibSecurity',ib.security||'tls');set('#ibPort',ib.port||443);set('#ibExtPort',ib.external_port||443);set('#ibDomain',ib.domain||'');set('#ibExtDomain',ib.external_domain||'');set('#ibSni',ib.sni||'');set('#ibFp',ib.fingerprint||'chrome');set('#ibPath',(ib.ws_settings||{}).path||ib.path||'/ws/{uuid}');set('#ibGrpcService',(ib.grpc_settings||{}).serviceName||'pars-space');set('#ibXPath2',(ib.xhttp_settings||{}).path||'/xhttp');set('#ibXPath',(ib.xhttp_settings||{}).path||'/');set('#ibDest',(ib.reality_settings||{}).dest||'is1-ssl.mzstatic.com:443');set('#ibSid',(ib.reality_settings||{}).short_id||'');set('#ibFinalMask',JSON.stringify(ib.finalmask||{},null,2));renderTransportExtras('ib');},0);$('#inboundModal').classList.add('open')}catch(e){toast(e.message)}}
 
 async function createInbound(){
  try{
-  const p=$('#ibProtocol').value; const net=$('#ibNetwork')?.value||'ws'; const reality=p==='reality';
+  const p=$('#ibProtocol').value;
+  if(p==='node'){
+   const selected=$$('.ibNodeCheck:checked').map(e=>e.value);
+   const editId=$('#ibEditId').value.trim();
+   const d=await api('/api/inbounds/'+encodeURIComponent(editId||'Node'),{method:editId?'PATCH':'POST',body:JSON.stringify({name:'Node',protocol:'node',enabled_node_ids:selected,node_ids:selected})});
+   closeInbound();toast(lang==='fa'?'نودهای اینباند ذخیره شد':'Node inbound saved');loadInbounds();loadOverview();return;
+  }
+  const net=$('#ibNetwork')?.value||'ws'; const reality=p==='reality';
   const body={name:$('#ibName').value.trim(),protocol:p,network:net,security:reality?'reality':($('#ibSecurity')?.value||'tls'),port:Number($('#ibPort')?.value||443),external_port:Number($('#ibExtPort')?.value||443),domain:$('#ibDomain')?.value||'',external_domain:$('#ibExtDomain')?.value||'',sni:$('#ibSni')?.value||'',fingerprint:$('#ibFp')?.value||'chrome',tls_settings:{alpn:$('#ibAlpn')?.value||'http/1.1'},ws_settings:{path:$('#ibPath')?.value||'/ws/{uuid}'},grpc_settings:{serviceName:$('#ibGrpcService')?.value||'pars-space'},xhttp_settings:{path:$('#ibXPath2')?.value||$('#ibXPath')?.value||'/',mode:'stream-up'},reality_settings:{dest:$('#ibDest')?.value||'',sni:$('#ibSni')?.value||'',short_id:$('#ibSid')?.value||'',fingerprint:$('#ibFp')?.value||'chrome'},finalmask:parseFinalMask($('#ibFinalMask')?.value||'')};
   const editId=$('#ibEditId').value.trim();
   const d=await api('/api/inbounds'+(editId?'/'+encodeURIComponent(editId):''),{method:editId?'PATCH':'POST',body:JSON.stringify(body)});
@@ -394,15 +419,42 @@ async function loadTerminalInfo(){try{let d=await api('/api/terminal/info');$('#
 async function runTerminal(){try{let command=$('#terminalCommand').value.trim();if(!command)return;$('#terminalOutput').textContent='Running…';let d=await api('/api/terminal/exec',{method:'POST',body:JSON.stringify({command})});$('#terminalCwd').textContent=d.cwd||'';$('#terminalOutput').textContent=(d.output||'(no output)')+`\n\n[exit ${d.code??'?'}${d.timed_out?' · timeout':''}]`; }catch(e){$('#terminalOutput').textContent=e.message}}
 function clearTerminal(){$('#terminalCommand').value='';$('#terminalOutput').textContent='Pars Space Linux terminal ready.'}
 $('#terminalCommand')?.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();runTerminal()}});
+$('#uConcurrent')?.addEventListener('change',e=>{$('#uConcurrentCustomWrap').style.display=e.target.value==='custom'?'grid':'none'});
 async function toggleUser(id){try{await api('/api/users/'+encodeURIComponent(id)+'/toggle',{method:'PATCH'});await loadClients();await loadOverview();toast('Status updated')}catch(e){toast(e.message)}}
 async function deleteUser(id){if(!confirm(lang==='fa'?'این کاربر و کانفیگش حذف شود؟':'Delete this user and its config?'))return;try{await api('/api/users/'+encodeURIComponent(id),{method:'DELETE'});await loadClients();await loadOverview();toast(lang==='fa'?'کاربر حذف شد':'User deleted')}catch(e){toast(e.message)}}
 async function showUserQR(id){try{const u=await api('/api/users/'+encodeURIComponent(id));$('#userQrImage').src=u.qr_url+'?t='+Date.now();$('#userQrLink').textContent=u.subscription_url||'';$('#userQrModal').classList.add('open')}catch(e){toast(e.message)}}
 function closeUserQR(){$('#userQrModal').classList.remove('open')}
-async function editUser(id){try{const u=await api('/api/users/'+encodeURIComponent(id));$('#editUserId').value=id;$('#editUsername').value=u.username||'';$('#editStatus').value=u.status||'active';$('#editTraffic').value=u.traffic_limit_bytes?Math.round(u.traffic_limit_bytes/1024**3*100)/100:0;let days=0;if(u.expire_at){days=Math.max(0,Math.ceil((new Date(u.expire_at)-Date.now())/86400000))}$('#editExpire').value=days;$('#editSni').value=u.sni||'';$('#userEditModal').classList.add('open')}catch(e){toast(e.message)}}
+async function editUser(id){try{const u=await api('/api/users/'+encodeURIComponent(id));$('#editUserId').value=id;$('#editUsername').value=u.username||'';$('#editStatus').value=u.status||'active';$('#editTraffic').value=u.traffic_limit_bytes?Math.round(u.traffic_limit_bytes/1024**3*100)/100:0;let days=0;if(u.expire_at){days=Math.max(0,Math.ceil((new Date(u.expire_at)-Date.now())/86400000))}$('#editExpire').value=days;$('#editSni').value=u.sni||'';$('#editConcurrent').value=u.concurrent_connections||0;$('#userEditModal').classList.add('open')}catch(e){toast(e.message)}}
 function closeUserEdit(){$('#userEditModal').classList.remove('open')}
-async function saveUserEdit(){try{const id=$('#editUserId').value;await api('/api/users/'+encodeURIComponent(id),{method:'PATCH',body:JSON.stringify({username:$('#editUsername').value.trim(),status:$('#editStatus').value,traffic_limit_gb:Number($('#editTraffic').value||0),expire_days:Number($('#editExpire').value||0),sni:$('#editSni').value.trim()})});closeUserEdit();await loadClients();await loadOverview();toast('User updated')}catch(e){toast(e.message)}}
+async function saveUserEdit(){try{const id=$('#editUserId').value;await api('/api/users/'+encodeURIComponent(id),{method:'PATCH',body:JSON.stringify({username:$('#editUsername').value.trim(),status:$('#editStatus').value,traffic_limit_gb:Number($('#editTraffic').value||0),expire_days:Number($('#editExpire').value||0),sni:$('#editSni').value.trim(),concurrent_connections:Number($('#editConcurrent').value||0)})});closeUserEdit();await loadClients();await loadOverview();toast('User updated')}catch(e){toast(e.message)}}
 async function resetUserTrafficFromEdit(){try{const id=$('#editUserId').value;await api('/api/users/'+encodeURIComponent(id)+'/reset',{method:'PATCH'});toast('Traffic reset');await loadClients()}catch(e){toast(e.message)}}
-async function loadNodes(){try{let d=await api('/api/nodes');let a=d.nodes||[];$('#nodeList').innerHTML=a.length?a.map(n=>`<div class="row"><div><b>${esc(n.name||n.node_id)}</b><div class="muted" dir="ltr">${esc(n.url||'')}</div></div><div class="toolbar"><span class="pill">${esc(n.status||'unknown')}</span><button class="btn small" onclick="pingNode('${esc(n.node_id)}')">Ping</button><button class="btn small" onclick="syncNode('${esc(n.node_id)}')">Sync</button><button class="btn small danger" onclick="deleteNode('${esc(n.node_id)}')">${tr('delete')}</button></div></div>`).join(''):`<div class="empty">${tr('noData')}</div>`}catch(e){$('#nodeList').innerHTML='<div class="empty">'+esc(e.message)+'</div>'}}
+async function loadNodes(){
+ try{
+  let d=await api('/api/nodes');let a=d.nodes||[];
+  $('#nodeList').innerHTML=a.length?a.map(n=>{
+   const inboundMap=n.remote_inbound_map||{};
+   const configs=[];
+   // configs are attached to users, fetched from the users endpoint below
+   return `<div class="card cardPad"><div class="head"><div><b>${esc(n.country_flag||'🌐')} ${esc(n.name||n.node_id)}</b><div class="muted" dir="ltr">${esc(n.domain||n.url||'')}</div></div><div class="toolbar"><span class="pill">${esc(n.status||'unknown')}</span><span class="pill">${esc(n.latency_ms??'--')} ms</span></div></div><div class="traffic-meta"><div class="miniStat"><span class="muted">Users</span><b>${esc(n.remote_users??0)}</b></div><div class="miniStat"><span class="muted">Inboundها</span><b>${esc(Object.keys(inboundMap).length)}</b></div><div class="miniStat"><span class="muted">Last sync</span><b style="font-size:12px">${esc(n.last_sync||'--')}</b></div></div><div class="toolbar" style="margin-top:12px"><button class="btn small" onclick="pingNode('${esc(n.node_id)}')">Ping</button><button class="btn small" onclick="syncNode('${esc(n.node_id)}')">Sync</button><button class="btn small danger" onclick="deleteNode('${esc(n.node_id)}')">${tr('delete')}</button></div><div id="nodeCfg_${esc(n.node_id)}" class="list" style="margin-top:10px"><div class="muted">Loading node configs…</div></div></div>`;
+  }).join(''):`<div class="empty">${tr('noData')}</div>`;
+  await loadNodeConfigsForCards(a);
+ }catch(e){$('#nodeList').innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
+}
+async function loadNodeConfigsForCards(nodes){
+ try{
+  const d=await api('/api/users'); const users=d.users||[];
+  nodes.forEach(n=>{
+   const rows=users.filter(u=>(u.node_assignments||[]).some(x=>String(x.node_id)===String(n.node_id)&&x.config));
+   const el=document.getElementById('nodeCfg_'+n.node_id); if(!el)return;
+   el.innerHTML=rows.length?rows.map(u=>{
+     const x=(u.node_assignments||[]).find(z=>String(z.node_id)===String(n.node_id));
+     const cfg=JSON.stringify(x?.config||'');
+     return `<div class="row"><div><b>${esc(u.username)}</b><div class="muted">${esc((u.protocol||'').toUpperCase())} · ${esc(x?.status||'unknown')}</div></div><button class="btn small" onclick='copyText(${cfg})'>Copy config</button></div>`;
+   }).join(''):`<div class="empty">No synced configs on this node.</div>`;
+  });
+ }catch(e){}
+}
+
 function openNode(){$('#nodeModal').classList.add('open')}
 function closeNode(){$('#nodeModal').classList.remove('open')}
 async function connectNode(){try{let name=$('#nodeName').value.trim(),url=$('#nodeUrl').value.trim(),key=$('#nodeKey').value.trim();if(!url||!key)throw Error('Panel URL and API key are required');if(!/^psp_/.test(key))throw Error('Panel API key must start with psp_');await api('/api/pars/v1/nodes/connect',{method:'POST',body:JSON.stringify({name,url,domain:url,api_key:key})});closeNode();toast(lang==='fa'?'پنل متصل شد':'Panel connected');$('#nodeName').value='';$('#nodeUrl').value='';$('#nodeKey').value='';loadNodes()}catch(e){toast(e.message)}}
@@ -417,11 +469,12 @@ async function loadParsApi(){try{let d=await api('/api/pars/v1/credentials');$('
 async function copyParsKey(){await copyText($('#parsApiKey').value)}
 async function regenerateParsKey(){if(!confirm(lang==='fa'?'کلید قبلی دیگر معتبر نباشد و کلید جدید ساخته شود؟':'Regenerate the Pars API key?'))return;try{let d=await api('/api/pars/v1/credentials/regenerate',{method:'POST'});$('#parsApiKey').value=d.api_key||'';toast(lang==='fa'?'کلید جدید ساخته شد':'New key generated')}catch(e){toast(e.message)}}
 async function loadSettingsPanel(){try{let d=await api('/api/settings');if($('#panelAlias'))$('#panelAlias').value=d.panel_alias||'Pars Space';}catch(e){}}
+function applyWelcome(username){const e=$('#welcomeText');if(e)e.textContent=(T[lang]?.welcome||'Welcome back')+(username?' · '+username:'')}
 async function savePanelAlias(){try{let v=$('#panelAlias').value.trim()||'Pars Space';await api('/api/settings',{method:'POST',body:JSON.stringify({panel_alias:v})});toast(lang==='fa'?'نام مستعار ذخیره شد':'Alias saved')}catch(e){toast(e.message)}}
 async function loadActivity(){try{let d=await api('/api/activity');let a=d.activity||d.activities||d.logs||[];$('#activityList').innerHTML=a.length?a.slice(0,30).map(x=>`<div class="row"><span>${esc(x.message||x.action||x.event||JSON.stringify(x))}</span><span class="muted">${esc(x.created_at||x.time||'')}</span></div>`).join(''):`<div class="empty">${tr('noData')}</div>`}catch(e){toast(e.message)}}
 async function copyText(v){if(!v)return toast('No link');try{await navigator.clipboard.writeText(v);toast(lang==='fa'?'کپی شد':'Copied')}catch{prompt('Copy:',v)}}
 async function changeCredentials(){try{await api('/api/change-credentials',{method:'POST',body:JSON.stringify({username:$('#adminUser').value.trim(),current_password:$('#adminCurrent').value,new_password:$('#adminNew').value})});toast(lang==='fa'?'رمز عبور تغییر کرد':'Password updated')}catch(e){toast(e.message)}}
-async function boot(){applyI18n();applyTheme();try{let me=await api('/api/me');if(me.username)$('#adminUser').value=me.username}catch{}startLiveOverview();loadInbounds();loadParsApi();loadServerInfo();loadSettingsPanel();setTimeout(()=>$('#loadingScreen')?.classList.add('hide'),650)}
+async function boot(){applyI18n();applyTheme();let me={};try{me=await api('/api/me');if(me.username)$('#adminUser').value=me.username}catch{}applyWelcome(me.username||'');try{await Promise.all([loadOverview(),loadInbounds(),loadParsApi(),loadServerInfo(),loadSettingsPanel()]);startLiveOverview()}catch(e){console.warn(e)}finally{setTimeout(()=>$('#loadingScreen')?.classList.add('hide'),180)}}
 updateClientProtocolFields();boot();
 </script>
 </body>

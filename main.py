@@ -727,12 +727,16 @@ async def require_replication_auth(request: Request):
         return {"kind": "session", "token": token}
     key = str(request.headers.get("X-API-Key") or "").strip()
     if not key:
-        # Backward compatibility with older SpiderPanel peers. New clients use X-API-Key.
         key = str(request.headers.get("X-Node-Key") or "").strip()
+    pars_key = str(request.headers.get("X-Pars-Key") or "").strip()
+    if pars_key:
+        expected_pars = str(SETTINGS.get("pars_api_key") or globals().get("PARS_API_KEY") or "")
+        if expected_pars and secrets.compare_digest(pars_key, expected_pars):
+            return {"kind": "api_key", "api": "pars"}
     async with SETTINGS_LOCK:
         expected = str(SETTINGS.get("panel_api_key") or SETTINGS.get("security_token") or "")
     if key and expected and secrets.compare_digest(key, expected):
-        return {"kind": "api_key"}
+        return {"kind": "api_key", "api": "legacy"}
     raise HTTPException(status_code=401, detail="unauthorized")
 
 async def require_session_or_api_key(request: Request):
@@ -1038,7 +1042,7 @@ async def startup():
                 "name": DEFAULT_TLS_WS_INBOUND_NAME,
                 "protocol": "vless", "inbound_type": "transport", "port": 443, "network": "ws", "security": "tls",
                 "domain": _safe_host(SETTINGS.get("domain"), get_host()),
-                "external_domain": "", "sni": "", "external_port": "",
+                "external_domain": "", "sni": _safe_host(SETTINGS.get("domain"), get_host()), "external_port": "",
                 "fingerprint": "chrome", "reality_settings": {}, "xhttp_settings": {},
                 "ws_settings": {"path": "/ws/{uuid}"},
                 "created_at": datetime.now().isoformat(),
@@ -1055,39 +1059,8 @@ async def startup():
             ib["domain"] = _safe_host(ib.get("domain"), SETTINGS.get("domain"), get_host())
             ib["external_domain"] = ""
             ib["external_port"] = ""
+            ib["sni"] = str(ib.get("sni") or _safe_host(SETTINGS.get("domain"), get_host()) or "").strip()
             ib.setdefault("ws_settings", {"path": "/ws/{uuid}"})
-        # Auto-create a default Reality+xhttp inbound (needs real Xray to serve)
-        has_reality = any(
-            ib.get("network") == "xhttp" and ib.get("protocol") == "reality"
-            for ib in INBOUNDS.values()
-        )
-        if not has_reality:
-            rs = _gen_reality_settings()
-            # Reality inbound: domain + ports are LEFT EMPTY — the admin fills
-            # them in (external domain + external port + listen port). The pbk
-            # keypair is auto-generated here so it's always ready.
-            INBOUNDS["default-reality"] = {
-                "name": "Reality+XHTTP پیش‌فرض",
-                "protocol": "reality",
-                "port": 8443,
-                "network": "xhttp",
-                "security": "reality",
-                "domain": "",
-                "external_domain": "",
-                "sni": "is1-ssl.mzstatic.com",
-                "external_port": "",
-                "fingerprint": "chrome",
-                "reality_settings": rs,
-                "xhttp_settings": {
-                    "path": "/",
-                    "xPaddingBytes": "100-1000",
-                    "mode": "stream-up",
-                    "scMaxEachPostBytes": "1000000",
-                },
-                "created_at": datetime.now().isoformat(),
-            }
-            asyncio.create_task(save_state())
-            log_activity("inbound", "اینباند پیش‌فرض Reality+XHTTP ساخته شد", "ok")
         # Auto-create / migrate the system Node selector inbound. It is NOT an
         # Xray listener: it only stores the Node relationship.
         node_selector = None
@@ -1338,7 +1311,7 @@ async def startup():
     for _ib in INBOUNDS.values():
         _proto = (_ib.get("protocol") or "").lower()
         _sec = (_ib.get("security") or "").lower()
-        if _proto == "worker" or _proto == "reality" or _sec == "reality":
+        if _proto in ("worker", "reality", "node") or _sec == "reality" or _ib.get("system") is True:
             continue
         if int(_ib.get("port") or 0) != _relay_port:
             _ib["port"] = _relay_port
@@ -2114,6 +2087,11 @@ def _client_public_domain() -> str:
 
 
 DEFAULT_TLS_WS_INBOUND_NAME = "پیش‌فرض TLS + WS"
+XRAY_FINGERPRINTS = ("chrome", "firefox", "safari", "ios", "android", "edge", "360", "qq", "random", "randomized")
+
+def normalize_fingerprint(value: str | None) -> str:
+    fp = str(value or "chrome").strip().lower()
+    return fp if fp in XRAY_FINGERPRINTS else "chrome"
 LEGACY_TLS_WS_NAMES = {"VLESS+WS پیش‌فرض", "VLESS + WS پیش‌فرض", "پیش‌فرض VLESS+WS", "پیش‌فرض VLESS + WS"}
 
 
@@ -2174,11 +2152,37 @@ def normalize_relay_links() -> int:
     return changed
 
 
+def _remote_inbound_for_user(node: dict, user: dict) -> dict:
+    proto = str(user.get("protocol") or "vless").lower()
+    candidates = list(node.get("remote_inbounds") or [])
+    exact = [x for x in candidates if str(x.get("protocol") or "").lower() == proto]
+    if exact:
+        # Prefer an inbound with the same transport as the user's local choice.
+        wanted_net = str(user.get("transport_type") or "").lower()
+        for x in exact:
+            if wanted_net and str(x.get("network") or "").lower() == wanted_net:
+                return x
+        return exact[0]
+    iid = (node.get("remote_inbound_map") or {}).get(proto)
+    for x in candidates:
+        if str(x.get("inbound_id") or "") == str(iid):
+            return x
+    if proto == "vless":
+        return dict(node.get("remote_tls_ws") or {})
+    return {}
+
+
 def remote_node_config(node: dict, user: dict, remark_tag: str | None = None) -> str:
-    """Build the client config from the remote panel's actual managed TLS+WS data."""
+    """Build the real client profile from the remote Node's actual inbound."""
     from urllib.parse import urlsplit
     config_uuid = str(user.get("config_uuid") or "").strip()
     if not config_uuid:
+        return ""
+    remote_ib = _remote_inbound_for_user(node, user)
+    if not remote_ib:
+        return ""
+    proto = str(user.get("protocol") or remote_ib.get("protocol") or "vless").lower()
+    if proto not in ("vless", "vmess", "trojan", "reality"):
         return ""
     raw = str(node.get("domain") or "").strip().rstrip("/")
     if not raw:
@@ -2186,42 +2190,89 @@ def remote_node_config(node: dict, user: dict, remark_tag: str | None = None) ->
     if not raw.startswith(("http://", "https://")):
         raw = "https://" + raw
     parsed = urlsplit(raw)
-    remote_ib = dict(node.get("remote_tls_ws") or {})
-    host = str(remote_ib.get("domain") or node.get("remote_host") or parsed.hostname or "").strip()
+    host = str(remote_ib.get("external_domain") or remote_ib.get("domain") or node.get("remote_host") or parsed.hostname or "").strip()
     if not host:
         return ""
     try:
         port = int(remote_ib.get("external_port") or remote_ib.get("port") or parsed.port or 443)
     except Exception:
         port = 443
-    path_template = str(remote_ib.get("path") or ((remote_ib.get("ws_settings") or {}).get("path") or "/ws/{uuid}"))
-    path = path_template.replace("{uuid}", config_uuid)
-    if not path.startswith("/"):
-        path = "/" + path
-    network = str(remote_ib.get("network") or "ws").lower()
     security = str(remote_ib.get("security") or "tls").lower()
-    fingerprint = str(remote_ib.get("fingerprint") or "chrome")
-    sni = str(remote_ib.get("sni") or host)
+    network = str(remote_ib.get("network") or "ws").lower()
+    fp = normalize_fingerprint(remote_ib.get("fingerprint"))
+    sni = str(remote_ib.get("sni") or host).strip()
     node_label = str(node.get("name") or node.get("remote_host") or "node").strip()
     node_flag = str(node.get("country_flag") or node.get("remote_flag") or "🌐").strip() or "🌐"
     node_country = str(node.get("country") or "").strip()
     node_ip = str(node.get("public_ip") or node.get("remote_ip") or "").strip()
-    node_identity = " ".join(x for x in (node_flag, node_country, node_ip) if x).strip()
-    remark = f"Pars Space - {user.get('username', 'user')} {node_identity}".strip()
+    identity = " ".join(x for x in (node_flag, node_country, node_ip) if x).strip()
+    remark = f"Pars Space - {user.get('username', 'user')} {identity}".strip()
     if node_label and node_label not in remark:
         remark += f" · {node_label}"
     if remark_tag and remark_tag not in remark:
         remark += f" {remark_tag}"
-    if network == "ws":
-        params = (f"encryption=none&security={security}&type=ws"
-                  f"&host={quote(host)}&path={quote(path, safe='')}"
-                  f"&sni={quote(sni)}&fp={quote(fingerprint)}&alpn=http/1.1")
-    else:
-        # Managed Node selection currently requires TLS+WS. Refuse to generate a
-        # misleading VLESS config when the remote server reports another transport.
-        return ""
-    return f"vless://{config_uuid}@{host}:{port}?{params}#{quote(remark)}"
+    remark_q = quote(remark)
 
+    if security == "reality" or proto == "reality":
+        rs = remote_ib.get("reality_settings") or {}
+        pbk = str(rs.get("public_key") or "").strip()
+        if not pbk:
+            priv = _xray_x25519_privkey_norm(str(rs.get("private_key") or ""))
+            pbk = _xray_x25519_public_key(priv) if priv else ""
+        sid = str(rs.get("short_id") or rs.get("short_ids") or "").strip().lower()
+        if not pbk or not re.fullmatch(r"[0-9a-f]{2,16}", sid or "") or len(sid) % 2:
+            return ""
+        spx = str(rs.get("spiderx") or "/").strip() or "/"
+        if proto == "trojan":
+            pw = str(user.get("trojan_password") or user.get("config_uuid") or "")
+            q = f"security=reality&type=tcp&sni={quote(sni)}&fp={quote(fp)}&pbk={quote(pbk)}&sid={sid}&spx={quote(spx)}"
+            return f"trojan://{quote(pw, safe='')}@{host}:{port}?{q}#{remark_q}"
+        if proto == "vmess":
+            obj = {"v":"2","ps":remark,"add":host,"port":port,"id":config_uuid,"aid":0,"scy":"auto","net":"tcp","type":"none","tls":"reality","sni":sni,"fp":fp,"pbk":pbk,"sid":sid,"spx":spx}
+            return "vmess://" + base64.b64encode(json.dumps(obj,separators=(",",":"),ensure_ascii=False).encode()).decode()
+        q = f"encryption=none&security=reality&type=tcp&sni={quote(sni)}&fp={quote(fp)}&pbk={quote(pbk)}&sid={sid}&spx={quote(spx)}"
+        return f"vless://{config_uuid}@{host}:{port}?{q}#{remark_q}"
+
+    alpn = str((remote_ib.get("tls_settings") or {}).get("alpn") or "http/1.1")
+    if network == "ws":
+        ws = remote_ib.get("ws_settings") or {}
+        path = str(ws.get("path") or f"/ws/{config_uuid}").strip()
+        path = path.replace("{uuid}", config_uuid)
+        if not path.startswith("/"):
+            path = "/" + path
+        ws_host = str(ws.get("host") or host).strip()
+        if proto == "vmess":
+            obj = {"v":"2","ps":remark,"add":host,"port":port,"id":config_uuid,"aid":0,"scy":"auto","net":"ws","type":"none","host":ws_host,"path":path,"tls":"tls" if security=="tls" else "","sni":sni,"alpn":alpn}
+            return "vmess://" + base64.b64encode(json.dumps(obj,separators=(",",":"),ensure_ascii=False).encode()).decode()
+        if proto == "trojan":
+            pw = str(user.get("trojan_password") or user.get("password") or config_uuid)
+            q = f"security={quote(security)}&type=ws&host={quote(ws_host)}&path={quote(path,safe='')}&sni={quote(sni)}&fp={quote(fp)}&alpn={quote(alpn)}"
+            return f"trojan://{quote(pw,safe='')}@{host}:{port}?{q}#{remark_q}"
+        q = f"encryption=none&security={security}&type=ws&host={quote(ws_host)}&path={quote(path,safe='')}&sni={quote(sni)}&fp={quote(fp)}&alpn={quote(alpn)}"
+        return f"vless://{config_uuid}@{host}:{port}?{q}#{remark_q}"
+    if network == "grpc":
+        gs = remote_ib.get("grpc_settings") or {}
+        service = str(gs.get("serviceName") or gs.get("service_name") or "pars-space")
+        if proto == "vmess":
+            obj = {"v":"2","ps":remark,"add":host,"port":port,"id":config_uuid,"aid":0,"scy":"auto","net":"grpc","type":"none","host":host,"path":service,"tls":"tls" if security=="tls" else "","sni":sni,"alpn":alpn}
+            return "vmess://" + base64.b64encode(json.dumps(obj,separators=(",",":"),ensure_ascii=False).encode()).decode()
+        if proto == "trojan":
+            pw = str(user.get("trojan_password") or user.get("password") or config_uuid)
+            q = f"security={quote(security)}&type=grpc&serviceName={quote(service)}&sni={quote(sni)}&fp={quote(fp)}&alpn={quote(alpn)}"
+            return f"trojan://{quote(pw,safe='')}@{host}:{port}?{q}#{remark_q}"
+        q = f"encryption=none&security={security}&type=grpc&serviceName={quote(service)}&sni={quote(sni)}&fp={quote(fp)}&alpn={quote(alpn)}"
+        return f"vless://{config_uuid}@{host}:{port}?{q}#{remark_q}"
+    if network == "tcp":
+        if proto == "vmess":
+            obj = {"v":"2","ps":remark,"add":host,"port":port,"id":config_uuid,"aid":0,"scy":"auto","net":"tcp","type":"none","tls":"tls" if security=="tls" else "","sni":sni,"alpn":alpn}
+            return "vmess://" + base64.b64encode(json.dumps(obj,separators=(",",":"),ensure_ascii=False).encode()).decode()
+        if proto == "trojan":
+            pw = str(user.get("trojan_password") or user.get("password") or config_uuid)
+            q = f"security={quote(security)}&type=tcp&sni={quote(sni)}&fp={quote(fp)}&alpn={quote(alpn)}"
+            return f"trojan://{quote(pw,safe='')}@{host}:{port}?{q}#{remark_q}"
+        q = f"encryption=none&security={security}&type=tcp&sni={quote(sni)}&fp={quote(fp)}&alpn={quote(alpn)}"
+        return f"vless://{config_uuid}@{host}:{port}?{q}#{remark_q}"
+    return ""
 
 def is_node_control_inbound(inbound_id: str, inbound: dict | None = None) -> bool:
     """The local Node inbound is a management selector, not a remote VLESS endpoint."""
@@ -2420,7 +2471,7 @@ def _generate_protocol_share_link(config_uuid: str, username: str, password: str
     host = addr_ip or host
     port = addr_port or port
     remark = quote(f"Pars Space - {username}")
-    fp = str((inbound or {}).get("fingerprint") or "chrome")
+    fp = normalize_fingerprint((inbound or {}).get("fingerprint"))
     if transport == "ws":
         ws = (inbound or {}).get("ws_settings") or {}
         path = str(ws.get("path") or (inbound or {}).get("path") or f"/ws/{config_uuid}").strip()
@@ -2480,6 +2531,9 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
     on the real domain so the TLS handshake reaches the service.
     """
     inbound = INBOUNDS.get(inbound_id) if inbound_id else None
+    if inbound_id and is_node_control_inbound(inbound_id, inbound):
+        cfgs = node_subscription_configs(user)
+        return cfgs[0] if cfgs else ""
     proto = (inbound.get("protocol") if inbound else None) or (user.get("protocol") or "vless")
     proto = proto.lower()
     sec = (inbound.get("security") if inbound else None) or "tls"
@@ -2500,7 +2554,7 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
     # Never generate a client-facing config until a real public hostname is known.
     # Returning an empty config lets the caller/UI retry while the resolver works.
     panel_domain = _client_public_domain()
-    if not panel_domain and proto not in ("worker", "reality", "telegram"):
+    if not panel_domain and proto not in ("worker", "reality", "telegram") and not inbound:
         return ""
 
     # Optional custom-IP address override (only the connect address changes).
@@ -2552,7 +2606,7 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
             logger.warning("Skipping Reality config for user %s: invalid short_id %r", user_id, sid)
             return ""
         spx = str(rs.get("spiderx") or gs.get("spiderx") or "/").strip() or "/"
-        fp = inbound.get("fingerprint") or rs.get("fingerprint") or gs.get("fingerprint") or "chrome"
+        fp = normalize_fingerprint(inbound.get("fingerprint") or rs.get("fingerprint") or gs.get("fingerprint"))
         sni = inbound.get("sni") or rs.get("sni") or gs.get("sni") or "is1-ssl.mzstatic.com"
         xs = inbound.get("xhttp_settings") or {}
         # XHTTP path is a shared transport base path: the client and server
@@ -4308,21 +4362,40 @@ async def list_inbounds(auth=Depends(require_replication_auth)):
     async with INBOUNDS_LOCK:
         snap = dict(INBOUNDS)
     if auth.get("kind") == "api_key":
-        iid = find_default_tls_ws_inbound_id()
-        ib = dict(snap.get(iid, {})) if iid else {}
-        return {"inbounds": ([{
-            "inbound_id": iid,
-            "name": ib.get("name", DEFAULT_TLS_WS_INBOUND_NAME),
-            "protocol": "vless",
-            "inbound_type": "transport",
-            "network": ib.get("network", "ws"),
-            "security": ib.get("security", "tls"),
-            "domain": ib.get("domain") or _safe_host(SETTINGS.get("domain"), get_host()),
-            "external_port": ib.get("external_port") or 443,
-            "port": ib.get("port") or 443,
-            "ws_settings": ib.get("ws_settings") or {"path": "/ws/{uuid}"},
-            "fingerprint": ib.get("fingerprint") or "chrome",
-        }] if iid else [])}
+        safe = []
+        for iid, ib in snap.items():
+            proto = str(ib.get("protocol") or "").lower()
+            if proto in ("node", "worker", "telegram"):
+                continue
+            rs = ib.get("reality_settings") or {}
+            safe_rs = {
+                "public_key": rs.get("public_key") or "",
+                "short_id": rs.get("short_id") or "",
+                "spiderx": rs.get("spiderx") or "/",
+                "dest": rs.get("dest") or "",
+                "sni": rs.get("sni") or "",
+            }
+            safe.append({
+                "inbound_id": iid,
+                "name": ib.get("name", iid),
+                "protocol": proto or "vless",
+                "inbound_type": ib.get("inbound_type", "transport"),
+                "network": ib.get("network", "ws"),
+                "security": ib.get("security", "tls"),
+                "domain": ib.get("domain") or _safe_host(SETTINGS.get("domain"), get_host()),
+                "external_domain": ib.get("external_domain") or "",
+                "external_port": ib.get("external_port") or ib.get("port") or 443,
+                "port": ib.get("port") or 443,
+                "sni": ib.get("sni") or "",
+                "fingerprint": normalize_fingerprint(ib.get("fingerprint")),
+                "ws_settings": ib.get("ws_settings") or {"path": "/ws/{uuid}"},
+                "grpc_settings": ib.get("grpc_settings") or {},
+                "xhttp_settings": ib.get("xhttp_settings") or {},
+                "reality_settings": safe_rs,
+                "finalmask": ib.get("finalmask") or {},
+                "tls_settings": ib.get("tls_settings") or {},
+            })
+        return {"inbounds": safe}
     result = []
     for iid, ib in snap.items():
         iids = {str(iid)}
@@ -4385,6 +4458,8 @@ async def create_inbound(request: Request, auth=Depends(require_replication_auth
     external_domain = str(body.get("external_domain") or "").strip()
     sni = str(body.get("sni") or "").strip()
     destination = str(body.get("destination") or "").strip()
+    if not sni and domain:
+        sni = domain
     server_name = str(body.get("server_name") or "").strip()
     # A "worker" inbound is a special type: it is addressed to the deployed
     # Cloudflare Worker domain; Railway only controls it and is not in the
@@ -4407,7 +4482,7 @@ async def create_inbound(request: Request, auth=Depends(require_replication_auth
         port = int(body.get("port") or 443)
         external_port = int(body.get("external_port") or 443)
 
-    fingerprint = str(body.get("fingerprint") or "chrome").strip()
+    fingerprint = normalize_fingerprint(body.get("fingerprint"))
     spoof_ip = str(body.get("spoof_ip") or "").strip()
     reality_settings = body.get("reality_settings", {}) if isinstance(body.get("reality_settings"), dict) else {}
     xhttp_settings = body.get("xhttp_settings", {}) if isinstance(body.get("xhttp_settings"), dict) else {}
@@ -4729,6 +4804,10 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
         _validate_listener_port(int(ib.get("port") or 0), exclude_id=inbound_id)
     elif (ib.get("protocol") or "").lower() == "reality" or (ib.get("security") or "").lower() == "reality":
         _validate_listener_port(int(ib.get("port") or 0), exclude_id=inbound_id)
+    if (ib.get("protocol") or "").lower() != "node" and not str(ib.get("sni") or "").strip():
+        fallback_sni = str(ib.get("external_domain") or ib.get("domain") or "").strip()
+        if fallback_sni:
+            ib["sni"] = fallback_sni
 
     await save_state()
     log_activity("inbound", f"اینباند «{ib.get('name', inbound_id)}» ویرایش شد", "info")
@@ -4916,11 +4995,32 @@ async def _upsert_remote_user(body: dict) -> dict:
     status = str(body.get("status") or "active").lower()
     if status not in ("active", "disabled", "expired"):
         status = "active"
-    path = f"/ws/{config_uuid}"
+    remote_protocol = str(body.get("protocol") or "vless").lower()
+    if remote_protocol not in USER_PROTOCOLS:
+        remote_protocol = "vless"
+    requested_ids = [str(x).strip() for x in (body.get("inbound_ids") or []) if str(x).strip()]
+    requested_id = str(body.get("inbound_id") or "").strip()
+    if requested_id and requested_id not in requested_ids:
+        requested_ids.insert(0, requested_id)
+    remote_inbound_ids = [iid for iid in requested_ids if iid in INBOUNDS and str((INBOUNDS.get(iid) or {}).get("protocol") or "").lower() == remote_protocol]
+    if not remote_inbound_ids:
+        for iid, rib in INBOUNDS.items():
+            if str(rib.get("protocol") or "").lower() == remote_protocol:
+                remote_inbound_ids = [iid]
+                break
+    if not remote_inbound_ids and default_iid and remote_protocol == "vless":
+        remote_inbound_ids = [default_iid]
+    remote_inbound_id = remote_inbound_ids[0] if remote_inbound_ids else None
+    remote_ib = INBOUNDS.get(remote_inbound_id) if remote_inbound_id else {}
+    path = str(body.get("path") or ((remote_ib.get("ws_settings") or {}).get("path") if remote_ib else "") or f"/ws/{config_uuid}")
     subscription_uuid = str(body.get("subscription_uuid") or secrets.token_urlsafe(16))
     password = str(body.get("password") or secrets.token_urlsafe(18))
+    trojan_password = str(body.get("trojan_password") or password) if remote_protocol == "trojan" else ""
     reset_traffic = bool(body.get("reset_traffic"))
     from_node = str(body.get("from_node") or "").strip()
+
+    if remote_protocol in ("vmess", "trojan") and not remote_inbound_id:
+        raise HTTPException(status_code=400, detail=f"Remote node has no {remote_protocol.upper()} inbound")
 
     async with USERS_LOCK:
         target_uid = next((uid for uid, u in USERS.items() if u.get("config_uuid") == config_uuid), None)
@@ -4932,7 +5032,7 @@ async def _upsert_remote_user(body: dict) -> dict:
             **existing,
             "username": username,
             "password_hash": hash_password(password),
-            "protocol": "vless",
+            "protocol": remote_protocol,
             "traffic_limit_bytes": traffic_limit_bytes,
             "traffic_used_bytes": traffic_used,
             "expire_at": expire_at,
@@ -4942,11 +5042,12 @@ async def _upsert_remote_user(body: dict) -> dict:
             "server": existing.get("server") or "remote-node",
             "config_uuid": config_uuid,
             "subscription_uuid": subscription_uuid,
-            "sni": "",
+            "sni": str(body.get("sni") or remote_ib.get("sni") or remote_ib.get("domain") or "").strip(),
+            "trojan_password": trojan_password,
             "path": path,
-            "transport_type": "ws",
-            "inbound_id": default_iid,
-            "inbound_ids": [default_iid],
+            "transport_type": str(remote_ib.get("network") or "ws").lower(),
+            "inbound_id": remote_inbound_id or default_iid,
+            "inbound_ids": remote_inbound_ids or ([default_iid] if default_iid else []),
             "node_sync_password": existing.get("node_sync_password") or secrets.token_urlsafe(18),
             "from_node": from_node,
             "synced_at": datetime.now().isoformat(),
@@ -4967,12 +5068,12 @@ async def _upsert_remote_user(body: dict) -> dict:
             "note": f"Remote Node: {from_node or 'unknown'}",
             "is_default": False,
             "sub_id": None,
-            "protocol": "vless-ws",
+            "protocol": remote_protocol if remote_protocol != "vless" else "vless-ws",
             "path": path,
             "user_id": target_uid,
-            "inbound_id": default_iid,
-            "relay_enabled": True,
-            "relay_inbound_id": default_iid,
+            "inbound_id": remote_inbound_id or default_iid,
+            "relay_enabled": remote_protocol == "vless" and (remote_inbound_id or default_iid) == default_iid,
+            "relay_inbound_id": default_iid if remote_protocol == "vless" else None,
         })
         PATH_INDEX[config_uuid] = config_uuid
         PATH_INDEX[path.lstrip("/")] = config_uuid
@@ -5029,6 +5130,13 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
         inbound_ids.insert(0, inbound_id)
     if inbound_ids:
         inbound_id = inbound_ids[0]
+    # Auto means the existing default inbound. Creating a user must never
+    # silently create another listener.
+    if not inbound_ids:
+        _default_iid = find_default_tls_ws_inbound_id()
+        if _default_iid:
+            inbound_ids = [_default_iid]
+            inbound_id = _default_iid
     proxy_ip = str(body.get("proxy_ip") or "").strip()
     proxy_ips = [str(x).strip() for x in (body.get("proxy_ips") or []) if str(x).strip()][:3]
     # Cloudflare Worker routing: when enabled + worker connected, the user's
@@ -5073,6 +5181,11 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
 
     if protocol not in USER_PROTOCOLS:
         raise HTTPException(status_code=400, detail=f"Invalid protocol. Must be one of: {', '.join(USER_PROTOCOLS)}")
+    if inbound_id and inbound_id in INBOUNDS:
+        _chosen_ib = INBOUNDS.get(inbound_id) or {}
+        _chosen_proto = str(_chosen_ib.get("protocol") or "").lower()
+        if _chosen_proto not in ("node", protocol, "worker", "telegram"):
+            raise HTTPException(status_code=400, detail=f"Inbound protocol {_chosen_proto.upper()} does not match user protocol {protocol.upper()}")
     if len(username) < 1:
         raise HTTPException(status_code=400, detail="Username is required")
     if len(password) < 4:
@@ -5253,11 +5366,20 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
             # Rebuild its secret list and restart the listener now.
             for _tg_iid in [i for i in inbound_ids if (INBOUNDS.get(i, {}).get("protocol") or "").lower() == "telegram"]:
                 asyncio.create_task(_restart_telegram_proxy(_tg_iid))
-    # Reconcile the authoritative union of Node selections across all user inbounds.
+    # Reconcile Node selections immediately when this is a Node inbound so the
+    # response can contain the exact config issued by the remote Node.
+    node_sync_result = None
     if _selected_node_ids_for_user(USERS[user_id]):
-        asyncio.create_task(_sync_user_to_selected_nodes(user_id, dict(USERS[user_id])))
+        if inbound_id and is_node_control_inbound(inbound_id, INBOUNDS.get(inbound_id)):
+            node_sync_result = await _sync_user_to_selected_nodes(user_id, dict(USERS[user_id]))
+        else:
+            asyncio.create_task(_sync_user_to_selected_nodes(user_id, dict(USERS[user_id])))
     host = SETTINGS.get("domain") or get_host()
     asyncio.create_task(_xray_apply())  # refresh Xray clients after user change
+    direct_config = generate_user_config(user_id, USERS[user_id], inbound_id)
+    if node_sync_result and not direct_config:
+        cfgs = node_subscription_configs(USERS[user_id])
+        direct_config = cfgs[0] if cfgs else ""
     return {
         "user_id": user_id,
         **USERS[user_id],
@@ -5265,7 +5387,8 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
         "config_url": f"https://{host}/api/users/{user_id}/config",
         "qr_url": f"https://{host}/api/users/{user_id}/qr",
         "subscription_url": f"https://{host}/link/{USERS[user_id].get('config_uuid')}",
-        "config": generate_user_config(user_id, USERS[user_id], inbound_id),
+        "config": direct_config,
+        "node_sync": node_sync_result,
     }
 
 @app.patch("/api/users/{user_id}/toggle")
@@ -5830,6 +5953,8 @@ if not PARS_API_KEY.startswith("psp_"):
 
 async def _pars_v1_auth(request: Request):
     key = str(request.headers.get("x-pars-key") or "").strip()
+    if not key:
+        key = str(request.headers.get("x-api-key") or "").strip()
     authz = str(request.headers.get("authorization") or "")
     if authz.lower().startswith("bearer "):
         key = authz[7:].strip()
@@ -5872,8 +5997,10 @@ async def pars_create_user(request: Request):
 
 @app.get("/api/pars/v1/inbounds")
 async def pars_inbounds(request: Request):
-    await _pars_v1_auth(request)
-    return await list_inbounds({"kind":"session"})
+    auth = await _pars_v1_auth(request)
+    # Remote Nodes receive a sanitized transport catalog. Browser sessions may
+    # use the normal local listing.
+    return await list_inbounds({"kind":"api_key"} if auth.get("kind") == "api_key" else {"kind":"session"})
 
 @app.post("/api/pars/v1/inbounds")
 async def pars_create_inbound(request: Request):
@@ -5911,11 +6038,6 @@ async def pars_connect_node(request: Request):
 async def add_node_from_pars(body: dict):
     payload = dict(body)
     payload["api_key"] = payload.get("api_key") or payload.get("pars_api_key")
-    # Existing node storage currently uses spdr_ credentials. Accept psp_ at the
-    # Pars Space boundary and keep a local compatibility credential internally.
-    key = str(payload.get("api_key") or "")
-    if key.startswith("psp_"):
-        payload["api_key"] = "spdr_" + secrets.token_urlsafe(24)
     class _Req:
         async def json(self): return payload
     return await add_node(_Req(), None)
@@ -6419,9 +6541,11 @@ def _get_panel_api_key_sync() -> str:
 
 def _normalize_node_key(value: str) -> str:
     key = str(value or "").strip()
-    if key and not key.startswith("spdr_"):
-        return "spdr_" + key
-    return key
+    if not key:
+        return ""
+    if key.startswith(("spdr_", "psp_")):
+        return key
+    return "spdr_" + key
 
 
 def _normalize_node_base_url(domain: str) -> str:
@@ -6518,6 +6642,8 @@ def _node_public_view(node_id: str, node: dict) -> dict:
         "enabled_inbound_count": enabled_count,
         "synced_user_count": synced_users,
         "remote_users": int(node.get("remote_users") or 0),
+        "remote_inbounds": list(node.get("remote_inbounds") or []),
+        "remote_inbound_map": dict(node.get("remote_inbound_map") or {}),
         # Legacy aliases kept for the existing frontend and old saved state.
         "remote_host": node.get("remote_host", ""),
         "remote_ip": public_ip,
@@ -6568,6 +6694,8 @@ async def _probe_node(node: dict) -> dict:
         "remote_flag": "🌐",
         "remote_users": 0,
         "remote_tls_ws": {},
+        "remote_inbounds": [],
+        "remote_inbound_map": {},
         "last_error": "",
         "error": "",
     }
@@ -6582,7 +6710,12 @@ async def _probe_node(node: dict) -> dict:
             ac = httpx.AsyncClient(timeout=httpx.Timeout(12.0, connect=6.0), follow_redirects=True)
             own_client = True
         try:
-            r = await ac.get(f"{base}/api/server-info", headers={"X-API-Key": key, "Accept": "application/json"})
+            headers = {"Accept": "application/json"}
+            if key.startswith("psp_"):
+                headers["X-Pars-Key"] = key
+            else:
+                headers["X-API-Key"] = key
+            r = await ac.get(f"{base}/api/server-info", headers=headers)
         finally:
             if own_client:
                 await ac.aclose()
@@ -6621,6 +6754,26 @@ async def _probe_node(node: dict) -> dict:
             out["status"] = out["last_status"] = "error"
             out["last_error"] = out["error"] = "managed inbound is not TLS+WS"
             return out
+        remote_inbounds = []
+        remote_inbound_map = {}
+        try:
+            ih = {"Accept": "application/json"}
+            if key.startswith("psp_"):
+                ih["X-Pars-Key"] = key
+            else:
+                ih["X-API-Key"] = key
+            ir = await ac.get(f"{base}/api/pars/v1/inbounds", headers=ih)
+            if ir.status_code == 200:
+                payload = ir.json() or {}
+                for rib in payload.get("inbounds") or []:
+                    if not isinstance(rib, dict):
+                        continue
+                    proto = str(rib.get("protocol") or "").lower()
+                    if proto in ("vless", "vmess", "trojan", "reality"):
+                        remote_inbounds.append(rib)
+                        remote_inbound_map.setdefault(proto, rib.get("inbound_id"))
+        except Exception as exc:
+            logger.warning("Node inbound discovery failed: %s", exc)
         out.update({
             "status": "online", "last_status": "online",
             "last_seen": datetime.now().isoformat(),
@@ -6633,6 +6786,8 @@ async def _probe_node(node: dict) -> dict:
             "remote_flag": str(info.get("country_flag") or "🌐"),
             "remote_users": int(info.get("users") or 0),
             "remote_tls_ws": dict(info.get("default_tls_ws") or {}),
+            "remote_inbounds": remote_inbounds,
+            "remote_inbound_map": remote_inbound_map,
             "last_error": "", "error": "",
         })
     except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.PoolTimeout, TimeoutError) as exc:
@@ -6659,7 +6814,12 @@ async def _remote_request(node: dict, method: str, path: str, json_body=None, ti
         ac = httpx.AsyncClient(timeout=httpx.Timeout(timeout, connect=min(8.0, timeout)), follow_redirects=True)
         own_client = True
     try:
-        return await ac.request(method, f"{base}{path}", json=json_body, headers={"X-API-Key": key, "Accept": "application/json"})
+        headers = {"Accept": "application/json"}
+        if key.startswith("psp_"):
+            headers["X-Pars-Key"] = key
+        else:
+            headers["X-API-Key"] = key
+        return await ac.request(method, f"{base}{path}", json=json_body, headers=headers)
     finally:
         if own_client:
             await ac.aclose()
@@ -6759,8 +6919,8 @@ async def add_node(request: Request, _=Depends(require_auth)):
     body = await request.json()
     domain = _normalize_node_base_url(body.get("domain") or body.get("url") or "")
     raw_api_key = str(body.get("api_key") or body.get("spi_key") or "").strip()
-    if not raw_api_key or not raw_api_key.startswith("spdr_"):
-        raise HTTPException(status_code=400, detail="SPI Key باید با spdr_ شروع شود")
+    if not raw_api_key or not raw_api_key.startswith(("spdr_", "psp_")):
+        raise HTTPException(status_code=400, detail="API Key باید با spdr_ یا psp_ شروع شود")
     api_key = _normalize_node_key(raw_api_key)
     name = str(body.get("name") or "").strip()[:60]
     if not domain:
@@ -8222,8 +8382,11 @@ async def _sync_user_to_selected_nodes(user_id: str, user: dict, selected_overri
                 "expire_days": _expire_days_from_user(user),
                 "concurrent_connections": int(user.get("concurrent_connections") or 0),
                 "status": user.get("status", "active"),
-                "inbound_id": inbound_default,
-                "inbound_ids": [inbound_default] if inbound_default else [],
+                "inbound_id": (node.get("remote_inbound_map") or {}).get(str(user.get("protocol") or "vless")) or inbound_default,
+                "inbound_ids": [(node.get("remote_inbound_map") or {}).get(str(user.get("protocol") or "vless")) or inbound_default] if ((node.get("remote_inbound_map") or {}).get(str(user.get("protocol") or "vless")) or inbound_default) else [],
+                "protocol": str(user.get("protocol") or "vless").lower(),
+                "trojan_password": str(user.get("trojan_password") or user.get("password") or user.get("config_uuid") or "") if str(user.get("protocol") or "").lower() == "trojan" else "",
+                "sni": str(user.get("sni") or ""),
                 "subscription_uuid": user.get("subscription_uuid") or "",
                 "path": f"/ws/{cuuid}",
                 "from_node": origin,
@@ -9524,7 +9687,12 @@ def _add_inbound_to_xray(cfg: dict, ib: dict, iid: str, host: str):
     security = ib.get("security", "tls")
     is_reality = protocol == "reality" or security == "reality"
     if not is_reality and protocol not in ("vmess", "trojan"):
-        return  # TLS WS/XHTTP + worker inbounds are handled by their relays
+        return
+    if not is_reality and security == "tls":
+        cert_file = os.environ.get("XRAY_CERT_FILE", "/etc/xray/cert.pem")
+        key_file = os.environ.get("XRAY_KEY_FILE", "/etc/xray/key.pem")
+        if not (os.path.exists(cert_file) and os.path.exists(key_file)):
+            return
     # A reality inbound without a configured port is not ready yet — skip it
     # so Xray doesn't start on a wrong/default port.
     _raw_port = str(ib.get("port") or "").strip()
@@ -9536,7 +9704,7 @@ def _add_inbound_to_xray(cfg: dict, ib: dict, iid: str, host: str):
     network = ib.get("network", "ws")
     domain = ib.get("domain", host)
     sni_val = ib.get("sni", domain)
-    fingerprint = ib.get("fingerprint", "chrome")
+    fingerprint = normalize_fingerprint(ib.get("fingerprint"))
     rs = ib.get("reality_settings", {}) if (protocol == "reality" or security == "reality") else {}
     ws_settings = ib.get("ws_settings", {})
     xh_settings = ib.get("xhttp_settings", {})

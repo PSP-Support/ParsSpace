@@ -1,108 +1,280 @@
-# 🏛️ Pars Space
+# Pars Space 🚀
 
-Pars Space یک پنل مدیریتی مدرن برای مدیریت User، Config، Subscription، Inbound و Node است.
+پنل مدیریتی **Pars Space** برای مدیریت کاربران، کانفیگ‌ها، Subscription، Inbound و Nodeها.
 
 ## ✨ امکانات
 
-- مدیریت کاربران، حجم و تاریخ انقضا
-- محدودیت دستگاه همزمان برای هر کاربر
-- Subscription اختصاصی + QR
-- VLESS / VMess / Trojan / Reality
-- SNI و Fingerprint برای کانفیگ‌ها
-- مدیریت Inbound و حذف Inbound
-- Node با Health Check، Sync و نمایش کانفیگ‌های سینک‌شده
-- SNI Scanner
-- Config Test
-- API اختصاصی Pars Space
-- فارسی / انگلیسی
-- Dark / Light
-- رابط Responsive و بهینه‌تر برای موبایل
+- 👤 مدیریت کاربران
+- 📊 حجم، انقضا و محدودیت دستگاه همزمان
+- 🔗 Subscription اختصاصی + QR
+- ⚡ VLESS / VMess / Trojan / Reality
+- 🌐 مدیریت Inbound
+- 🖥️ اتصال چند پنل به عنوان Node
+- 🔄 Sync کاربر و کانفیگ بین Nodeها
+- 🔎 SNI Scanner
+- 🧪 Config Test
+- 🔐 Pars Space API با کلید `psp_`
+- 🌙 Dark / Light / System
+- 🇮🇷 فارسی / 🇬🇧 انگلیسی
+- 📱 مناسب موبایل و کامپیوتر
+- ✨ رابط Liquid Glass
 
-## 🚀 نصب سریع
+## 🎯 هدف پروژه
 
-### Linux / VPS
+هدف Pars Space اینه که مدیریت سرویس و کاربران ساده‌تر بشه.  
+ساخت کاربر، انتخاب Inbound، ساخت Subscription و اتصال به Nodeها از یک محیط انجام میشه.
+
+مخصوصاً در بخش Node، کاربر می‌تونه یک Inbound از نوع **Node** داشته باشه، چند Node رو انتخاب کنه و کانفیگ واقعی ساخته‌شده روی Node رو مستقیماً از پنل دریافت کنه.
+
+---
+
+# 📦 نصب روی کامپیوتر
+
+## Windows
+
+Python و Git رو نصب کنید، بعد CMD:
+
+```cmd
+git clone YOUR_GITHUB_REPOSITORY
+cd ParsSpace
+pip install -r requirements.txt
+python main.py
+```
+
+بعد:
+
+```text
+http://127.0.0.1:8080
+```
+
+اگر پورت دیگری در Terminal نمایش داده شد، همان پورت را استفاده کنید.
+
+## Linux
 
 ```bash
-sudo apt update
-sudo apt install -y git python3 python3-venv
-
-git clone YOUR_GITHUB_REPOSITORY ParsSpace
+git clone YOUR_GITHUB_REPOSITORY
 cd ParsSpace
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+python main.py
+```
+
+یا:
+
+```bash
 python -m uvicorn main:app --host 0.0.0.0 --port 8080
 ```
 
-پنل:
+---
 
-```text
-http://SERVER-IP:8080/spider
-```
+# 📱 نصب روی Android
 
-### Windows
-
-CMD:
-
-```cmd
-git clone YOUR_GITHUB_REPOSITORY ParsSpace
-cd ParsSpace
-py -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-python -m uvicorn main:app --host 0.0.0.0 --port 8080
-```
-
-### Android / Termux
+با **Termux**:
 
 ```bash
 pkg update -y
 pkg install python git -y
-git clone YOUR_GITHUB_REPOSITORY ParsSpace
+
+git clone YOUR_GITHUB_REPOSITORY
 cd ParsSpace
+
 pip install -r requirements.txt
-python -m uvicorn main:app --host 0.0.0.0 --port 8080
+python main.py
 ```
 
-سپس `http://127.0.0.1:8080/spider` را باز کنید.
+بعد مرورگر گوشی:
 
-## 🔑 Secret Key
+```text
+http://127.0.0.1:8080
+```
 
-CMD یا Terminal:
+---
+
+# 🔑 ساخت Secret Key
+
+داخل CMD یا Terminal:
 
 ```bash
 python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
-بعد مقدار خروجی را به عنوان `SECRET_KEY` در Environment قرار دهید.
+یا داخل Python:
 
-## ☁️ Railway
+```python
+import secrets
+print(secrets.token_urlsafe(32))
+```
 
-Repository را به Railway وصل کنید، Deploy را انجام دهید و Domain عمومی بسازید. برنامه روی پورت 8080 اجرا می‌شود.
+کلید را داخل Environment پروژه قرار بدهید و داخل GitHub منتشر نکنید.
 
-## 🛰️ Node
+---
 
-Node باید قبل از ساخت کاربر، یک Inbound موجود و سالم داشته باشد. Pars Space هنگام ساخت کاربر برای Node جدید Inbound اضافی نمی‌سازد. برای VMess/Trojan نیز باید Inbound همان پروتکل روی Node مقصد از قبل ساخته شده باشد تا همان Config روی Node ساخته و در پنل اصلی نمایش داده شود.
+# 🌐 راه‌اندازی Node
 
-## 🔐 نکات امنیتی
+در پنل مقصد از بخش Settings، **Pars Space API Key** را بگیرید.
 
-- Secret Key، API Key و رمزها را داخل GitHub نگذارید.
-- پنل عمومی را با HTTPS اجرا کنید.
-- Scanner را فقط روی مقصدهایی که اجازه بررسی آن‌ها را دارید اجرا کنید.
-- VMess به زمان دقیق سیستم حساس است.
-
-## 📌 ساختار
+کلید باید با این شکل باشد:
 
 ```text
-ParsSpace/
-├── main.py
-├── public_page.py
-├── requirements.txt
-├── Dockerfile
-├── Procfile
-├── railway.toml
-└── static/
-    ├── index.html
-    ├── login.html
-    └── sub.html
+psp_xxxxxxxxxxxxxxxxx
 ```
+
+در پنل اصلی:
+
+```text
+Nodes
+→ Add Node
+→ Node name
+→ Panel URL
+→ Panel API Key
+→ Connect
+```
+
+بعد از اتصال، Node باید وضعیت آنلاین و اطلاعات Inboundهای قابل استفاده را نشان بدهد.
+
+برای استفاده:
+
+```text
+Inbounds
+→ Node
+→ انتخاب Node
+→ Save
+```
+
+حالا هنگام ساخت کاربر، Inbound نوع Node را انتخاب کنید.
+
+Pars Space بر اساس پروتکل کاربر، Inbound سازگار روی Node را انتخاب می‌کند و کانفیگ واقعی همان Node را برمی‌گرداند.
+
+---
+
+# 👤 ساخت کاربر
+
+از:
+
+```text
+Users & Config
+→ ایجاد کاربر + کانفیگ
+```
+
+موارد اصلی:
+
+- Username
+- Protocol
+- Inbound
+- Traffic
+- Expire days
+- SNI
+- Device limit
+
+محدودیت دستگاه:
+
+```text
+نامحدود
+1
+2
+3
+4
+5
+10
+سفارشی
+```
+
+برای VMess و Trojan لازم نیست Password کانفیگ را دستی وارد کنید. اطلاعات لازم به‌صورت خودکار ساخته می‌شود.
+
+---
+
+# 🌐 Inbound
+
+Inbound پیش‌فرض همیشه:
+
+```text
+VLESS + WebSocket + TLS
+```
+
+است.
+
+برای ساخت Inbound جدید می‌توانید از:
+
+```text
+VLESS
+VMess
+Trojan
+Reality
+```
+
+استفاده کنید.
+
+SNI و Fingerprint در تنظیمات Inbound قابل انتخاب هستند.
+
+Fingerprintهای موجود:
+
+```text
+chrome
+firefox
+safari
+ios
+android
+edge
+360
+qq
+random
+randomized
+```
+
+---
+
+# 🛰️ VMess و Trojan
+
+VMess و Trojan به‌صورت پروتکل واقعی خودشان ساخته می‌شوند و به VLESS تبدیل نمی‌شوند.
+
+برای Trojan، Password اختصاصی کاربر در Backend نگهداری می‌شود و در UI لازم نیست دستی وارد شود.
+
+برای VMess، UUID کاربر به‌عنوان شناسه کلاینت استفاده می‌شود.
+
+---
+
+# 🧹 حذف Inbound
+
+از بخش:
+
+```text
+Inbounds
+→ Delete
+```
+
+می‌توانید Inboundهای معمولی را حذف کنید.
+
+Inbound سیستمی `Node` قابل حذف نیست، چون وظیفه‌اش نگهداری انتخاب Nodeهاست.
+
+---
+
+# 📱 بهینه‌سازی موبایل
+
+Pars Space در نسخه فعلی:
+
+- Loader اولیه دارد
+- داده‌های اصلی را قبل از نمایش کامل صفحه دریافت می‌کند
+- افکت‌های سنگین موبایل کاهش داده شده‌اند
+- Blur روی موبایل سبک‌تر است
+- بخش‌های سنگین به‌صورت جداگانه بارگذاری می‌شوند
+- جدول‌ها و لیست‌ها برای موبایل بهینه شده‌اند
+
+---
+
+# 🛠️ نکات مهم
+
+برای استفاده عمومی:
+
+- HTTPS فعال باشد
+- Secret Key و API Key را منتشر نکنید
+- دسترسی Admin را محدود کنید
+- برای Nodeها از API Key معتبر استفاده کنید
+- SNI و Domain واقعی خودتان را وارد کنید
+- قبل از استفاده عمومی، Config تولیدشده را با کلاینت واقعی تست کنید
+
+## 📌 وضعیت پروژه
+
+Pars Space یک پروژه در حال توسعه است. قبل از استفاده روی زیرساخت واقعی، تنظیمات شبکه، Xray و Certificateهای موردنیاز پروتکل‌ها را بررسی کنید.
+
+**Pars Space · Simple management, real control.**
