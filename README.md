@@ -1,280 +1,53 @@
-# Pars Space 🚀
+# Pars Space — Railway deployment bundle
 
-پنل مدیریتی **Pars Space** برای مدیریت کاربران، کانفیگ‌ها، Subscription، Inbound و Nodeها.
+This bundle is based on the real SpiderPanel backend and its API-connected dashboard, with Pars Space branding. The live `/dashboard` route serves `static/index.html`; `/spider` is a compatibility redirect to `/dashboard` (the functional UI); `preview/dashboard-review.html` is only a separate visual prototype and is **not** the production dashboard.
 
-## ✨ امکانات
+## Before deploying
 
-- 👤 مدیریت کاربران
-- 📊 حجم، انقضا و محدودیت دستگاه همزمان
-- 🔗 Subscription اختصاصی + QR
-- ⚡ VLESS / VMess / Trojan / Reality
-- 🌐 مدیریت Inbound
-- 🖥️ اتصال چند پنل به عنوان Node
-- 🔄 Sync کاربر و کانفیگ بین Nodeها
-- 🔎 SNI Scanner
-- 🧪 Config Test
-- 🔐 Pars Space API با کلید `psp_`
-- 🌙 Dark / Light / System
-- 🇮🇷 فارسی / 🇬🇧 انگلیسی
-- 📱 مناسب موبایل و کامپیوتر
-- ✨ رابط Liquid Glass
+Set these Railway Variables before the first deployment:
 
-## 🎯 هدف پروژه
+- `ADMIN_USERNAME`: a unique admin username (not a shared/default value).
+- `ADMIN_PASSWORD`: a unique password with at least 12 characters.
+- `SECRET_KEY`: a persistent random value of at least 32 characters. Generate one with `python -c "import secrets; print(secrets.token_urlsafe(48))"`.
+- `DATA_DIR=/data`.
 
-هدف Pars Space اینه که مدیریت سرویس و کاربران ساده‌تر بشه.  
-ساخت کاربر، انتخاب Inbound، ساخت Subscription و اتصال به Nodeها از یک محیط انجام میشه.
+The application intentionally refuses to start if `ADMIN_PASSWORD` or `SECRET_KEY` are missing/too short. This avoids deploying the old default `admin` password or a predictable session secret. On a fresh `/data` volume, `ADMIN_PASSWORD` is used for the initial administrator password. If you mount an existing Spider data volume, its saved password hash and saved secret are preserved for compatibility, so keep using that panel’s existing password unless you perform a deliberate credential migration.
 
-مخصوصاً در بخش Node، کاربر می‌تونه یک Inbound از نوع **Node** داشته باشه، چند Node رو انتخاب کنه و کانفیگ واقعی ساخته‌شده روی Node رو مستقیماً از پنل دریافت کنه.
+Add a Railway Volume mounted at `/data`. The application stores its JSON state and supporting files there; without persistent storage, state can be lost when the service is replaced.
 
----
+## Deploy
 
-# 📦 نصب روی کامپیوتر
+1. Upload/push the contents of this folder to a **new Pars Space repository** on GitHub. Do not overwrite the upstream SpiderPanel repository.
+2. Create a Railway service from that repository. The included `railway.json` selects the included Dockerfile.
+3. Add the Variables above and mount a Volume at `/data`.
+4. Generate a Railway domain and open it. `/` redirects to `/login`; after successful login the panel opens at `/dashboard`.
+5. Check `/healthz`, login/logout, inbound CRUD, user CRUD, subscriptions, backup/restore, and any integrations you rely on before migrating production traffic.
 
-## Windows
+## What is included
 
-Python و Git رو نصب کنید، بعد CMD:
+- `main.py`: FastAPI backend and the existing Spider-compatible APIs.
+- `static/index.html`: actual API-connected management UI, rebranded and restyled with a restrained black/champagne-gold glass theme.
+- `static/login.html`: Pars Space login page with the cinematic pixel-art background, wired to `/api/login`.
+- `static/sub.html`: subscription page served by the existing subscription routes.
+- `worker/worker.js` and root `worker.js`: Cloudflare Worker code, for separate deployment.
+- `preview/dashboard-review.html`: visual prototype only; it uses mock data and is not wired to production APIs.
 
-```cmd
-git clone YOUR_GITHUB_REPOSITORY
-cd ParsSpace
-pip install -r requirements.txt
-python main.py
-```
+## Cloudflare Worker
 
-بعد:
+Deploy `worker/worker.js` separately to Cloudflare Workers and configure its existing KV bindings, secrets, backend URL, and routes according to your current Spider deployment. Railway does not deploy this Worker automatically.
 
-```text
-http://127.0.0.1:8080
-```
+## Important Railway limits
 
-اگر پورت دیگری در Terminal نمایش داده شد، همان پورت را استفاده کنید.
+The FastAPI web panel can run on Railway, but deployment success does not prove every VPN/network feature is publicly reachable. Xray and MTProxy listeners, arbitrary TCP ports, Docker-dependent features, external nodes, and Cloudflare Worker/KV integration each need a real environment test. Railway's normal web domain is not a general-purpose public TCP endpoint. Do not move production traffic until the features you use have passed end-to-end tests.
 
-## Linux
+## Security and operations
 
-```bash
-git clone YOUR_GITHUB_REPOSITORY
-cd ParsSpace
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python main.py
-```
+- Keep `SECRET_KEY` stable across deploys; changing it invalidates existing sessions.
+- Keep `/data` mounted and back it up before updates.
+- Do not publish Worker secrets, Telegram bot tokens, API keys, or private Reality keys.
+- The old one-click upstream Spider update control is removed from the UI because it was not implemented by this backend and could have overwritten Pars Space files. Update by pushing the Pars Space repository and deploying through Railway.
+- `CORS_ORIGINS` is empty by default, appropriate for a same-origin deployment. Only set explicit trusted origins if you add a separate frontend.
 
-یا:
+## Validation performed
 
-```bash
-python -m uvicorn main:app --host 0.0.0.0 --port 8080
-```
-
----
-
-# 📱 نصب روی Android
-
-با **Termux**:
-
-```bash
-pkg update -y
-pkg install python git -y
-
-git clone YOUR_GITHUB_REPOSITORY
-cd ParsSpace
-
-pip install -r requirements.txt
-python main.py
-```
-
-بعد مرورگر گوشی:
-
-```text
-http://127.0.0.1:8080
-```
-
----
-
-# 🔑 ساخت Secret Key
-
-داخل CMD یا Terminal:
-
-```bash
-python -c "import secrets; print(secrets.token_urlsafe(32))"
-```
-
-یا داخل Python:
-
-```python
-import secrets
-print(secrets.token_urlsafe(32))
-```
-
-کلید را داخل Environment پروژه قرار بدهید و داخل GitHub منتشر نکنید.
-
----
-
-# 🌐 راه‌اندازی Node
-
-در پنل مقصد از بخش Settings، **Pars Space API Key** را بگیرید.
-
-کلید باید با این شکل باشد:
-
-```text
-psp_xxxxxxxxxxxxxxxxx
-```
-
-در پنل اصلی:
-
-```text
-Nodes
-→ Add Node
-→ Node name
-→ Panel URL
-→ Panel API Key
-→ Connect
-```
-
-بعد از اتصال، Node باید وضعیت آنلاین و اطلاعات Inboundهای قابل استفاده را نشان بدهد.
-
-برای استفاده:
-
-```text
-Inbounds
-→ Node
-→ انتخاب Node
-→ Save
-```
-
-حالا هنگام ساخت کاربر، Inbound نوع Node را انتخاب کنید.
-
-Pars Space بر اساس پروتکل کاربر، Inbound سازگار روی Node را انتخاب می‌کند و کانفیگ واقعی همان Node را برمی‌گرداند.
-
----
-
-# 👤 ساخت کاربر
-
-از:
-
-```text
-Users & Config
-→ ایجاد کاربر + کانفیگ
-```
-
-موارد اصلی:
-
-- Username
-- Protocol
-- Inbound
-- Traffic
-- Expire days
-- SNI
-- Device limit
-
-محدودیت دستگاه:
-
-```text
-نامحدود
-1
-2
-3
-4
-5
-10
-سفارشی
-```
-
-برای VMess و Trojan لازم نیست Password کانفیگ را دستی وارد کنید. اطلاعات لازم به‌صورت خودکار ساخته می‌شود.
-
----
-
-# 🌐 Inbound
-
-Inbound پیش‌فرض همیشه:
-
-```text
-VLESS + WebSocket + TLS
-```
-
-است.
-
-برای ساخت Inbound جدید می‌توانید از:
-
-```text
-VLESS
-VMess
-Trojan
-Reality
-```
-
-استفاده کنید.
-
-SNI و Fingerprint در تنظیمات Inbound قابل انتخاب هستند.
-
-Fingerprintهای موجود:
-
-```text
-chrome
-firefox
-safari
-ios
-android
-edge
-360
-qq
-random
-randomized
-```
-
----
-
-# 🛰️ VMess و Trojan
-
-VMess و Trojan به‌صورت پروتکل واقعی خودشان ساخته می‌شوند و به VLESS تبدیل نمی‌شوند.
-
-برای Trojan، Password اختصاصی کاربر در Backend نگهداری می‌شود و در UI لازم نیست دستی وارد شود.
-
-برای VMess، UUID کاربر به‌عنوان شناسه کلاینت استفاده می‌شود.
-
----
-
-# 🧹 حذف Inbound
-
-از بخش:
-
-```text
-Inbounds
-→ Delete
-```
-
-می‌توانید Inboundهای معمولی را حذف کنید.
-
-Inbound سیستمی `Node` قابل حذف نیست، چون وظیفه‌اش نگهداری انتخاب Nodeهاست.
-
----
-
-# 📱 بهینه‌سازی موبایل
-
-Pars Space در نسخه فعلی:
-
-- Loader اولیه دارد
-- داده‌های اصلی را قبل از نمایش کامل صفحه دریافت می‌کند
-- افکت‌های سنگین موبایل کاهش داده شده‌اند
-- Blur روی موبایل سبک‌تر است
-- بخش‌های سنگین به‌صورت جداگانه بارگذاری می‌شوند
-- جدول‌ها و لیست‌ها برای موبایل بهینه شده‌اند
-
----
-
-# 🛠️ نکات مهم
-
-برای استفاده عمومی:
-
-- HTTPS فعال باشد
-- Secret Key و API Key را منتشر نکنید
-- دسترسی Admin را محدود کنید
-- برای Nodeها از API Key معتبر استفاده کنید
-- SNI و Domain واقعی خودتان را وارد کنید
-- قبل از استفاده عمومی، Config تولیدشده را با کلاینت واقعی تست کنید
-
-## 📌 وضعیت پروژه
-
-Pars Space یک پروژه در حال توسعه است. قبل از استفاده روی زیرساخت واقعی، تنظیمات شبکه، Xray و Certificateهای موردنیاز پروتکل‌ها را بررسی کنید.
-
-**Pars Space · Simple management, real control.**
+Static checks include Python compilation, JavaScript syntax checks, HTML parsing, ZIP integrity, presence of expected routes/assets, and a check that the production page remains the API-connected Spider dashboard. No live Railway, Cloudflare KV, public TCP listener, or real traffic test has been performed from this build environment.

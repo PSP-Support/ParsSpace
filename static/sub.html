@@ -13,10 +13,26 @@
 @media(max-width:720px){.grid{grid-template-columns:1fr 1fr}.hero{padding:24px}.item{grid-template-columns:1fr}.actions{justify-content:flex-start}.suburl,.pw{flex-direction:column}.btn{width:100%}.top{top:6px}}
 @media(max-width:430px){.grid{grid-template-columns:1fr 1fr}.stat{padding:14px}.stat b{font-size:18px}}
 </style>
-<style id="pars-sub-v9">
-:root{--accent:#ff5b73;--accentText:#fff;--card:rgba(18,19,26,.78);--card2:rgba(255,255,255,.045);--line:rgba(255,255,255,.085);--ok:#5ee7a1}
-body{background:radial-gradient(900px 500px at 82% -8%,rgba(255,91,115,.13),transparent 60%),radial-gradient(700px 500px at 0 100%,rgba(111,87,170,.10),transparent 65%),#07080c!important}.bg{background:transparent!important}.glow{border-color:rgba(255,255,255,.07)!important;opacity:.55!important;animation:float 22s ease-in-out infinite!important;box-shadow:inset 0 0 80px rgba(255,255,255,.018),0 0 90px rgba(255,91,115,.04)!important}.wrap{max-width:1060px!important}.top,.hero,.card,.stat{border-radius:24px!important;border-color:rgba(255,255,255,.09)!important;background:linear-gradient(145deg,rgba(20,21,28,.82),rgba(10,11,16,.70))!important;box-shadow:0 22px 70px rgba(0,0,0,.25),inset 0 1px rgba(255,255,255,.035)!important}.top{padding:11px 13px!important}.mark{background:linear-gradient(145deg,#ff5b73,#c93851)!important;box-shadow:0 10px 25px rgba(255,91,115,.18)!important}.hero{padding:34px!important;min-height:250px;display:flex;align-items:center}.hero:before{content:"";position:absolute;width:220px;height:220px;border-radius:50%;right:-100px;top:-100px;background:rgba(255,91,115,.08);filter:blur(12px)}h1{font-size:clamp(40px,7vw,78px)!important}.state{background:rgba(255,255,255,.045)!important}.grid{gap:12px!important}.stat{padding:20px!important}.card{padding:22px!important}.item{border-radius:18px!important;background:rgba(255,255,255,.032)!important;transition:.22s}.item:hover{transform:translateY(-2px);border-color:rgba(255,91,115,.22)}.btn{border-radius:14px!important}.config{max-height:220px!important;background:rgba(0,0,0,.20)!important}.badge.ok{color:var(--ok)!important;border-color:rgba(94,231,161,.18)!important}
-@media(max-width:720px){.hero{padding:24px!important;min-height:220px}.card{padding:16px!important}.item{padding:12px!important}}
+<style id="pars-space-v7-premium">
+:root{--ps:#e84b68;--ps2:#ff8799;--psline:rgba(255,255,255,.1)}
+body{background:radial-gradient(900px 500px at 80% -10%,rgba(232,75,104,.16),transparent 65%),radial-gradient(700px 500px at -10% 100%,rgba(103,83,170,.1),transparent 60%),var(--bg)!important}
+.shell,.wrap{animation:psPageIn .65s cubic-bezier(.16,1,.3,1)}
+@keyframes psPageIn{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
+.shell,.top,.card,.panel,.sub-card,.login-card{border-color:var(--psline)!important;box-shadow:0 30px 100px rgba(0,0,0,.3),inset 0 1px rgba(255,255,255,.05)!important}
+button,.btn,.action,.copy{transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s,background .2s!important}
+button:hover,.btn:hover,.action:hover,.copy:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(0,0,0,.16)}
+button:active,.btn:active,.action:active,.copy:active{transform:scale(.97)}
+input,textarea,select{border-radius:15px!important;transition:.2s!important}
+input:focus,textarea:focus,select:focus{border-color:rgba(232,75,104,.55)!important;box-shadow:0 0 0 4px rgba(232,75,104,.08)!important}
+@media(max-width:720px){.shell{width:calc(100vw - 18px)!important;min-height:0!important;border-radius:24px!important}.visual{min-height:240px!important}.wrap{padding:10px 9px 35px!important}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition-duration:.01ms!important}}
+</style>
+
+<style>
+.top{border-radius:24px!important;padding:14px 16px!important;background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(255,255,255,.025))!important}
+.card,.sub-card{border-radius:25px!important;background:linear-gradient(145deg,rgba(255,255,255,.075),rgba(255,255,255,.025))!important;backdrop-filter:blur(24px) saturate(140%)!important}
+.wrap:before{content:"";display:block;height:3px;border-radius:99px;background:linear-gradient(90deg,transparent,#e84b68,#ff8799,transparent);opacity:.8;margin:0 auto 16px;animation:subGlow 3s ease-in-out infinite}
+@keyframes subGlow{50%{opacity:.35;transform:scaleX(.75)}}
 </style>
 </head>
 <body><div class="bg"><i class="glow g1"></i><i class="glow g2"></i></div><div class="wrap">

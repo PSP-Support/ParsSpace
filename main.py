@@ -665,7 +665,7 @@ TG_PROXY_INSTANCES: dict = {}
 # پروتکل‌های پشتیبانی‌شده برای هر کانفیگ
 PROTOCOLS = ("vless-ws", "xhttp-packet-up", "xhttp-stream-up", "xhttp-stream-one")
 
-USER_PROTOCOLS = ("vless", "vmess", "trojan", "ssh", "shadowsocks", "reality")
+USER_PROTOCOLS = ("vless", "vmess", "trojan", "shadowsocks", "reality", "ssh")
 DEFAULT_PROTOCOL = "vless-ws"
 
 def log_activity(kind: str, message: str, level: str = "info"):
@@ -727,16 +727,12 @@ async def require_replication_auth(request: Request):
         return {"kind": "session", "token": token}
     key = str(request.headers.get("X-API-Key") or "").strip()
     if not key:
+        # Backward compatibility with older SpiderPanel peers. New clients use X-API-Key.
         key = str(request.headers.get("X-Node-Key") or "").strip()
-    pars_key = str(request.headers.get("X-Pars-Key") or "").strip()
-    if pars_key:
-        expected_pars = str(SETTINGS.get("pars_api_key") or globals().get("PARS_API_KEY") or "")
-        if expected_pars and secrets.compare_digest(pars_key, expected_pars):
-            return {"kind": "api_key", "api": "pars"}
     async with SETTINGS_LOCK:
         expected = str(SETTINGS.get("panel_api_key") or SETTINGS.get("security_token") or "")
     if key and expected and secrets.compare_digest(key, expected):
-        return {"kind": "api_key", "api": "legacy"}
+        return {"kind": "api_key"}
     raise HTTPException(status_code=401, detail="unauthorized")
 
 async def require_session_or_api_key(request: Request):
@@ -1042,7 +1038,7 @@ async def startup():
                 "name": DEFAULT_TLS_WS_INBOUND_NAME,
                 "protocol": "vless", "inbound_type": "transport", "port": 443, "network": "ws", "security": "tls",
                 "domain": _safe_host(SETTINGS.get("domain"), get_host()),
-                "external_domain": "", "sni": _safe_host(SETTINGS.get("domain"), get_host()), "external_port": "",
+                "external_domain": "", "sni": "", "external_port": "",
                 "fingerprint": "chrome", "reality_settings": {}, "xhttp_settings": {},
                 "ws_settings": {"path": "/ws/{uuid}"},
                 "created_at": datetime.now().isoformat(),
@@ -1059,41 +1055,65 @@ async def startup():
             ib["domain"] = _safe_host(ib.get("domain"), SETTINGS.get("domain"), get_host())
             ib["external_domain"] = ""
             ib["external_port"] = ""
-            ib["sni"] = str(ib.get("sni") or _safe_host(SETTINGS.get("domain"), get_host()) or "").strip()
-            ib["managed_default"] = True
             ib.setdefault("ws_settings", {"path": "/ws/{uuid}"})
-        # Managed VMess and SSH profiles are created once with sane defaults.
-        # They are intentionally not rewritten on every boot, so an administrator
-        # can change them later without the panel fighting the configuration.
-        if not any(str(x.get("name") or "") == DEFAULT_VMESS_WS_INBOUND_NAME for x in INBOUNDS.values()):
-            vmid = generate_short_id()
-            INBOUNDS[vmid] = {
-                "name": DEFAULT_VMESS_WS_INBOUND_NAME, "protocol": "vmess", "inbound_type": "transport",
+        # Auto-create a default Reality+xhttp inbound (needs real Xray to serve)
+        has_reality = any(
+            ib.get("network") == "xhttp" and ib.get("protocol") == "reality"
+            for ib in INBOUNDS.values()
+        )
+        if not has_reality:
+            rs = _gen_reality_settings()
+            # Reality inbound: domain + ports are LEFT EMPTY — the admin fills
+            # them in (external domain + external port + listen port). The pbk
+            # keypair is auto-generated here so it's always ready.
+            INBOUNDS["default-reality"] = {
+                "name": "Reality+XHTTP پیش‌فرض",
+                "protocol": "reality",
+                "port": 8443,
+                "network": "xhttp",
+                "security": "reality",
+                "domain": "",
+                "external_domain": "",
+                "sni": "is1-ssl.mzstatic.com",
+                "external_port": "",
+                "fingerprint": "chrome",
+                "reality_settings": rs,
+                "xhttp_settings": {
+                    "path": "/",
+                    "xPaddingBytes": "100-1000",
+                    "mode": "stream-up",
+                    "scMaxEachPostBytes": "1000000",
+                },
+                "created_at": datetime.now().isoformat(),
+            }
+            asyncio.create_task(save_state())
+            log_activity("inbound", "اینباند پیش‌فرض Reality+XHTTP ساخته شد", "ok")
+        # Managed VMess and SSH profiles. These are created once with sensible
+        # defaults so admins normally never need to hand-tune an inbound.
+        if not any((ib.get("protocol") or "").lower() == "vmess" and ib.get("managed_default") for ib in INBOUNDS.values()):
+            INBOUNDS["managed-vmess"] = {
+                "name": "VMess · WS + TLS",
+                "protocol": "vmess", "inbound_type": "transport", "managed_default": True,
                 "port": 8443, "network": "ws", "security": "tls",
                 "domain": _safe_host(SETTINGS.get("domain"), get_host()),
-                "external_domain": "", "external_port": "",
-                "sni": _safe_host(SETTINGS.get("domain"), get_host()),
-                "fingerprint": "chrome", "reality_settings": {}, "xhttp_settings": {},
-                "ws_settings": {"path": "/vmess", "host": _safe_host(SETTINGS.get("domain"), get_host())},
-                "grpc_settings": {}, "tls_settings": {}, "created_at": datetime.now().isoformat(),
-                "managed_default": True,
+                "external_domain": "", "sni": _safe_host(SETTINGS.get("domain"), get_host()),
+                "external_port": 8443, "fingerprint": "chrome",
+                "tls_settings": {"alpn": "http/1.1"},
+                "ws_settings": {"path": "/vmess/{uuid}"},
+                "grpc_settings": {}, "xhttp_settings": {}, "reality_settings": {},
+                "created_at": datetime.now().isoformat(),
             }
-            log_activity("inbound", f"اینباند {DEFAULT_VMESS_WS_INBOUND_NAME} ساخته شد", "ok")
-        if not any(str(x.get("name") or "") == DEFAULT_SSH_INBOUND_NAME for x in INBOUNDS.values()):
-            shost = str(os.environ.get("PARS_SSH_HOST") or _safe_host(SETTINGS.get("domain"), get_host()) or "").strip()
-            try: sport = max(1, min(65535, int(os.environ.get("PARS_SSH_PORT", "22"))))
-            except Exception: sport = 22
-            INBOUNDS[generate_short_id()] = {
-                "name": DEFAULT_SSH_INBOUND_NAME, "protocol": "ssh", "inbound_type": "profile",
-                "port": sport, "network": "tcp", "security": "none", "domain": shost,
-                "external_domain": shost, "external_port": sport, "sni": "",
-                "fingerprint": "chrome", "reality_settings": {}, "xhttp_settings": {},
-                "ws_settings": {}, "grpc_settings": {}, "tls_settings": {},
-                "ssh_settings": {"host": shost, "port": sport, "username": str(os.environ.get("PARS_SSH_USER") or "").strip(),
-                                  "password": str(os.environ.get("PARS_SSH_PASSWORD") or ""), "mode": "direct"},
-                "created_at": datetime.now().isoformat(), "managed_default": True,
+            log_activity("inbound", "اینباند مدیریت‌شده VMess ساخته شد", "ok")
+        if not any((ib.get("protocol") or "").lower() == "ssh" and ib.get("managed_default") for ib in INBOUNDS.values()):
+            INBOUNDS["managed-ssh"] = {
+                "name": "SSH · Direct Profile",
+                "protocol": "ssh", "inbound_type": "profile", "managed_default": True,
+                "port": 22, "network": "tcp", "security": "none",
+                "domain": _safe_host(SETTINGS.get("domain"), get_host()),
+                "ssh_settings": {"host": _safe_host(SETTINGS.get("domain"), get_host()), "port": 22, "username": "", "password": "", "mode": "password"},
+                "created_at": datetime.now().isoformat(),
             }
-            log_activity("inbound", f"اینباند {DEFAULT_SSH_INBOUND_NAME} ساخته شد", "ok")
+            log_activity("inbound", "اینباند مدیریت‌شده SSH ساخته شد", "ok")
         asyncio.create_task(save_state())
 
         # Auto-create / migrate the system Node selector inbound. It is NOT an
@@ -1346,7 +1366,7 @@ async def startup():
     for _ib in INBOUNDS.values():
         _proto = (_ib.get("protocol") or "").lower()
         _sec = (_ib.get("security") or "").lower()
-        if _proto in ("worker", "reality", "node") or _sec == "reality" or _ib.get("system") is True:
+        if _proto == "worker" or _proto == "reality" or _sec == "reality":
             continue
         if int(_ib.get("port") or 0) != _relay_port:
             _ib["port"] = _relay_port
@@ -2102,25 +2122,6 @@ def _is_ip_address(value: str) -> bool:
         return False
 
 
-def _client_config_address(hostname: str) -> str:
-    """Address field for generated client profiles. Can use the detected numeric
-    panel IP while preserving hostname/SNI/Host for TLS routing."""
-    mode = str(SETTINGS.get("config_address_mode") or "panel_ip").lower()
-    if mode != "panel_ip":
-        return hostname
-    ip = str(SETTINGS.get("server_ip") or "").strip()
-    if _is_ip_address(ip):
-        return ip
-    try:
-        import socket as _sock
-        resolved = _sock.gethostbyname(hostname)
-        if _is_ip_address(resolved):
-            return resolved
-    except Exception:
-        pass
-    return hostname
-
-
 def _client_public_domain() -> str:
     """Return a hostname suitable for client configs, never a literal IP.
 
@@ -2141,14 +2142,6 @@ def _client_public_domain() -> str:
 
 
 DEFAULT_TLS_WS_INBOUND_NAME = "پیش‌فرض TLS + WS"
-DEFAULT_VMESS_WS_INBOUND_NAME = "VMess · WS + TLS"
-DEFAULT_SSH_INBOUND_NAME = "SSH · Direct Profile"
-
-XRAY_FINGERPRINTS = ("chrome", "firefox", "safari", "ios", "android", "edge", "360", "qq", "random", "randomized")
-
-def normalize_fingerprint(value: str | None) -> str:
-    fp = str(value or "chrome").strip().lower()
-    return fp if fp in XRAY_FINGERPRINTS else "chrome"
 LEGACY_TLS_WS_NAMES = {"VLESS+WS پیش‌فرض", "VLESS + WS پیش‌فرض", "پیش‌فرض VLESS+WS", "پیش‌فرض VLESS + WS"}
 
 
@@ -2209,37 +2202,11 @@ def normalize_relay_links() -> int:
     return changed
 
 
-def _remote_inbound_for_user(node: dict, user: dict) -> dict:
-    proto = str(user.get("protocol") or "vless").lower()
-    candidates = list(node.get("remote_inbounds") or [])
-    exact = [x for x in candidates if str(x.get("protocol") or "").lower() == proto]
-    if exact:
-        # Prefer an inbound with the same transport as the user's local choice.
-        wanted_net = str(user.get("transport_type") or "").lower()
-        for x in exact:
-            if wanted_net and str(x.get("network") or "").lower() == wanted_net:
-                return x
-        return exact[0]
-    iid = (node.get("remote_inbound_map") or {}).get(proto)
-    for x in candidates:
-        if str(x.get("inbound_id") or "") == str(iid):
-            return x
-    if proto == "vless":
-        return dict(node.get("remote_tls_ws") or {})
-    return {}
-
-
 def remote_node_config(node: dict, user: dict, remark_tag: str | None = None) -> str:
-    """Build the real client profile from the remote Node's actual inbound."""
+    """Build the client config from the remote panel's actual managed TLS+WS data."""
     from urllib.parse import urlsplit
     config_uuid = str(user.get("config_uuid") or "").strip()
     if not config_uuid:
-        return ""
-    remote_ib = _remote_inbound_for_user(node, user)
-    if not remote_ib:
-        return ""
-    proto = str(user.get("protocol") or remote_ib.get("protocol") or "vless").lower()
-    if proto not in ("vless", "vmess", "trojan", "ssh", "reality"):
         return ""
     raw = str(node.get("domain") or "").strip().rstrip("/")
     if not raw:
@@ -2247,99 +2214,42 @@ def remote_node_config(node: dict, user: dict, remark_tag: str | None = None) ->
     if not raw.startswith(("http://", "https://")):
         raw = "https://" + raw
     parsed = urlsplit(raw)
-    host = str(remote_ib.get("external_domain") or remote_ib.get("domain") or node.get("remote_host") or parsed.hostname or "").strip()
+    remote_ib = dict(node.get("remote_tls_ws") or {})
+    host = str(remote_ib.get("domain") or node.get("remote_host") or parsed.hostname or "").strip()
     if not host:
         return ""
     try:
         port = int(remote_ib.get("external_port") or remote_ib.get("port") or parsed.port or 443)
     except Exception:
         port = 443
-    security = str(remote_ib.get("security") or "tls").lower()
+    path_template = str(remote_ib.get("path") or ((remote_ib.get("ws_settings") or {}).get("path") or "/ws/{uuid}"))
+    path = path_template.replace("{uuid}", config_uuid)
+    if not path.startswith("/"):
+        path = "/" + path
     network = str(remote_ib.get("network") or "ws").lower()
-    fp = normalize_fingerprint(remote_ib.get("fingerprint"))
-    sni = str(remote_ib.get("sni") or host).strip()
+    security = str(remote_ib.get("security") or "tls").lower()
+    fingerprint = str(remote_ib.get("fingerprint") or "chrome")
+    sni = str(remote_ib.get("sni") or host)
     node_label = str(node.get("name") or node.get("remote_host") or "node").strip()
     node_flag = str(node.get("country_flag") or node.get("remote_flag") or "🌐").strip() or "🌐"
     node_country = str(node.get("country") or "").strip()
     node_ip = str(node.get("public_ip") or node.get("remote_ip") or "").strip()
-    identity = " ".join(x for x in (node_flag, node_country, node_ip) if x).strip()
-    remark = f"Pars Space - {user.get('username', 'user')} {identity}".strip()
+    node_identity = " ".join(x for x in (node_flag, node_country, node_ip) if x).strip()
+    remark = f"Pars Space - {user.get('username', 'user')} {node_identity}".strip()
     if node_label and node_label not in remark:
         remark += f" · {node_label}"
     if remark_tag and remark_tag not in remark:
         remark += f" {remark_tag}"
-    remark_q = quote(remark)
-
-    if proto == "ssh":
-        ss = remote_ib.get("ssh_settings") or {}
-        ssh_host = str(ss.get("host") or host).strip()
-        ssh_port = int(ss.get("port") or port or 22)
-        ssh_user = str(ss.get("username") or user.get("ssh_username") or user.get("username") or "").strip()
-        ssh_pw = str(user.get("ssh_password") or ss.get("password") or "").strip()
-        if not ssh_host or not ssh_user or not ssh_pw:
-            return ""
-        return f"{ssh_host}:{ssh_port}@{ssh_user}:{ssh_pw}"
-
-    if security == "reality" or proto == "reality":
-        rs = remote_ib.get("reality_settings") or {}
-        pbk = str(rs.get("public_key") or "").strip()
-        if not pbk:
-            priv = _xray_x25519_privkey_norm(str(rs.get("private_key") or ""))
-            pbk = _xray_x25519_public_key(priv) if priv else ""
-        sid = str(rs.get("short_id") or rs.get("short_ids") or "").strip().lower()
-        if not pbk or not re.fullmatch(r"[0-9a-f]{2,16}", sid or "") or len(sid) % 2:
-            return ""
-        spx = str(rs.get("spiderx") or "/").strip() or "/"
-        if proto == "trojan":
-            pw = str(user.get("trojan_password") or user.get("config_uuid") or "")
-            q = f"security=reality&type=tcp&sni={quote(sni)}&fp={quote(fp)}&pbk={quote(pbk)}&sid={sid}&spx={quote(spx)}"
-            return f"trojan://{quote(pw, safe='')}@{host}:{port}?{q}#{remark_q}"
-        if proto == "vmess":
-            obj = {"v":"2","ps":remark,"add":host,"port":port,"id":config_uuid,"aid":0,"scy":"auto","net":"tcp","type":"none","tls":"reality","sni":sni,"fp":fp,"pbk":pbk,"sid":sid,"spx":spx}
-            return "vmess://" + base64.b64encode(json.dumps(obj,separators=(",",":"),ensure_ascii=False).encode()).decode()
-        q = f"encryption=none&security=reality&type=tcp&sni={quote(sni)}&fp={quote(fp)}&pbk={quote(pbk)}&sid={sid}&spx={quote(spx)}"
-        return f"vless://{config_uuid}@{host}:{port}?{q}#{remark_q}"
-
-    alpn = str((remote_ib.get("tls_settings") or {}).get("alpn") or "http/1.1")
     if network == "ws":
-        ws = remote_ib.get("ws_settings") or {}
-        path = str(ws.get("path") or f"/ws/{config_uuid}").strip()
-        path = path.replace("{uuid}", config_uuid)
-        if not path.startswith("/"):
-            path = "/" + path
-        ws_host = str(ws.get("host") or host).strip()
-        if proto == "vmess":
-            obj = {"v":"2","ps":remark,"add":host,"port":port,"id":config_uuid,"aid":0,"scy":"auto","net":"ws","type":"none","host":ws_host,"path":path,"tls":"tls" if security=="tls" else "","sni":sni,"alpn":alpn}
-            return "vmess://" + base64.b64encode(json.dumps(obj,separators=(",",":"),ensure_ascii=False).encode()).decode()
-        if proto == "trojan":
-            pw = str(user.get("trojan_password") or user.get("password") or config_uuid)
-            q = f"security={quote(security)}&type=ws&host={quote(ws_host)}&path={quote(path,safe='')}&sni={quote(sni)}&fp={quote(fp)}&alpn={quote(alpn)}"
-            return f"trojan://{quote(pw,safe='')}@{host}:{port}?{q}#{remark_q}"
-        q = f"encryption=none&security={security}&type=ws&host={quote(ws_host)}&path={quote(path,safe='')}&sni={quote(sni)}&fp={quote(fp)}&alpn={quote(alpn)}"
-        return f"vless://{config_uuid}@{host}:{port}?{q}#{remark_q}"
-    if network == "grpc":
-        gs = remote_ib.get("grpc_settings") or {}
-        service = str(gs.get("serviceName") or gs.get("service_name") or "pars-space")
-        if proto == "vmess":
-            obj = {"v":"2","ps":remark,"add":host,"port":port,"id":config_uuid,"aid":0,"scy":"auto","net":"grpc","type":"none","host":host,"path":service,"tls":"tls" if security=="tls" else "","sni":sni,"alpn":alpn}
-            return "vmess://" + base64.b64encode(json.dumps(obj,separators=(",",":"),ensure_ascii=False).encode()).decode()
-        if proto == "trojan":
-            pw = str(user.get("trojan_password") or user.get("password") or config_uuid)
-            q = f"security={quote(security)}&type=grpc&serviceName={quote(service)}&sni={quote(sni)}&fp={quote(fp)}&alpn={quote(alpn)}"
-            return f"trojan://{quote(pw,safe='')}@{host}:{port}?{q}#{remark_q}"
-        q = f"encryption=none&security={security}&type=grpc&serviceName={quote(service)}&sni={quote(sni)}&fp={quote(fp)}&alpn={quote(alpn)}"
-        return f"vless://{config_uuid}@{host}:{port}?{q}#{remark_q}"
-    if network == "tcp":
-        if proto == "vmess":
-            obj = {"v":"2","ps":remark,"add":host,"port":port,"id":config_uuid,"aid":0,"scy":"auto","net":"tcp","type":"none","tls":"tls" if security=="tls" else "","sni":sni,"alpn":alpn}
-            return "vmess://" + base64.b64encode(json.dumps(obj,separators=(",",":"),ensure_ascii=False).encode()).decode()
-        if proto == "trojan":
-            pw = str(user.get("trojan_password") or user.get("password") or config_uuid)
-            q = f"security={quote(security)}&type=tcp&sni={quote(sni)}&fp={quote(fp)}&alpn={quote(alpn)}"
-            return f"trojan://{quote(pw,safe='')}@{host}:{port}?{q}#{remark_q}"
-        q = f"encryption=none&security={security}&type=tcp&sni={quote(sni)}&fp={quote(fp)}&alpn={quote(alpn)}"
-        return f"vless://{config_uuid}@{host}:{port}?{q}#{remark_q}"
-    return ""
+        params = (f"encryption=none&security={security}&type=ws"
+                  f"&host={quote(host)}&path={quote(path, safe='')}"
+                  f"&sni={quote(sni)}&fp={quote(fingerprint)}&alpn=http/1.1")
+    else:
+        # Managed Node selection currently requires TLS+WS. Refuse to generate a
+        # misleading VLESS config when the remote server reports another transport.
+        return ""
+    return f"vless://{config_uuid}@{host}:{port}?{params}#{quote(remark)}"
+
 
 def is_node_control_inbound(inbound_id: str, inbound: dict | None = None) -> bool:
     """The local Node inbound is a management selector, not a remote VLESS endpoint."""
@@ -2528,7 +2438,7 @@ def generate_short_id() -> str:
     """Generate a shorter ID for user management."""
     return secrets.token_hex(6)
 
-def _generate_protocol_share_link(config_uuid: str, username: str, password: str, proto: str, host: str, port: str, transport: str, security: str, inbound: dict | None, user: dict, addr_ip: str | None = None, addr_port: str | None = None, alpn: str = "http/1.1", sni_host: str | None = None) -> str:
+def _generate_protocol_share_link(config_uuid: str, username: str, password: str, proto: str, host: str, port: str, transport: str, security: str, inbound: dict | None, user: dict, addr_ip: str | None = None, addr_port: str | None = None, alpn: str = "http/1.1") -> str:
     """Generate a client share link matching the selected protocol/transport.
 
     This deliberately emits VMess/Trojan links instead of pretending every
@@ -2537,39 +2447,37 @@ def _generate_protocol_share_link(config_uuid: str, username: str, password: str
     """
     host = addr_ip or host
     port = addr_port or port
-    tls_host = str(sni_host or host).strip()
     remark = quote(f"Pars Space - {username}")
-    fp = normalize_fingerprint((inbound or {}).get("fingerprint"))
+    fp = str((inbound or {}).get("fingerprint") or "chrome")
     if transport == "ws":
         ws = (inbound or {}).get("ws_settings") or {}
         path = str(ws.get("path") or (inbound or {}).get("path") or f"/ws/{config_uuid}").strip()
-        path = path.replace("{uuid}", config_uuid)
         if not path.startswith("/"): path = "/" + path
-        host_header = str(ws.get("host") or tls_host).strip()
+        host_header = str(ws.get("host") or host).strip()
         if proto == "vmess":
-            obj = {"v":"2","ps":f"Pars Space - {username}","add":host,"port":int(port or 443),"id":config_uuid,"aid":0,"scy":"auto","net":"ws","type":"none","host":host_header,"path":path,"tls":"tls" if security=="tls" else "","sni":tls_host,"alpn":alpn}
+            obj = {"v":"2","ps":f"Pars Space - {username}","add":host,"port":int(port or 443),"id":config_uuid,"aid":0,"scy":"auto","net":"ws","type":"none","host":host_header,"path":path,"tls":"tls" if security=="tls" else "","sni":host,"alpn":alpn}
             return "vmess://" + base64.b64encode(json.dumps(obj,separators=(",",":"),ensure_ascii=False).encode()).decode()
         if proto == "trojan":
             pw = str(password or user.get("trojan_password") or config_uuid)
-            q = f"security={quote(security)}&type=ws&host={quote(host_header)}&path={quote(path,safe='')}&sni={quote(tls_host)}&fp={quote(fp)}&alpn={quote(alpn)}"
+            q = f"security={quote(security)}&type=ws&host={quote(host_header)}&path={quote(path,safe='')}&sni={quote(host)}&fp={quote(fp)}&alpn={quote(alpn)}"
             return f"trojan://{quote(pw,safe='')}@{host}:{port}?{q}#{remark}"
     elif transport == "grpc":
         gs = (inbound or {}).get("grpc_settings") or {}
         service = str(gs.get("serviceName") or gs.get("service_name") or "pars-space").strip()
         if proto == "vmess":
-            obj = {"v":"2","ps":f"Pars Space - {username}","add":host,"port":int(port or 443),"id":config_uuid,"aid":0,"scy":"auto","net":"grpc","type":"none","host":host,"path":service,"tls":"tls" if security=="tls" else "","sni":tls_host,"alpn":alpn}
+            obj = {"v":"2","ps":f"Pars Space - {username}","add":host,"port":int(port or 443),"id":config_uuid,"aid":0,"scy":"auto","net":"grpc","type":"none","host":host,"path":service,"tls":"tls" if security=="tls" else "","sni":host,"alpn":alpn}
             return "vmess://" + base64.b64encode(json.dumps(obj,separators=(",",":"),ensure_ascii=False).encode()).decode()
         if proto == "trojan":
             pw = str(password or user.get("trojan_password") or config_uuid)
-            q = f"security={quote(security)}&type=grpc&serviceName={quote(service)}&sni={quote(tls_host)}&fp={quote(fp)}&alpn={quote(alpn)}"
+            q = f"security={quote(security)}&type=grpc&serviceName={quote(service)}&sni={quote(host)}&fp={quote(fp)}&alpn={quote(alpn)}"
             return f"trojan://{quote(pw,safe='')}@{host}:{port}?{q}#{remark}"
     elif transport == "tcp":
         if proto == "vmess":
-            obj = {"v":"2","ps":f"Pars Space - {username}","add":host,"port":int(port or 443),"id":config_uuid,"aid":0,"scy":"auto","net":"tcp","type":"none","host":"","path":"","tls":"tls" if security=="tls" else "","sni":tls_host,"alpn":alpn}
+            obj = {"v":"2","ps":f"Pars Space - {username}","add":host,"port":int(port or 443),"id":config_uuid,"aid":0,"scy":"auto","net":"tcp","type":"none","host":"","path":"","tls":"tls" if security=="tls" else "","sni":host,"alpn":alpn}
             return "vmess://" + base64.b64encode(json.dumps(obj,separators=(",",":"),ensure_ascii=False).encode()).decode()
         if proto == "trojan":
             pw = str(password or user.get("trojan_password") or config_uuid)
-            q = f"security={quote(security)}&type=tcp&sni={quote(tls_host)}&fp={quote(fp)}&alpn={quote(alpn)}"
+            q = f"security={quote(security)}&type=tcp&sni={quote(host)}&fp={quote(fp)}&alpn={quote(alpn)}"
             return f"trojan://{quote(pw,safe='')}@{host}:{port}?{q}#{remark}"
     # Fallback for protocols not covered above.
     return ""
@@ -2582,14 +2490,6 @@ def _finalmask_query(inbound: dict | None) -> str:
         return "&fm=" + quote(json.dumps(fm, separators=(",", ":"), ensure_ascii=False), safe="")
     except Exception:
         return ""
-
-
-def _dark_tunnel_config_for_user(user_id: str, user: dict, inbound_id: str | None = None) -> str:
-    """Return a DarkTunnel-importable profile. For V2Ray protocols the app accepts
-    standard VMess/VLESS/Trojan URIs; for SSH it accepts server:port@user:pass text.
-    The proprietary encrypted .dark container is intentionally not fabricated.
-    """
-    return generate_user_config(user_id, user, inbound_id)
 
 
 def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr: str = None, remark_tag: str = None) -> str:
@@ -2608,9 +2508,6 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
     on the real domain so the TLS handshake reaches the service.
     """
     inbound = INBOUNDS.get(inbound_id) if inbound_id else None
-    if inbound_id and is_node_control_inbound(inbound_id, inbound):
-        cfgs = node_subscription_configs(user)
-        return cfgs[0] if cfgs else ""
     proto = (inbound.get("protocol") if inbound else None) or (user.get("protocol") or "vless")
     proto = proto.lower()
     sec = (inbound.get("security") if inbound else None) or "tls"
@@ -2628,10 +2525,23 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
         rem = f"{rem} {remark_tag}"
     remark = quote(rem)
 
+    # SSH uses a direct profile and does not depend on the panel public hostname.
+    if proto == "ssh":
+        if not inbound:
+            return ""
+        ss = inbound.get("ssh_settings") or {}
+        host = str(ss.get("host") or inbound.get("domain") or "").strip()
+        port = int(ss.get("port") or inbound.get("port") or 22)
+        su = str(user.get("ssh_username") or ss.get("username") or user.get("username") or "").strip()
+        sp = str(user.get("ssh_password") or ss.get("password") or user.get("password") or "").strip()
+        if not host or not su:
+            return ""
+        return f"ssh://{quote(su, safe='')}:{quote(sp, safe='')}@{host}:{port}#{remark}"
+
     # Never generate a client-facing config until a real public hostname is known.
     # Returning an empty config lets the caller/UI retry while the resolver works.
     panel_domain = _client_public_domain()
-    if not panel_domain and proto not in ("worker", "reality", "telegram") and not inbound:
+    if not panel_domain and proto not in ("worker", "reality", "telegram"):
         return ""
 
     # Optional custom-IP address override (only the connect address changes).
@@ -2656,17 +2566,6 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
         if not inbound:
             return ""
         return generate_telegram_proxy_link(user_id, user, inbound, remark_tag)
-
-    # ── SSH / DarkTunnel profile ──
-    if proto == "ssh":
-        ss = (inbound or {}).get("ssh_settings") or {}
-        ssh_host = str(ss.get("host") or (inbound or {}).get("external_domain") or (inbound or {}).get("domain") or get_host()).strip()
-        ssh_port = int(ss.get("port") or (inbound or {}).get("external_port") or (inbound or {}).get("port") or 22)
-        ssh_user = str(user.get("ssh_username") or ss.get("username") or user.get("username") or "").strip()
-        ssh_pw = str(user.get("ssh_password") or ss.get("password") or "").strip()
-        if not ssh_host or not ssh_user or not ssh_pw:
-            return ""
-        return f"{ssh_host}:{ssh_port}@{ssh_user}:{ssh_pw}"
 
     # ── REALITY (served by Xray core) ──
     if proto == "reality" or sec == "reality":
@@ -2694,7 +2593,7 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
             logger.warning("Skipping Reality config for user %s: invalid short_id %r", user_id, sid)
             return ""
         spx = str(rs.get("spiderx") or gs.get("spiderx") or "/").strip() or "/"
-        fp = normalize_fingerprint(inbound.get("fingerprint") or rs.get("fingerprint") or gs.get("fingerprint"))
+        fp = inbound.get("fingerprint") or rs.get("fingerprint") or gs.get("fingerprint") or "chrome"
         sni = inbound.get("sni") or rs.get("sni") or gs.get("sni") or "is1-ssl.mzstatic.com"
         xs = inbound.get("xhttp_settings") or {}
         # XHTTP path is a shared transport base path: the client and server
@@ -2749,7 +2648,6 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
     # ── TLS (WS default / XHTTP selectable) — served by the FastAPI relay ──
     # address/host/sni always = the panel main domain; port 443 (Railway TLS).
     panel_domain = _client_public_domain()
-    connect_address = _client_config_address(panel_domain) if panel_domain else panel_domain
 
     # ── TUNNEL (user → Railway → CF Worker → site) — path /tunnel/{uuid} ──
     if proto == "tunnel":
@@ -2779,16 +2677,14 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
     # WebSocket relay. Other inbounds must use their own stored transport/domain/port.
     if is_default_tls_ws_inbound(inbound):
         panel_domain = _client_public_domain()
-        host = addr_ip or connect_address or panel_domain
-        tls_server_name = panel_domain
+        host = addr_ip or panel_domain
         port = addr_port or "443"
         transport = "ws"
         security = "tls"
     else:
         inbound_domain = str((inbound or {}).get("external_domain") or (inbound or {}).get("domain") or "").strip()
-        host = addr_ip or _client_config_address(_client_public_domain()) or inbound_domain
-        tls_server_name = _client_public_domain() or inbound_domain
-        if not host:
+        host = addr_ip or _client_public_domain() or inbound_domain
+        if not host or (_is_ip_address(host) and not addr_ip):
             return ""
         port = addr_port or str((inbound or {}).get("external_port") or (inbound or {}).get("port") or 443)
         network = str((inbound or {}).get("network") or "").strip().lower()
@@ -2812,17 +2708,17 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
         extra = quote(json.dumps(extra_obj, separators=(",", ":"), ensure_ascii=False), safe='')
         xpath = f"/xhttp-siz10/{xmode}/{config_uuid}"
         params = (f"encryption=none&security={security}&type=xhttp"
-                  f"&host={quote(tls_server_name)}&path={quote(xpath, safe='')}&sni={quote(tls_server_name)}"
+                  f"&host={quote(host)}&path={quote(xpath, safe='')}&sni={quote(host)}"
                   f"&fp=chrome&alpn={quote(alpn)}&mode={xmode}&extra={extra}")
     elif transport == "grpc":
         gs = (inbound.get("grpc_settings") or {}) if inbound else {}
         service = str(gs.get("serviceName") or gs.get("service_name") or "pars-space").strip() or "spider"
         params = (f"encryption=none&security={security}&type=grpc"
-                  f"&serviceName={quote(service)}&sni={quote(tls_server_name)}"
+                  f"&serviceName={quote(service)}&sni={quote(host)}"
                   f"&fp=chrome&alpn={quote(alpn)}")
     elif transport == "tcp":
         params = (f"encryption=none&security={security}&type=tcp"
-                  f"&sni={quote(tls_server_name)}&fp=chrome&alpn={quote(alpn)}")
+                  f"&sni={quote(host)}&fp=chrome&alpn={quote(alpn)}")
     else:  # ws
         # Only the exact default TLS+WS inbound may use /ws/{uuid}; other WS
         # inbounds keep their own configured path if present.
@@ -2832,12 +2728,12 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
         else:
             ws_path = configured_path if configured_path.startswith("/") else f"/{configured_path}"
         params = (f"encryption=none&security={security}&type=ws"
-                  f"&host={quote(tls_server_name)}&path={quote(ws_path, safe='')}&sni={quote(tls_server_name)}"
+                  f"&host={quote(host)}&path={quote(ws_path, safe='')}&sni={quote(host)}"
                   f"&fp=chrome&alpn={quote(alpn)}")
     if proto in ("vmess", "trojan"):
         generated = _generate_protocol_share_link(
             config_uuid, username, str(user.get("password") or user.get("trojan_password") or ""),
-            proto, host, port, transport, security, inbound, user, addr_ip, addr_port, alpn, tls_server_name
+            proto, host, port, transport, security, inbound, user, addr_ip, addr_port, alpn
         )
         if generated:
             return generated
@@ -2981,7 +2877,7 @@ def generate_status_config(user: dict, configs: list) -> str:
             break
 
     # Address is panel domain, port 443
-    host = connect_address
+    host = panel_domain
     port = "443"
 
     return f"vless://{config_uuid}@{host}:{port}?{params}#{remark}"
@@ -4453,41 +4349,21 @@ async def list_inbounds(auth=Depends(require_replication_auth)):
     async with INBOUNDS_LOCK:
         snap = dict(INBOUNDS)
     if auth.get("kind") == "api_key":
-        safe = []
-        for iid, ib in snap.items():
-            proto = str(ib.get("protocol") or "").lower()
-            if proto in ("node", "worker", "telegram"):
-                continue
-            rs = ib.get("reality_settings") or {}
-            safe_rs = {
-                "public_key": rs.get("public_key") or "",
-                "short_id": rs.get("short_id") or "",
-                "spiderx": rs.get("spiderx") or "/",
-                "dest": rs.get("dest") or "",
-                "sni": rs.get("sni") or "",
-            }
-            safe.append({
-                "inbound_id": iid,
-                "name": ib.get("name", iid),
-                "protocol": proto or "vless",
-                "inbound_type": ib.get("inbound_type", "transport"),
-                "network": ib.get("network", "ws"),
-                "security": ib.get("security", "tls"),
-                "domain": ib.get("domain") or _safe_host(SETTINGS.get("domain"), get_host()),
-                "external_domain": ib.get("external_domain") or "",
-                "external_port": ib.get("external_port") or ib.get("port") or 443,
-                "port": ib.get("port") or 443,
-                "sni": ib.get("sni") or "",
-                "fingerprint": normalize_fingerprint(ib.get("fingerprint")),
-                "ws_settings": ib.get("ws_settings") or {"path": "/ws/{uuid}"},
-                "grpc_settings": ib.get("grpc_settings") or {},
-                "xhttp_settings": ib.get("xhttp_settings") or {},
-                "reality_settings": safe_rs,
-                "finalmask": ib.get("finalmask") or {},
-                "tls_settings": ib.get("tls_settings") or {},
-                "ssh_settings": {k:v for k,v in (ib.get("ssh_settings") or {}).items() if k != "password"},
-            })
-        return {"inbounds": safe}
+        iid = find_default_tls_ws_inbound_id()
+        ib = dict(snap.get(iid, {})) if iid else {}
+        return {"inbounds": ([{
+            "inbound_id": iid,
+            "name": ib.get("name", DEFAULT_TLS_WS_INBOUND_NAME),
+            "protocol": "vless",
+            "inbound_type": "transport",
+            "network": ib.get("network", "ws"),
+            "security": ib.get("security", "tls"),
+            "domain": ib.get("domain") or _safe_host(SETTINGS.get("domain"), get_host()),
+            "external_port": ib.get("external_port") or 443,
+            "port": ib.get("port") or 443,
+            "ws_settings": ib.get("ws_settings") or {"path": "/ws/{uuid}"},
+            "fingerprint": ib.get("fingerprint") or "chrome",
+        }] if iid else [])}
     result = []
     for iid, ib in snap.items():
         iids = {str(iid)}
@@ -4528,7 +4404,7 @@ async def create_inbound(request: Request, auth=Depends(require_replication_auth
     _raw_ib = (body.get("name") or "").strip()[:60]
     name = _raw_ib or f"inbound-{secrets.token_hex(3)}"
     protocol = str(body.get("protocol") or "vless").lower()
-    if protocol not in ("vless", "vmess", "trojan", "ssh", "reality", "worker", "telegram", "node"):
+    if protocol not in ("vless", "vmess", "trojan", "reality", "ssh", "worker", "telegram", "node"):
         raise HTTPException(status_code=400, detail="Invalid protocol")
     if protocol == "node":
         selected = [str(x).strip() for x in (body.get("enabled_node_ids") or body.get("node_ids") or []) if str(x).strip()]
@@ -4544,16 +4420,33 @@ async def create_inbound(request: Request, auth=Depends(require_replication_auth
         asyncio.create_task(refresh_node_inbound_configs("Node"))
         return {"ok": True, "inbound_id": "Node", **ib}
 
-    network = str(body.get("network") or "ws").lower()
-    security = str(body.get("security") or "tls").lower()
+    # SSH is a profile-based inbound. The panel stores the connection
+    # metadata and generates a direct SSH profile; it does not pretend to
+    # create an operating-system sshd listener.
+    ssh_settings = body.get("ssh_settings", {}) if isinstance(body.get("ssh_settings"), dict) else {}
+    if protocol == "ssh":
+        port = int(body.get("port") or ssh_settings.get("port") or 22)
+        host = str(body.get("domain") or ssh_settings.get("host") or "").strip()
+        ssh_settings = {
+            "host": host,
+            "port": port,
+            "username": str(ssh_settings.get("username") or "").strip(),
+            "password": str(ssh_settings.get("password") or ""),
+            "mode": str(ssh_settings.get("mode") or "password").strip().lower(),
+        }
+        if not 1 <= port <= 65535:
+            raise HTTPException(status_code=400, detail="SSH port must be between 1 and 65535")
+        if ssh_settings["mode"] not in ("password", "key"):
+            ssh_settings["mode"] = "password"
+        network, security = "tcp", "none"
+    else:
+        network = str(body.get("network") or "ws").lower()
+        security = str(body.get("security") or "tls").lower()
     domain = str(body.get("domain") or "").strip()
     external_domain = str(body.get("external_domain") or "").strip()
     sni = str(body.get("sni") or "").strip()
     destination = str(body.get("destination") or "").strip()
-    if not sni and domain:
-        sni = domain
     server_name = str(body.get("server_name") or "").strip()
-    ssh_settings = body.get("ssh_settings", {}) if isinstance(body.get("ssh_settings"), dict) else {}
     # A "worker" inbound is a special type: it is addressed to the deployed
     # Cloudflare Worker domain; Railway only controls it and is not in the
     # client traffic path.
@@ -4567,34 +4460,15 @@ async def create_inbound(request: Request, auth=Depends(require_replication_auth
         external_domain = wdom
         sni = wdom
 
-    # SSH is a profile backed by an existing SSH service (sshd). The panel stores
-    # the endpoint/credential metadata and emits a DarkTunnel-compatible profile.
-    if protocol == "ssh":
-        network = "tcp"
-        security = "none"
-        ssh_settings = {
-            "host": str(ssh_settings.get("host") or external_domain or domain or get_host()).strip(),
-            "port": int(ssh_settings.get("port") or body.get("port") or 22),
-            "username": str(ssh_settings.get("username") or "").strip()[:64],
-            "password": str(ssh_settings.get("password") or ""),
-            "mode": str(ssh_settings.get("mode") or "direct").strip().lower(),
-        }
-        domain = ssh_settings["host"]
-        external_domain = ssh_settings["host"]
-        port = ssh_settings["port"]
-        external_port = ssh_settings["port"]
     # Telegram uses the explicit internal listener from telegram_settings.
     if protocol == "telegram":
         port = int(body.get("port") or 0)
         external_port = int(body.get("external_port") or 443)
-    elif protocol == "ssh":
-        port = int(ssh_settings.get("port") or 22)
-        external_port = port
     else:
         port = int(body.get("port") or 443)
         external_port = int(body.get("external_port") or 443)
 
-    fingerprint = normalize_fingerprint(body.get("fingerprint"))
+    fingerprint = str(body.get("fingerprint") or "chrome").strip()
     spoof_ip = str(body.get("spoof_ip") or "").strip()
     reality_settings = body.get("reality_settings", {}) if isinstance(body.get("reality_settings"), dict) else {}
     xhttp_settings = body.get("xhttp_settings", {}) if isinstance(body.get("xhttp_settings"), dict) else {}
@@ -4619,9 +4493,6 @@ async def create_inbound(request: Request, auth=Depends(require_replication_auth
         _validate_listener_port(port)
         if not 1 <= external_port <= 65535:
             raise HTTPException(status_code=400, detail="Telegram External Port must be between 1 and 65535")
-    elif protocol == "ssh":
-        if not 1 <= port <= 65535:
-            raise HTTPException(status_code=400, detail="SSH port must be between 1 and 65535")
     elif protocol == "reality" or security == "reality":
         _validate_listener_port(port)
         if not 1 <= external_port <= 65535:
@@ -4662,7 +4533,7 @@ async def create_inbound(request: Request, auth=Depends(require_replication_auth
             external_domain = domain or CONFIG.get("host", "")
         if network not in ("tcp", "xhttp", "grpc"):
             network = "tcp"
-    elif protocol != "ssh":
+    else:
         # For TLS WS/XHTTP (non-reality, non-worker): external_domain and external_port should be empty
         # The panel domain is used via SETTINGS["domain"] in generate_user_config
         external_domain = ""
@@ -4701,8 +4572,8 @@ async def create_inbound(request: Request, auth=Depends(require_replication_auth
             "ws_settings": ws_settings,
             "grpc_settings": grpc_settings,
             "telegram_settings": telegram_settings,
-            "ssh_settings": ssh_settings,
             "tls_settings": tls_settings,
+            "ssh_settings": ssh_settings,
             "node_ids": [str(x).strip() for x in (body.get("node_ids") or []) if str(x).strip()],
             "enabled_node_ids": [str(x).strip() for x in (body.get("enabled_node_ids") or body.get("node_ids") or []) if str(x).strip()],
             "created_at": datetime.now().isoformat(),
@@ -4839,17 +4710,6 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
             ib["grpc_settings"] = body["grpc_settings"]
         if "telegram_settings" in body and isinstance(body["telegram_settings"], dict):
             ib["telegram_settings"] = body["telegram_settings"]
-        if "ssh_settings" in body and isinstance(body["ssh_settings"], dict):
-            cur_ssh = ib.setdefault("ssh_settings", {})
-            incoming_ssh = body.get("ssh_settings") or {}
-            for key in ("host", "port", "username", "mode"):
-                if key in incoming_ssh:
-                    cur_ssh[key] = incoming_ssh[key]
-            if "password" in incoming_ssh and str(incoming_ssh.get("password") or ""):
-                cur_ssh["password"] = str(incoming_ssh.get("password"))
-            cur_ssh["host"] = str(cur_ssh.get("host") or ib.get("external_domain") or ib.get("domain") or get_host()).strip()
-            try: cur_ssh["port"] = int(cur_ssh.get("port") or 22)
-            except Exception: cur_ssh["port"] = 22
 
         if (ib.get("protocol") or "").lower() == "reality" or (ib.get("security") or "").lower() == "reality":
             rs = ib.setdefault("reality_settings", {})
@@ -4931,10 +4791,6 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
         _validate_listener_port(int(ib.get("port") or 0), exclude_id=inbound_id)
     elif (ib.get("protocol") or "").lower() == "reality" or (ib.get("security") or "").lower() == "reality":
         _validate_listener_port(int(ib.get("port") or 0), exclude_id=inbound_id)
-    if (ib.get("protocol") or "").lower() != "node" and not str(ib.get("sni") or "").strip():
-        fallback_sni = str(ib.get("external_domain") or ib.get("domain") or "").strip()
-        if fallback_sni:
-            ib["sni"] = fallback_sni
 
     await save_state()
     log_activity("inbound", f"اینباند «{ib.get('name', inbound_id)}» ویرایش شد", "info")
@@ -5122,34 +4978,11 @@ async def _upsert_remote_user(body: dict) -> dict:
     status = str(body.get("status") or "active").lower()
     if status not in ("active", "disabled", "expired"):
         status = "active"
-    remote_protocol = str(body.get("protocol") or "vless").lower()
-    if remote_protocol not in USER_PROTOCOLS:
-        remote_protocol = "vless"
-    requested_ids = [str(x).strip() for x in (body.get("inbound_ids") or []) if str(x).strip()]
-    requested_id = str(body.get("inbound_id") or "").strip()
-    if requested_id and requested_id not in requested_ids:
-        requested_ids.insert(0, requested_id)
-    remote_inbound_ids = [iid for iid in requested_ids if iid in INBOUNDS and str((INBOUNDS.get(iid) or {}).get("protocol") or "").lower() == remote_protocol]
-    if not remote_inbound_ids:
-        for iid, rib in INBOUNDS.items():
-            if str(rib.get("protocol") or "").lower() == remote_protocol:
-                remote_inbound_ids = [iid]
-                break
-    if not remote_inbound_ids and default_iid and remote_protocol == "vless":
-        remote_inbound_ids = [default_iid]
-    remote_inbound_id = remote_inbound_ids[0] if remote_inbound_ids else None
-    remote_ib = INBOUNDS.get(remote_inbound_id) if remote_inbound_id else {}
-    path = str(body.get("path") or ((remote_ib.get("ws_settings") or {}).get("path") if remote_ib else "") or f"/ws/{config_uuid}")
+    path = f"/ws/{config_uuid}"
     subscription_uuid = str(body.get("subscription_uuid") or secrets.token_urlsafe(16))
     password = str(body.get("password") or secrets.token_urlsafe(18))
-    trojan_password = str(body.get("trojan_password") or password) if remote_protocol == "trojan" else ""
-    ssh_username = str(body.get("ssh_username") or "").strip()[:64]
-    ssh_password = str(body.get("ssh_password") or "")
     reset_traffic = bool(body.get("reset_traffic"))
     from_node = str(body.get("from_node") or "").strip()
-
-    if remote_protocol in ("vmess", "trojan") and not remote_inbound_id:
-        raise HTTPException(status_code=400, detail=f"Remote node has no {remote_protocol.upper()} inbound")
 
     async with USERS_LOCK:
         target_uid = next((uid for uid, u in USERS.items() if u.get("config_uuid") == config_uuid), None)
@@ -5161,7 +4994,7 @@ async def _upsert_remote_user(body: dict) -> dict:
             **existing,
             "username": username,
             "password_hash": hash_password(password),
-            "protocol": remote_protocol,
+            "protocol": "vless",
             "traffic_limit_bytes": traffic_limit_bytes,
             "traffic_used_bytes": traffic_used,
             "expire_at": expire_at,
@@ -5171,14 +5004,11 @@ async def _upsert_remote_user(body: dict) -> dict:
             "server": existing.get("server") or "remote-node",
             "config_uuid": config_uuid,
             "subscription_uuid": subscription_uuid,
-            "sni": str(body.get("sni") or remote_ib.get("sni") or remote_ib.get("domain") or "").strip(),
-            "trojan_password": trojan_password,
-            "ssh_username": ssh_username,
-            "ssh_password": ssh_password,
+            "sni": "",
             "path": path,
-            "transport_type": str(remote_ib.get("network") or "ws").lower(),
-            "inbound_id": remote_inbound_id or default_iid,
-            "inbound_ids": remote_inbound_ids or ([default_iid] if default_iid else []),
+            "transport_type": "ws",
+            "inbound_id": default_iid,
+            "inbound_ids": [default_iid],
             "node_sync_password": existing.get("node_sync_password") or secrets.token_urlsafe(18),
             "from_node": from_node,
             "synced_at": datetime.now().isoformat(),
@@ -5199,12 +5029,12 @@ async def _upsert_remote_user(body: dict) -> dict:
             "note": f"Remote Node: {from_node or 'unknown'}",
             "is_default": False,
             "sub_id": None,
-            "protocol": remote_protocol if remote_protocol != "vless" else "vless-ws",
+            "protocol": "vless-ws",
             "path": path,
             "user_id": target_uid,
-            "inbound_id": remote_inbound_id or default_iid,
-            "relay_enabled": remote_protocol == "vless" and (remote_inbound_id or default_iid) == default_iid,
-            "relay_inbound_id": default_iid if remote_protocol == "vless" else None,
+            "inbound_id": default_iid,
+            "relay_enabled": True,
+            "relay_inbound_id": default_iid,
         })
         PATH_INDEX[config_uuid] = config_uuid
         PATH_INDEX[path.lstrip("/")] = config_uuid
@@ -5244,8 +5074,6 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
     expire_days = int(body.get("expire_days") or 0)
     protocol = str(body.get("protocol") or "vless").lower()
     trojan_password = str(body.get("trojan_password") or (password if protocol == "trojan" else ""))
-    ssh_username = str(body.get("ssh_username") or "").strip()[:64]
-    ssh_password = str(body.get("ssh_password") or "")
     _cc_raw = body.get("concurrent_connections")
     concurrent_connections = int(_cc_raw) if _cc_raw is not None else 0
     server = (body.get("server") or "IR-Tehran-01").strip()[:40]
@@ -5263,19 +5091,6 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
         inbound_ids.insert(0, inbound_id)
     if inbound_ids:
         inbound_id = inbound_ids[0]
-    # Auto means the existing default inbound. Creating a user must never
-    # silently create another listener.
-    if not inbound_ids:
-        if protocol == "ssh":
-            _ssh_iid = next((iid for iid, ib in INBOUNDS.items() if str((ib or {}).get("protocol") or "").lower() == "ssh"), None)
-            if _ssh_iid:
-                inbound_ids = [_ssh_iid]
-                inbound_id = _ssh_iid
-        else:
-            _default_iid = find_default_tls_ws_inbound_id()
-            if _default_iid:
-                inbound_ids = [_default_iid]
-                inbound_id = _default_iid
     proxy_ip = str(body.get("proxy_ip") or "").strip()
     proxy_ips = [str(x).strip() for x in (body.get("proxy_ips") or []) if str(x).strip()][:3]
     # Cloudflare Worker routing: when enabled + worker connected, the user's
@@ -5301,10 +5116,13 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
     # Sni spoof for v2box: when enabled, TLS WS and Worker configs include
     # snispoofing JSON parameter. Does not apply to Reality/XHTTP Reality.
     sni_spoof_v2box = bool(body.get("sni_spoof_v2box"))
-    dark_tunnel_enabled = bool(body.get("dark_tunnel"))
-    dark_tunnel_type = str(body.get("dark_tunnel_type") or "auto").strip().lower()
-    if dark_tunnel_type not in ("auto", "v2ray", "ssh"):
-        dark_tunnel_type = "auto"
+
+    # Managed protocol defaults: keep the common path one-click and hands-off.
+    if not inbound_id and protocol in ("vmess", "ssh"):
+        preferred = "managed-vmess" if protocol == "vmess" else "managed-ssh"
+        if preferred in INBOUNDS:
+            inbound_id = preferred
+            inbound_ids = [preferred]
 
     # If transport_type not given explicitly, derive it from the primary inbound
     # (so an xhttp inbound produces an xhttp user).
@@ -5319,29 +5137,13 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
     if not transport_type:
         transport_type = "ws"
 
-    if transport_type not in ("ws", "grpc", "tcp", "xhttp", "reality", "ssh"):
-        transport_type = "ssh" if protocol == "ssh" else "ws"
+    if transport_type not in ("ws", "grpc", "tcp", "xhttp", "reality"):
+        transport_type = "ws"
 
     if protocol not in USER_PROTOCOLS:
         raise HTTPException(status_code=400, detail=f"Invalid protocol. Must be one of: {', '.join(USER_PROTOCOLS)}")
-    if protocol == "ssh" and not inbound_id:
-        raise HTTPException(status_code=400, detail="برای SSH ابتدا یک SSH Inbound بسازید")
-    if inbound_id and inbound_id in INBOUNDS:
-        _chosen_ib = INBOUNDS.get(inbound_id) or {}
-        _chosen_proto = str(_chosen_ib.get("protocol") or "").lower()
-        if _chosen_proto not in ("node", protocol, "worker", "telegram"):
-            raise HTTPException(status_code=400, detail=f"Inbound protocol {_chosen_proto.upper()} does not match user protocol {protocol.upper()}")
     if len(username) < 1:
         raise HTTPException(status_code=400, detail="Username is required")
-    if protocol == "ssh" and inbound_id:
-        _sib = INBOUNDS.get(inbound_id) or {}
-        _ss = _sib.get("ssh_settings") or {}
-        if not ssh_username:
-            ssh_username = str(_ss.get("username") or username).strip()[:64]
-        if not ssh_password:
-            ssh_password = str(_ss.get("password") or "")
-        if not ssh_username or not ssh_password:
-            raise HTTPException(status_code=400, detail="SSH username و password الزامی است")
     if len(password) < 4:
         raise HTTPException(status_code=400, detail="Password must be at least 4 characters")
     if concurrent_connections < 0:
@@ -5418,10 +5220,18 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
             # Never allow a custom/legacy path to break the exact default TLS+WS link.
             path = f"/ws/{config_uuid}"
 
+        selected_ssh = (primary_inbound.get("ssh_settings") or {}) if primary_inbound_proto == "ssh" else {}
+        ssh_username = str(body.get("ssh_username") or selected_ssh.get("username") or "").strip()
+        ssh_password = str(body.get("ssh_password") or selected_ssh.get("password") or password or "").strip()
+
         USERS[user_id] = {
             "username": username,
             "password_hash": hash_password(password),
             "protocol": protocol,
+            "ssh_username": ssh_username,
+            "ssh_password": ssh_password,
+            "dark_tunnel_enabled": bool(body.get("dark_tunnel_enabled")),
+            "dark_tunnel_type": str(body.get("dark_tunnel_type") or "auto").strip().lower() if body.get("dark_tunnel_enabled") else "auto",
             "traffic_limit_bytes": traffic_limit_bytes,
             "traffic_used_bytes": 0,
             "expire_at": expire_at,
@@ -5432,8 +5242,6 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
             "config_uuid": config_uuid,
             "subscription_uuid": subscription_uuid,
             "trojan_password": trojan_password,
-            "ssh_username": ssh_username,
-            "ssh_password": ssh_password,
             "sni": sni,
             "proxy_ip": proxy_ip,
             "proxy_ips": proxy_ips,
@@ -5441,8 +5249,6 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
             "custom_ip_type": custom_ip_type,
             "custom_ip_inbounds": custom_ip_inbounds,
             "sni_spoof_v2box": sni_spoof_v2box,
-            "dark_tunnel_enabled": dark_tunnel_enabled,
-            "dark_tunnel_type": dark_tunnel_type,
             "inbound_id": inbound_id,
             "inbound_ids": inbound_ids,
             "path": path,
@@ -5524,50 +5330,20 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
             # Rebuild its secret list and restart the listener now.
             for _tg_iid in [i for i in inbound_ids if (INBOUNDS.get(i, {}).get("protocol") or "").lower() == "telegram"]:
                 asyncio.create_task(_restart_telegram_proxy(_tg_iid))
-    # Reconcile Node selections immediately when this is a Node inbound so the
-    # response can contain the exact config issued by the remote Node.
-    node_sync_result = None
+    # Reconcile the authoritative union of Node selections across all user inbounds.
     if _selected_node_ids_for_user(USERS[user_id]):
-        if inbound_id and is_node_control_inbound(inbound_id, INBOUNDS.get(inbound_id)):
-            node_sync_result = await _sync_user_to_selected_nodes(user_id, dict(USERS[user_id]))
-        else:
-            asyncio.create_task(_sync_user_to_selected_nodes(user_id, dict(USERS[user_id])))
+        asyncio.create_task(_sync_user_to_selected_nodes(user_id, dict(USERS[user_id])))
     host = SETTINGS.get("domain") or get_host()
     asyncio.create_task(_xray_apply())  # refresh Xray clients after user change
-    direct_config = generate_user_config(user_id, USERS[user_id], inbound_id)
-    if node_sync_result and not direct_config:
-        cfgs = node_subscription_configs(USERS[user_id])
-        direct_config = cfgs[0] if cfgs else ""
     return {
         "user_id": user_id,
         **USERS[user_id],
         "password_hash": None,
-        "ssh_password": None,
         "config_url": f"https://{host}/api/users/{user_id}/config",
         "qr_url": f"https://{host}/api/users/{user_id}/qr",
         "subscription_url": f"https://{host}/link/{USERS[user_id].get('config_uuid')}",
-        "config": direct_config,
-        "dark_tunnel": direct_config if dark_tunnel_enabled else "",
-        "node_sync": node_sync_result,
+        "config": generate_user_config(user_id, USERS[user_id], inbound_id),
     }
-
-@app.get("/api/users/{user_id}/dark-tunnel")
-async def get_user_dark_tunnel(user_id: str, _=Depends(require_auth)):
-    """Return a DarkTunnel-compatible import profile.
-
-    DarkTunnel accepts standard VMess/VLESS/Trojan URIs. SSH uses its simple
-    server:port@username:password form. A proprietary encrypted .dark file is
-    not generated because its container format varies by app version.
-    """
-    async with USERS_LOCK:
-        u = dict(USERS.get(user_id) or {})
-    if not u:
-        raise HTTPException(status_code=404, detail="user not found")
-    iid = u.get("inbound_id")
-    cfg = _dark_tunnel_config_for_user(user_id, u, iid)
-    if not cfg:
-        raise HTTPException(status_code=400, detail="DarkTunnel profile is not ready")
-    return {"ok": True, "user_id": user_id, "username": u.get("username"), "protocol": u.get("protocol"), "config": cfg, "format": "uri-or-ssh-text"}
 
 @app.patch("/api/users/{user_id}/toggle")
 async def toggle_user(user_id: str, _=Depends(require_auth)):
@@ -5853,27 +5629,42 @@ async def get_user_config(user_id: str, _=Depends(require_auth)):
         username = u.get("username")
         protocol = u.get("protocol")
     host = SETTINGS.get("domain") or get_host()
-    all_configs = []
-    for iid in (u.get("inbound_ids") or ([u.get("inbound_id")] if u.get("inbound_id") else [])):
-        cfg = generate_user_config(user_id, u, iid)
-        if cfg:
-            ib = INBOUNDS.get(iid) or {}
-            all_configs.append({"inbound_id": iid, "name": ib.get("name") or iid, "protocol": ib.get("protocol") or protocol, "config": cfg})
-    for nid, ncfg in (u.get("node_configs") or {}).items():
-        node = NODES.get(str(nid)) or {}
-        if ncfg:
-            all_configs.append({"inbound_id": f"node:{nid}", "name": node.get("name") or str(nid), "protocol": u.get("protocol") or "", "config": ncfg, "node": True})
     return {
         "user_id": user_id,
         "username": username,
         "protocol": protocol,
         "config": config,
-        "configs": all_configs,
-        "dark_tunnel": config,
         "config_url": f"https://{host}/api/users/{user_id}/config",
         "qr_url": f"https://{host}/api/users/{user_id}/qr",
         "subscription_url": f"https://{host}/link/{u.get('config_uuid')}",
             "subscription_type": "per-user",
+    }
+
+@app.get("/api/users/{user_id}/dark-tunnel")
+async def get_user_dark_tunnel(user_id: str, _=Depends(require_auth)):
+    async with USERS_LOCK:
+        user = USERS.get(user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="user not found")
+        snapshot = dict(user)
+    inbound_ids = [str(x) for x in (snapshot.get("inbound_ids") or []) if str(x)]
+    if not inbound_ids and snapshot.get("inbound_id"):
+        inbound_ids = [str(snapshot["inbound_id"])]
+    configs = []
+    for iid in inbound_ids:
+        cfg = generate_user_config(user_id, snapshot, iid)
+        if cfg:
+            configs.append({"inbound_id": iid, "config": cfg})
+    if not configs:
+        cfg = generate_user_config(user_id, snapshot, snapshot.get("inbound_id"))
+        if cfg:
+            configs.append({"inbound_id": snapshot.get("inbound_id"), "config": cfg})
+    return {
+        "ok": True,
+        "enabled": bool(snapshot.get("dark_tunnel_enabled")),
+        "type": snapshot.get("dark_tunnel_type") or "auto",
+        "configs": configs,
+        "config": configs[0]["config"] if configs else "",
     }
 
 @app.get("/api/users/{user_id}/qr")
@@ -6143,8 +5934,6 @@ if not PARS_API_KEY.startswith("psp_"):
 
 async def _pars_v1_auth(request: Request):
     key = str(request.headers.get("x-pars-key") or "").strip()
-    if not key:
-        key = str(request.headers.get("x-api-key") or "").strip()
     authz = str(request.headers.get("authorization") or "")
     if authz.lower().startswith("bearer "):
         key = authz[7:].strip()
@@ -6187,10 +5976,8 @@ async def pars_create_user(request: Request):
 
 @app.get("/api/pars/v1/inbounds")
 async def pars_inbounds(request: Request):
-    auth = await _pars_v1_auth(request)
-    # Remote Nodes receive a sanitized transport catalog. Browser sessions may
-    # use the normal local listing.
-    return await list_inbounds({"kind":"api_key"} if auth.get("kind") == "api_key" else {"kind":"session"})
+    await _pars_v1_auth(request)
+    return await list_inbounds({"kind":"session"})
 
 @app.post("/api/pars/v1/inbounds")
 async def pars_create_inbound(request: Request):
@@ -6228,6 +6015,11 @@ async def pars_connect_node(request: Request):
 async def add_node_from_pars(body: dict):
     payload = dict(body)
     payload["api_key"] = payload.get("api_key") or payload.get("pars_api_key")
+    # Existing node storage currently uses spdr_ credentials. Accept psp_ at the
+    # Pars Space boundary and keep a local compatibility credential internally.
+    key = str(payload.get("api_key") or "")
+    if key.startswith("psp_"):
+        payload["api_key"] = "spdr_" + secrets.token_urlsafe(24)
     class _Req:
         async def json(self): return payload
     return await add_node(_Req(), None)
@@ -6508,7 +6300,7 @@ async def update_settings(request: Request, _=Depends(require_auth)):
     allowed_keys = {
         "websocket_mode", "xhttp_mode", "default_connection_mode",
         "max_ip_per_user", "bandwidth_limit_mbps", "live_monitoring",
-        "auto_ip_rotation", "server_ip", "country", "country_code", "country_flag", "panel_alias", "config_address_mode",
+        "auto_ip_rotation", "server_ip", "country", "country_code", "country_flag", "panel_alias",
     }
     async with SETTINGS_LOCK:
         for k, v in body.items():
@@ -6517,19 +6309,9 @@ async def update_settings(request: Request, _=Depends(require_auth)):
                     SETTINGS[k] = int(v)
                 elif k == "bandwidth_limit_mbps" and isinstance(v, (int, float)):
                     SETTINGS[k] = int(v)
-                elif k == "config_address_mode" and isinstance(v, str):
-                    if v in ("hostname", "panel_ip"):
-                        SETTINGS[k] = v
                 elif k == "default_connection_mode" and isinstance(v, str):
                     if v in ("ws", "xhttp", "tcp"):
                         SETTINGS[k] = v
-                elif k == "config_address_mode" and isinstance(v, str):
-                    if v in ("hostname", "panel_ip"):
-                        SETTINGS[k] = v
-                elif k == "panel_alias" and isinstance(v, str):
-                    SETTINGS[k] = v.strip()[:80] or "Pars Space"
-                elif k in ("server_ip", "country", "country_code", "country_flag") and isinstance(v, str):
-                    SETTINGS[k] = v.strip()[:120]
                 elif isinstance(v, bool):
                     SETTINGS[k] = v
     asyncio.create_task(save_state())
@@ -6741,11 +6523,9 @@ def _get_panel_api_key_sync() -> str:
 
 def _normalize_node_key(value: str) -> str:
     key = str(value or "").strip()
-    if not key:
-        return ""
-    if key.startswith(("spdr_", "psp_")):
-        return key
-    return "spdr_" + key
+    if key and not key.startswith("spdr_"):
+        return "spdr_" + key
+    return key
 
 
 def _normalize_node_base_url(domain: str) -> str:
@@ -6842,8 +6622,6 @@ def _node_public_view(node_id: str, node: dict) -> dict:
         "enabled_inbound_count": enabled_count,
         "synced_user_count": synced_users,
         "remote_users": int(node.get("remote_users") or 0),
-        "remote_inbounds": list(node.get("remote_inbounds") or []),
-        "remote_inbound_map": dict(node.get("remote_inbound_map") or {}),
         # Legacy aliases kept for the existing frontend and old saved state.
         "remote_host": node.get("remote_host", ""),
         "remote_ip": public_ip,
@@ -6894,8 +6672,6 @@ async def _probe_node(node: dict) -> dict:
         "remote_flag": "🌐",
         "remote_users": 0,
         "remote_tls_ws": {},
-        "remote_inbounds": [],
-        "remote_inbound_map": {},
         "last_error": "",
         "error": "",
     }
@@ -6910,12 +6686,7 @@ async def _probe_node(node: dict) -> dict:
             ac = httpx.AsyncClient(timeout=httpx.Timeout(12.0, connect=6.0), follow_redirects=True)
             own_client = True
         try:
-            headers = {"Accept": "application/json"}
-            if key.startswith("psp_"):
-                headers["X-Pars-Key"] = key
-            else:
-                headers["X-API-Key"] = key
-            r = await ac.get(f"{base}/api/server-info", headers=headers)
+            r = await ac.get(f"{base}/api/server-info", headers={"X-API-Key": key, "Accept": "application/json"})
         finally:
             if own_client:
                 await ac.aclose()
@@ -6954,26 +6725,6 @@ async def _probe_node(node: dict) -> dict:
             out["status"] = out["last_status"] = "error"
             out["last_error"] = out["error"] = "managed inbound is not TLS+WS"
             return out
-        remote_inbounds = []
-        remote_inbound_map = {}
-        try:
-            ih = {"Accept": "application/json"}
-            if key.startswith("psp_"):
-                ih["X-Pars-Key"] = key
-            else:
-                ih["X-API-Key"] = key
-            ir = await ac.get(f"{base}/api/pars/v1/inbounds", headers=ih)
-            if ir.status_code == 200:
-                payload = ir.json() or {}
-                for rib in payload.get("inbounds") or []:
-                    if not isinstance(rib, dict):
-                        continue
-                    proto = str(rib.get("protocol") or "").lower()
-                    if proto in ("vless", "vmess", "trojan", "ssh", "reality"):
-                        remote_inbounds.append(rib)
-                        remote_inbound_map.setdefault(proto, rib.get("inbound_id"))
-        except Exception as exc:
-            logger.warning("Node inbound discovery failed: %s", exc)
         out.update({
             "status": "online", "last_status": "online",
             "last_seen": datetime.now().isoformat(),
@@ -6986,8 +6737,6 @@ async def _probe_node(node: dict) -> dict:
             "remote_flag": str(info.get("country_flag") or "🌐"),
             "remote_users": int(info.get("users") or 0),
             "remote_tls_ws": dict(info.get("default_tls_ws") or {}),
-            "remote_inbounds": remote_inbounds,
-            "remote_inbound_map": remote_inbound_map,
             "last_error": "", "error": "",
         })
     except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.PoolTimeout, TimeoutError) as exc:
@@ -7014,12 +6763,7 @@ async def _remote_request(node: dict, method: str, path: str, json_body=None, ti
         ac = httpx.AsyncClient(timeout=httpx.Timeout(timeout, connect=min(8.0, timeout)), follow_redirects=True)
         own_client = True
     try:
-        headers = {"Accept": "application/json"}
-        if key.startswith("psp_"):
-            headers["X-Pars-Key"] = key
-        else:
-            headers["X-API-Key"] = key
-        return await ac.request(method, f"{base}{path}", json=json_body, headers=headers)
+        return await ac.request(method, f"{base}{path}", json=json_body, headers={"X-API-Key": key, "Accept": "application/json"})
     finally:
         if own_client:
             await ac.aclose()
@@ -7119,8 +6863,8 @@ async def add_node(request: Request, _=Depends(require_auth)):
     body = await request.json()
     domain = _normalize_node_base_url(body.get("domain") or body.get("url") or "")
     raw_api_key = str(body.get("api_key") or body.get("spi_key") or "").strip()
-    if not raw_api_key or not raw_api_key.startswith(("spdr_", "psp_")):
-        raise HTTPException(status_code=400, detail="API Key باید با spdr_ یا psp_ شروع شود")
+    if not raw_api_key or not raw_api_key.startswith("spdr_"):
+        raise HTTPException(status_code=400, detail="SPI Key باید با spdr_ شروع شود")
     api_key = _normalize_node_key(raw_api_key)
     name = str(body.get("name") or "").strip()[:60]
     if not domain:
@@ -8582,13 +8326,8 @@ async def _sync_user_to_selected_nodes(user_id: str, user: dict, selected_overri
                 "expire_days": _expire_days_from_user(user),
                 "concurrent_connections": int(user.get("concurrent_connections") or 0),
                 "status": user.get("status", "active"),
-                "inbound_id": (node.get("remote_inbound_map") or {}).get(str(user.get("protocol") or "vless")) or inbound_default,
-                "inbound_ids": [(node.get("remote_inbound_map") or {}).get(str(user.get("protocol") or "vless")) or inbound_default] if ((node.get("remote_inbound_map") or {}).get(str(user.get("protocol") or "vless")) or inbound_default) else [],
-                "protocol": str(user.get("protocol") or "vless").lower(),
-                "trojan_password": str(user.get("trojan_password") or user.get("password") or user.get("config_uuid") or "") if str(user.get("protocol") or "").lower() == "trojan" else "",
-                "ssh_username": str(user.get("ssh_username") or ""),
-                "ssh_password": str(user.get("ssh_password") or "") if str(user.get("protocol") or "").lower() == "ssh" else "",
-                "sni": str(user.get("sni") or ""),
+                "inbound_id": inbound_default,
+                "inbound_ids": [inbound_default] if inbound_default else [],
                 "subscription_uuid": user.get("subscription_uuid") or "",
                 "path": f"/ws/{cuuid}",
                 "from_node": origin,
@@ -9889,12 +9628,7 @@ def _add_inbound_to_xray(cfg: dict, ib: dict, iid: str, host: str):
     security = ib.get("security", "tls")
     is_reality = protocol == "reality" or security == "reality"
     if not is_reality and protocol not in ("vmess", "trojan"):
-        return
-    if not is_reality and security == "tls":
-        cert_file = os.environ.get("XRAY_CERT_FILE", "/etc/xray/cert.pem")
-        key_file = os.environ.get("XRAY_KEY_FILE", "/etc/xray/key.pem")
-        if not (os.path.exists(cert_file) and os.path.exists(key_file)):
-            return
+        return  # TLS WS/XHTTP + worker inbounds are handled by their relays
     # A reality inbound without a configured port is not ready yet — skip it
     # so Xray doesn't start on a wrong/default port.
     _raw_port = str(ib.get("port") or "").strip()
@@ -9906,7 +9640,7 @@ def _add_inbound_to_xray(cfg: dict, ib: dict, iid: str, host: str):
     network = ib.get("network", "ws")
     domain = ib.get("domain", host)
     sni_val = ib.get("sni", domain)
-    fingerprint = normalize_fingerprint(ib.get("fingerprint"))
+    fingerprint = ib.get("fingerprint", "chrome")
     rs = ib.get("reality_settings", {}) if (protocol == "reality" or security == "reality") else {}
     ws_settings = ib.get("ws_settings", {})
     xh_settings = ib.get("xhttp_settings", {})
