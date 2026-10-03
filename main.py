@@ -1060,7 +1060,42 @@ async def startup():
             ib["external_domain"] = ""
             ib["external_port"] = ""
             ib["sni"] = str(ib.get("sni") or _safe_host(SETTINGS.get("domain"), get_host()) or "").strip()
+            ib["managed_default"] = True
             ib.setdefault("ws_settings", {"path": "/ws/{uuid}"})
+        # Managed VMess and SSH profiles are created once with sane defaults.
+        # They are intentionally not rewritten on every boot, so an administrator
+        # can change them later without the panel fighting the configuration.
+        if not any(str(x.get("name") or "") == DEFAULT_VMESS_WS_INBOUND_NAME for x in INBOUNDS.values()):
+            vmid = generate_short_id()
+            INBOUNDS[vmid] = {
+                "name": DEFAULT_VMESS_WS_INBOUND_NAME, "protocol": "vmess", "inbound_type": "transport",
+                "port": 8443, "network": "ws", "security": "tls",
+                "domain": _safe_host(SETTINGS.get("domain"), get_host()),
+                "external_domain": "", "external_port": "",
+                "sni": _safe_host(SETTINGS.get("domain"), get_host()),
+                "fingerprint": "chrome", "reality_settings": {}, "xhttp_settings": {},
+                "ws_settings": {"path": "/vmess", "host": _safe_host(SETTINGS.get("domain"), get_host())},
+                "grpc_settings": {}, "tls_settings": {}, "created_at": datetime.now().isoformat(),
+                "managed_default": True,
+            }
+            log_activity("inbound", f"اینباند {DEFAULT_VMESS_WS_INBOUND_NAME} ساخته شد", "ok")
+        if not any(str(x.get("name") or "") == DEFAULT_SSH_INBOUND_NAME for x in INBOUNDS.values()):
+            shost = str(os.environ.get("PARS_SSH_HOST") or _safe_host(SETTINGS.get("domain"), get_host()) or "").strip()
+            try: sport = max(1, min(65535, int(os.environ.get("PARS_SSH_PORT", "22"))))
+            except Exception: sport = 22
+            INBOUNDS[generate_short_id()] = {
+                "name": DEFAULT_SSH_INBOUND_NAME, "protocol": "ssh", "inbound_type": "profile",
+                "port": sport, "network": "tcp", "security": "none", "domain": shost,
+                "external_domain": shost, "external_port": sport, "sni": "",
+                "fingerprint": "chrome", "reality_settings": {}, "xhttp_settings": {},
+                "ws_settings": {}, "grpc_settings": {}, "tls_settings": {},
+                "ssh_settings": {"host": shost, "port": sport, "username": str(os.environ.get("PARS_SSH_USER") or "").strip(),
+                                  "password": str(os.environ.get("PARS_SSH_PASSWORD") or ""), "mode": "direct"},
+                "created_at": datetime.now().isoformat(), "managed_default": True,
+            }
+            log_activity("inbound", f"اینباند {DEFAULT_SSH_INBOUND_NAME} ساخته شد", "ok")
+        asyncio.create_task(save_state())
+
         # Auto-create / migrate the system Node selector inbound. It is NOT an
         # Xray listener: it only stores the Node relationship.
         node_selector = None
@@ -2106,6 +2141,9 @@ def _client_public_domain() -> str:
 
 
 DEFAULT_TLS_WS_INBOUND_NAME = "پیش‌فرض TLS + WS"
+DEFAULT_VMESS_WS_INBOUND_NAME = "VMess · WS + TLS"
+DEFAULT_SSH_INBOUND_NAME = "SSH · Direct Profile"
+
 XRAY_FINGERPRINTS = ("chrome", "firefox", "safari", "ios", "android", "edge", "360", "qq", "random", "randomized")
 
 def normalize_fingerprint(value: str | None) -> str:
@@ -5264,6 +5302,9 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
     # snispoofing JSON parameter. Does not apply to Reality/XHTTP Reality.
     sni_spoof_v2box = bool(body.get("sni_spoof_v2box"))
     dark_tunnel_enabled = bool(body.get("dark_tunnel"))
+    dark_tunnel_type = str(body.get("dark_tunnel_type") or "auto").strip().lower()
+    if dark_tunnel_type not in ("auto", "v2ray", "ssh"):
+        dark_tunnel_type = "auto"
 
     # If transport_type not given explicitly, derive it from the primary inbound
     # (so an xhttp inbound produces an xhttp user).
@@ -5401,6 +5442,7 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
             "custom_ip_inbounds": custom_ip_inbounds,
             "sni_spoof_v2box": sni_spoof_v2box,
             "dark_tunnel_enabled": dark_tunnel_enabled,
+            "dark_tunnel_type": dark_tunnel_type,
             "inbound_id": inbound_id,
             "inbound_ids": inbound_ids,
             "path": path,
