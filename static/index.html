@@ -62,52 +62,54 @@ html[dir="ltr"] .close{float:right}html[dir="rtl"] .close{float:left}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
 .traffic-toolbar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.traffic-toolbar select{width:auto;min-width:130px}.traffic-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:10px}.miniStat{padding:12px;border:1px solid var(--line);border-radius:15px;background:var(--soft)}.miniStat b{display:block;font-size:18px;margin-top:3px}.speedMeter{height:18px;border-radius:999px;background:var(--soft);border:1px solid var(--line);overflow:hidden;margin-top:10px}.speedFill{height:100%;width:0;background:linear-gradient(90deg,#7c3aed,#2563eb,#22c55e);transition:width .7s cubic-bezier(.2,.8,.2,1)}.speedValue{font-size:38px;font-weight:900;letter-spacing:-.06em}.configBox{position:relative}.configBox .output{max-height:230px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}.configActions{display:flex;gap:7px;justify-content:flex-end;margin-top:8px}.loadingScreen{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:var(--bg);transition:opacity .5s ease,visibility .5s ease}.loadingScreen.hide{opacity:0;visibility:hidden;pointer-events:none}.loaderCard{width:min(360px,86vw);padding:28px;border:1px solid var(--line);background:var(--surface);backdrop-filter:blur(28px);border-radius:26px;text-align:center;box-shadow:var(--shadow)}.loaderRing{width:48px;height:48px;border:3px solid var(--line);border-top-color:var(--text);border-radius:50%;margin:0 auto 14px;animation:spinLoader .8s linear infinite}@keyframes spinLoader{to{transform:rotate(360deg)}}.loaderBar{height:5px;background:var(--soft);border-radius:99px;overflow:hidden;margin-top:16px}.loaderBar i{display:block;height:100%;width:45%;background:var(--accent);border-radius:99px;animation:loadBar 1.25s ease-in-out infinite}@keyframes loadBar{0%{transform:translateX(-120%)}100%{transform:translateX(280%)}}
 @media(max-width:600px){.traffic-meta{grid-template-columns:1fr 1fr}.traffic-toolbar select{width:100%}.speedValue{font-size:32px}.card:hover{transform:none}.btn:hover,.action:hover{transform:none}.output{font-size:11px}}
-</style>
 
-<style id="pars-space-v7-modern-ui">
+/* PARS SPACE // BLACK-GOLD GLASS SYSTEM */
 :root{
- --ps-accent:#e84b68;--ps-accent2:#ff8a9b;--ps-bg:#080a0f;--ps-card:rgba(20,22,29,.78);
- --ps-line:rgba(255,255,255,.085);--ps-shadow:0 24px 80px rgba(0,0,0,.28);
+ --bg:#050505;--surface:rgba(22,22,22,.60);--surface2:rgba(12,12,12,.82);--text:#fff;--muted:#a6a6a6;
+ --line:rgba(255,255,255,.10);--soft:rgba(255,255,255,.055);--accent:#d9b45a;--accent2:#fff;--accentText:#090909;
+ --gold:#e0bb62;--gold2:#fff2b2;--shadow:0 28px 100px rgba(0,0,0,.48);--radius:28px;
 }
-html,body{scroll-behavior:smooth}
-body{background:
- radial-gradient(900px 500px at 80% -10%,rgba(232,75,104,.13),transparent 65%),
- radial-gradient(700px 500px at -10% 100%,rgba(112,93,180,.08),transparent 60%),var(--ps-bg)!important}
-.card,.modalBox,.top,.settingsBox,.output,.configBox,.list .row{
- border:1px solid var(--ps-line)!important;
- box-shadow:var(--ps-shadow),inset 0 1px rgba(255,255,255,.045)!important;
- backdrop-filter:blur(24px) saturate(135%)!important;-webkit-backdrop-filter:blur(24px) saturate(135%)!important;
-}
-.card{border-radius:24px!important;background:linear-gradient(145deg,rgba(24,26,34,.88),rgba(13,15,21,.82))!important}
-.head h2{letter-spacing:-.025em}
-.btn,.action,.nav button,.foldToggle,.close{border-radius:15px!important;transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s,background .22s,border-color .22s!important}
-.btn:hover,.action:hover{transform:translateY(-2px);box-shadow:0 12px 35px rgba(0,0,0,.18)}
-.btn:active,.action:active{transform:scale(.97)}
-.field input,.field select,.field textarea{border-radius:15px!important;min-height:46px;border-color:rgba(255,255,255,.09)!important;transition:.2s!important}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:rgba(232,75,104,.65)!important;box-shadow:0 0 0 4px rgba(232,75,104,.09)!important}
-.modal{backdrop-filter:blur(10px)!important;background:rgba(3,5,9,.62)!important}
-.modalBox{border-radius:28px!important;background:linear-gradient(145deg,rgba(24,26,34,.96),rgba(10,12,17,.96))!important;animation:psModalIn .32s cubic-bezier(.16,1,.3,1)}
-@keyframes psModalIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
-.foldToggle{width:100%;display:flex;justify-content:space-between;align-items:center;padding:15px 17px!important;background:linear-gradient(135deg,rgba(255,255,255,.055),rgba(255,255,255,.025))!important;border:1px solid var(--ps-line)!important}
-.foldBody{overflow:hidden;max-height:0;opacity:0;transform:translateY(-6px);transition:max-height .38s cubic-bezier(.2,.8,.2,1),opacity .25s,transform .38s}
-.foldBody.open{max-height:1800px;opacity:1;transform:none}
-.protocol-default-banner,.default-note{padding:14px 16px;border:1px solid rgba(232,75,104,.18);border-radius:17px;background:linear-gradient(135deg,rgba(232,75,104,.09),rgba(255,255,255,.025));grid-column:1/-1}
-.protocol-default-banner span{display:block;color:var(--muted);font-size:12px;margin-top:4px}
-.dark-tunnel-card{padding:15px!important;border:1px solid rgba(232,75,104,.16)!important;border-radius:20px!important;background:linear-gradient(145deg,rgba(232,75,104,.08),rgba(255,255,255,.025))!important}
-.dt-row{display:flex;align-items:center;justify-content:space-between;gap:15px}.dt-row small{display:block;color:var(--muted);margin-top:4px}
-.ios-switch{position:relative;width:54px;height:32px;flex:0 0 54px;display:block}.ios-switch input{position:absolute;opacity:0;width:0;height:0}.ios-switch span{position:absolute;inset:0;border-radius:999px;background:#3b3e46;border:1px solid rgba(255,255,255,.12);transition:.28s cubic-bezier(.2,.8,.2,1);box-shadow:inset 0 2px 5px rgba(0,0,0,.25)}
-.ios-switch span:before{content:"";position:absolute;width:26px;height:26px;top:2px;left:2px;border-radius:50%;background:#fff;box-shadow:0 3px 9px rgba(0,0,0,.35);transition:.28s cubic-bezier(.2,.8,.2,1)}
-.ios-switch input:checked+span{background:linear-gradient(135deg,#ff7188,#e84b68);box-shadow:0 5px 18px rgba(232,75,104,.25),inset 0 1px rgba(255,255,255,.2)}
-.ios-switch input:checked+span:before{transform:translateX(22px)}
-.dt-types{display:flex;gap:7px;margin-top:12px;transition:.25s}.dt-types.disabled{opacity:.4;pointer-events:none}
-.dt-type{flex:1;border:1px solid var(--ps-line);background:rgba(255,255,255,.035);color:var(--muted);border-radius:12px;padding:10px 8px;cursor:pointer;transition:.2s}
-.dt-type.active{background:rgba(232,75,104,.14);color:#fff;border-color:rgba(232,75,104,.4)}
-@media(max-width:720px){
- .card{border-radius:19px!important}.modalBox{width:calc(100vw - 20px)!important;max-height:92vh;overflow:auto;border-radius:24px!important}
- .head{gap:10px}.form{grid-template-columns:1fr!important}.field.full{grid-column:1}
- .tableWrap{margin-inline:-5px}.btn{min-height:44px}.dt-type{font-size:11px}
-}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition-duration:.01ms!important}}
+[data-theme=light]{--bg:#f4f4f2;--surface:rgba(255,255,255,.66);--surface2:rgba(255,255,255,.88);--text:#0b0b0b;--muted:#666;--line:rgba(0,0,0,.10);--soft:rgba(0,0,0,.045);--accent:#b98b28;--accent2:#111;--accentText:#fff;--shadow:0 25px 70px rgba(0,0,0,.12)}
+html,body{background:radial-gradient(circle at 85% 8%,rgba(224,187,98,.11),transparent 28%),radial-gradient(circle at 5% 85%,rgba(255,255,255,.055),transparent 30%),var(--bg)}
+body{font-feature-settings:"ss01" 1;}
+.ambient{background:radial-gradient(circle at 80% 15%,rgba(224,187,98,.10),transparent 30%),radial-gradient(circle at 12% 85%,rgba(255,255,255,.045),transparent 32%);}
+.orb{background:linear-gradient(145deg,rgba(255,255,255,.12),rgba(224,187,98,.045) 42%,rgba(255,255,255,.01));border-color:rgba(224,187,98,.16);box-shadow:inset -30px -30px 80px rgba(0,0,0,.28),inset 20px 20px 60px rgba(255,255,255,.05),0 0 110px rgba(224,187,98,.08);}
+.top{background:linear-gradient(135deg,rgba(20,20,20,.80),rgba(10,10,10,.55));border:1px solid rgba(255,255,255,.10);box-shadow:0 18px 70px rgba(0,0,0,.35),inset 0 1px rgba(255,255,255,.10);backdrop-filter:blur(26px) saturate(140%);-webkit-backdrop-filter:blur(26px) saturate(140%);}
+.logo{color:var(--gold);text-shadow:0 0 22px rgba(224,187,98,.25)}
+.nav button{border:1px solid transparent;color:var(--muted);border-radius:15px;transition:.22s ease;}
+.nav button:hover{color:var(--text);background:rgba(255,255,255,.055);transform:translateY(-1px)}
+.nav button.active{color:#080808;background:linear-gradient(135deg,var(--gold2),var(--gold));box-shadow:0 8px 25px rgba(224,187,98,.20),inset 0 1px rgba(255,255,255,.75);}
+.card{position:relative;overflow:hidden;background:linear-gradient(145deg,rgba(255,255,255,.075),rgba(255,255,255,.025) 48%,rgba(224,187,98,.035));border:1px solid rgba(255,255,255,.105);box-shadow:var(--shadow),inset 0 1px rgba(255,255,255,.12),inset 0 -1px rgba(0,0,0,.32);backdrop-filter:blur(28px) saturate(150%);-webkit-backdrop-filter:blur(28px) saturate(150%);transform:translateZ(0);}
+.card:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(120deg,rgba(255,255,255,.10),transparent 24%,transparent 68%,rgba(224,187,98,.05));opacity:.75}
+.cardPad,.heroMain,.heroSide,.stat{border-radius:30px}
+.stat{transition:transform .25s ease,box-shadow .25s ease;border-color:rgba(224,187,98,.10)}
+.stat:hover,.action:hover,.row:hover{transform:translateY(-3px);box-shadow:0 22px 60px rgba(0,0,0,.34),inset 0 1px rgba(255,255,255,.12)}
+.heroMain{background:radial-gradient(circle at 80% 15%,rgba(224,187,98,.16),transparent 35%),linear-gradient(145deg,rgba(255,255,255,.09),rgba(255,255,255,.025));}
+.heroMain h1{letter-spacing:-.055em;text-shadow:0 10px 40px rgba(0,0,0,.45)}
+.big{color:var(--gold2);text-shadow:0 0 35px rgba(224,187,98,.20)}
+.btn{border-color:rgba(255,255,255,.12);background:rgba(255,255,255,.055);color:var(--text);box-shadow:inset 0 1px rgba(255,255,255,.10),0 10px 30px rgba(0,0,0,.18);transition:.2s ease}
+.btn:hover{border-color:rgba(224,187,98,.35);transform:translateY(-1px);box-shadow:0 15px 38px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.16)}
+.btn.dark{color:#080808;background:linear-gradient(135deg,var(--gold2),var(--gold));border-color:rgba(255,242,178,.65);box-shadow:0 12px 35px rgba(224,187,98,.20),inset 0 1px #fff}
+input,select,textarea{background:rgba(0,0,0,.24)!important;border:1px solid rgba(255,255,255,.105)!important;color:var(--text)!important;border-radius:16px!important;box-shadow:inset 0 1px rgba(255,255,255,.055),0 8px 24px rgba(0,0,0,.12);outline:none;transition:.18s ease}
+[data-theme=light] input,[data-theme=light] select,[data-theme=light] textarea{background:rgba(255,255,255,.62)!important}
+input:focus,select:focus,textarea:focus{border-color:rgba(224,187,98,.72)!important;box-shadow:0 0 0 3px rgba(224,187,98,.10),inset 0 1px rgba(255,255,255,.10)}
+.pill{border-color:rgba(224,187,98,.20);background:rgba(224,187,98,.08);color:var(--gold2)}
+.tableWrap{border-radius:24px;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.14);overflow:auto}
+.table th{color:var(--gold2);font-weight:650}.table td{border-color:rgba(255,255,255,.065)!important}
+.action{border:1px solid rgba(255,255,255,.09)!important;background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(255,255,255,.025))!important;box-shadow:inset 0 1px rgba(255,255,255,.10),0 16px 45px rgba(0,0,0,.18);border-radius:22px!important;transition:.22s ease}
+.modal{background:rgba(0,0,0,.62);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.modalBox{background:linear-gradient(145deg,rgba(24,24,24,.92),rgba(10,10,10,.88));border:1px solid rgba(255,255,255,.12);box-shadow:0 40px 120px rgba(0,0,0,.62),inset 0 1px rgba(255,255,255,.12),0 0 80px rgba(224,187,98,.05);border-radius:32px;backdrop-filter:blur(35px) saturate(150%);-webkit-backdrop-filter:blur(35px) saturate(150%)}
+.close{background:rgba(255,255,255,.07)!important;border:1px solid rgba(255,255,255,.10)!important;color:var(--text)!important;border-radius:13px!important;transition:.2s}.close:hover{background:rgba(224,187,98,.18)!important;color:var(--gold2)!important}
+.foldToggle{background:linear-gradient(145deg,rgba(255,255,255,.075),rgba(255,255,255,.025));border:1px solid rgba(255,255,255,.10);border-radius:18px;color:var(--text);box-shadow:inset 0 1px rgba(255,255,255,.08)}
+.output,.configBox{background:rgba(0,0,0,.30)!important;border:1px solid rgba(224,187,98,.10)!important;border-radius:20px!important}
+#clientBuilderModal .modalBox,#inboundModal .modalBox{max-width:980px}
+.sectionHero{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:6px 2px 18px}.sectionHero .heroIcon{width:58px;height:58px;border-radius:19px;display:grid;place-items:center;color:#080808;background:linear-gradient(145deg,var(--gold2),var(--gold));box-shadow:0 18px 40px rgba(224,187,98,.20),inset 0 1px #fff;font-size:24px;font-weight:900}
+.glassGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.glassChoice{cursor:pointer;border:1px solid rgba(255,255,255,.10);border-radius:24px;padding:18px;background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(255,255,255,.025));box-shadow:inset 0 1px rgba(255,255,255,.08),0 16px 45px rgba(0,0,0,.18);transition:.2s ease}.glassChoice:hover{transform:translateY(-3px);border-color:rgba(224,187,98,.35)}.glassChoice.active{border-color:rgba(224,187,98,.75);box-shadow:0 0 0 2px rgba(224,187,98,.10),0 22px 55px rgba(224,187,98,.10),inset 0 1px #fff2b2}.glassChoice b{display:block;margin-bottom:5px}.glassChoice span{color:var(--muted);font-size:12px}
+.switch{appearance:none!important;width:54px!important;height:30px!important;border-radius:999px!important;padding:0!important;cursor:pointer;background:rgba(255,255,255,.13)!important;position:relative;border:1px solid rgba(255,255,255,.14)!important}.switch:after{content:"";position:absolute;width:24px;height:24px;top:2px;left:2px;border-radius:50%;background:#fff;box-shadow:0 3px 10px rgba(0,0,0,.35);transition:.2s}.switch:checked{background:linear-gradient(135deg,var(--gold2),var(--gold))!important}.switch:checked:after{left:26px;background:#090909}
+.advancedGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.advancedBox{padding:15px;border-radius:22px;background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.07)}
+@media(max-width:900px){.glassGrid{grid-template-columns:1fr 1fr}.advancedGrid{grid-template-columns:1fr}.app{padding:10px}.top{top:7px}.nav{overflow-x:auto;scrollbar-width:none}.nav button{white-space:nowrap}.hero{grid-template-columns:1fr!important}.cols,.split{grid-template-columns:1fr!important}}
+@media(max-width:620px){.glassGrid{grid-template-columns:1fr}.modalBox{width:calc(100vw - 16px)!important;max-height:92vh!important;padding:17px!important;border-radius:25px}.form{grid-template-columns:1fr!important}.field.full{grid-column:auto!important}.sectionHero{align-items:flex-start}.table{min-width:680px}.btn{min-height:42px}.cardPad{padding:16px!important}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.card:hover,.action:hover,.row:hover{transform:none!important}}
 </style>
 </head>
 <body>
@@ -120,6 +122,7 @@ body{background:
   <button class="active" data-view="overview" data-i18n="overview">Overview</button>
   <button data-view="clients" data-i18n="clients">Users & Config</button>
   <button data-view="inbounds" data-i18n="inbounds">Inbounds</button>
+  <button data-view="subs" data-i18n="subs">Subscriptions</button>
   <button data-view="nodes" data-i18n="nodes">Nodes</button>
   <button data-view="scanner" data-i18n="scanner">Scanner</button>
   <button data-view="configTest" data-i18n="configTest">Config Test</button>
@@ -157,6 +160,7 @@ body{background:
 </section>
 
 <section class="view" id="clients">
+ <div class="sectionHero"><div><span class="eyebrow">PARS SPACE · USER CORE</span><h1 style="margin:6px 0 0">کاربرها و کانفیگ‌ها</h1><p class="muted">یک کاربر، چند اینباند، یک اشتراک. محدودیت‌های خالی یعنی نامحدود.</p></div><div class="heroIcon">◎</div></div>
  <div class="card cardPad">
   <div class="head"><div><h2 data-i18n="clientList">Users</h2><p data-i18n="clientListDesc">فقط کاربران در حالت عادی نمایش داده می‌شوند. ساخت کاربر و کانفیگ از یک فرم انجام می‌شود.</p></div><div class="toolbar"><button class="btn" onclick="loadClients()">↻</button><button class="btn dark" onclick="openClientBuilder()" data-i18n="createUserConfig">＋ ایجاد کاربر + کانفیگ</button></div></div>
   <div class="tableWrap"><table class="table"><thead><tr><th>User</th><th>Protocol</th><th>Traffic</th><th>Status</th><th>Actions</th></tr></thead><tbody id="usersBody"></tbody></table></div>
@@ -164,7 +168,13 @@ body{background:
 </section>
 
 <section class="view" id="inbounds">
+ <div class="sectionHero"><div><span class="eyebrow">PARS SPACE · TRANSPORT CORE</span><h1 style="margin:6px 0 0">اینباندها</h1><p class="muted">هر پروتکل فقط تنظیمات مربوط به خودش را نشان می‌دهد. کمتر گیج شو، انسان.</p></div><div class="heroIcon">◈</div></div>
  <div class="card cardPad"><div class="head"><div><h2 data-i18n="inboundTitle">Inbound management</h2><p data-i18n="inboundDesc">Create and manage the actual listener definitions.</p></div><button class="btn dark" onclick="openInbound()" data-i18n="addInbound">＋ Add inbound</button></div><div class="tableWrap"><table class="table"><thead><tr><th>Name</th><th>Protocol</th><th>Network</th><th>Port</th><th>Users</th><th>Status</th><th>Actions</th></tr></thead><tbody id="inboundBody"></tbody></table></div></div>
+</section>
+
+<section class="view" id="subs">
+ <div class="sectionHero"><div><span class="eyebrow">PARS SPACE · SUBSCRIPTION CORE</span><h1 style="margin:6px 0 0">اشتراک‌ها</h1><p class="muted">یک لینک برای چند کانفیگ، با پشتیبانی از چند اینباند و پروتکل‌های مختلف.</p></div><div class="heroIcon">↗</div></div>
+ <div class="card cardPad"><div class="head"><div><h2 data-i18n="subTitle">Pars Subscription</h2><p data-i18n="subTitleDesc">گروه اشتراک واقعی</p></div><button class="btn dark" onclick="createSubscription()">＋ ساخت اشتراک</button></div><div id="subList" class="list"></div></div>
 </section>
 
 <section class="view" id="nodes">
@@ -222,68 +232,60 @@ ls -la"></textarea></div>
    <button class="btn dark" style="margin-top:13px" onclick="changeCredentials()" data-i18n="save">Save changes</button>
   </div>
   <div class="card cardPad" style="margin-top:14px"><div class="head"><div><h2 data-i18n="panelAlias">نام مستعار پنل</h2><p data-i18n="panelAliasDesc">نامی که در داشبورد و بخش‌های مدیریتی نمایش داده می‌شود.</p></div></div><div class="form"><div class="field full"><label data-i18n="panelAlias">Panel alias</label><input id="panelAlias" placeholder="Pars Space"></div></div><button class="btn dark" style="margin-top:12px" onclick="savePanelAlias()" data-i18n="save">ذخیره</button></div>
-  <div class="card cardPad" style="margin-top:14px"><div class="head"><div><h2 data-i18n="activityTitle">Activity & Logs</h2><p data-i18n="activityDesc">لاگ‌ها و فعالیت‌های اخیر اینجا نمایش داده می‌شوند.</p></div><button class="btn" onclick="loadActivity()">↻</button></div><div id="activityList" class="list"></div></div>
-  <div class="card cardPad" style="margin-top:14px"><div class="head"><div><h2 data-i18n="helpTitle">آموزش کامل پنل</h2><p data-i18n="helpDesc">راهنمای سریع مدیریت کاربران، اینباند، SNI، کانفیگ و تنظیمات.</p></div></div><div class="list"><div class="row"><b>۱. کاربران</b><span class="muted">از «ایجاد کاربر + کانفیگ» استفاده کن. در حالت عادی فقط لیست کاربران نمایش داده می‌شود.</span></div><div class="row"><b>۲. پروتکل‌ها</b><span class="muted">Reality برای Xray native است. VMess و Trojan باید با Inbound سازگار خودشان ساخته شوند.</span></div><div class="row"><b>۳. SNI Scanner</b><span class="muted">لیست داخلی پنل را تست کن و سریع‌ترین SNIها را ذخیره کن.</span></div><div class="row"><b>۴. لینک اشتراک</b><span class="muted">لینک شخصی کاربر را به کلاینت بده. IP خام پنل در کانفیگ تولید نمی‌شود.</span></div><div class="row"><b>۵. تنظیمات</b><span class="muted">تم، زبان، نام مستعار، اطلاعات کشور و لاگ‌ها در همین تب هستند.</span></div></div></div>
+  <div class="card cardPad" style="margin-top:14px"><div class="head"><div><h2>تنظیمات بیشتر سرور</h2><p class="muted">پیش‌فرض‌های هر پروتکل. این مقادیر فقط برای اینباندهای جدید استفاده می‌شوند.</p></div><button class="btn dark" onclick="saveProtocolDefaults()">ذخیره تنظیمات</button></div><div class="form"><div class="field"><label>پروتکل</label><select id="settingsProtocol" onchange="renderServerAdvancedSettings()"><option value="vless">VLESS</option><option value="vmess">VMess</option><option value="trojan">Trojan</option><option value="reality">Reality</option><option value="ssh">SSH</option></select></div></div><div id="serverAdvancedSettings" style="margin-top:12px"></div></div>
+  <div class="card cardPad" id="activityCard" style="margin-top:14px"><div class="head"><div><h2 data-i18n="activityTitle">Activity & Logs</h2><p data-i18n="activityDesc">لاگ‌ها و فعالیت‌های اخیر اینجا نمایش داده می‌شوند.</p></div><div class="toolbar"><button class="btn" onclick="loadActivity()">↻</button><button class="btn" onclick="toggleActivity()">×</button></div></div><div id="activityList" class="list"></div></div>
   <div class="card cardPad" style="margin-top:14px"><div class="head"><div><h2>Panel network</h2><p>Live public IP and detected location.</p></div><button class="btn small" onclick="loadServerInfo()">↻</button></div><div id="serverInfo" class="list"><div class="empty">Loading…</div></div></div>
   <div class="card cardPad" style="margin-top:14px"><div class="head"><div><h2 data-i18n="parsApi">Pars Space API</h2><p data-i18n="parsApiDesc">This is the current panel API key used for node connections.</p></div><button class="btn" onclick="regenerateParsKey()" data-i18n="regenerate">Regenerate</button></div><div class="field"><label>Pars API Key</label><input id="parsApiKey" dir="ltr" readonly value="Loading..." onclick="this.select()"></div><div class="toolbar" style="margin-top:10px"><button class="btn dark" onclick="copyParsKey()" data-i18n="copyKey">Copy API key</button><span class="muted" data-i18n="apiPrefix">Prefix: psp_</span></div></div>
  </div>
+ <button id="activityShow" class="btn dark" style="display:none;margin-top:12px" onclick="toggleActivity()">نمایش لاگ‌ها</button>
 </section>
 </main>
 </div>
 
-<div class="modal" id="clientBuilderModal"><div class="modalBox"><button class="close" onclick="closeClientBuilder()">×</button><div class="head"><div><h2 data-i18n="createUserConfig">ایجاد کاربر + کانفیگ</h2><p class="muted">کاربر، اینباند و کانفیگ در یک مرحله ساخته می‌شوند.</p></div></div>
+<div class="modal" id="clientBuilderModal"><div class="modalBox">
+<button class="close" onclick="closeClientBuilder()">×</button>
+<div class="sectionHero"><div><span class="eyebrow">NEW CONNECTION</span><h2 style="margin:6px 0">ساخت کاربر و کانفیگ</h2><p class="muted">اول چیزهای ضروری، بعد تنظیمات پیشرفته. چند اینباند را همزمان انتخاب کن.</p></div><div class="heroIcon">+</div></div>
 <div class="form">
-<div class="field"><label data-i18n="username">Username</label><input id="uName" placeholder="khosrow"></div>
-<div class="field"><label data-i18n="password">Password</label><input id="uPass" placeholder="Auto generated if empty"></div>
-<div class="field"><label data-i18n="protocol">Protocol</label><select id="uProtocol" onchange="updateClientProtocolFields()"><option value="vless">VLESS</option><option value="vmess">VMess</option><option value="trojan">Trojan</option><option value="ssh">SSH</option><option value="reality">Reality</option></select></div>
-<div class="field"><label data-i18n="inbound">Inbound</label><select id="uInbound"><option value="">Auto / dedicated</option></select></div>
-<div class="field"><label data-i18n="trafficLimit">Traffic limit (GB)</label><input id="uTraffic" type="number" min="0" value="0"></div>
-<div class="field"><label data-i18n="expireDays">Expire days</label><input id="uExpire" type="number" min="0" value="30"></div>
-<div class="field full dark-tunnel-card">
-  <div class="dt-row">
-    <div><b>Dark Tunnel</b><small>خروجی سازگار را همراه کانفیگ کاربر بساز</small></div>
-    <label class="ios-switch"><input id="uDarkTunnel" type="checkbox"><span></span></label>
-  </div>
-  <div id="darkTunnelTypeWrap" class="dt-types">
-    <button type="button" class="dt-type active" data-dt="auto" onclick="setDarkTunnelType('auto',this)">Auto</button>
-    <button type="button" class="dt-type" data-dt="uri" onclick="setDarkTunnelType('uri',this)">V2Ray URI</button>
-    <button type="button" class="dt-type" data-dt="ssh" onclick="setDarkTunnelType('ssh',this)">SSH</button>
-  </div>
-  <input type="hidden" id="uDarkTunnelType" value="auto">
+<div class="field"><label>نام کاربری</label><input id="uName" placeholder="khosrow"></div>
+<div class="field"><label>رمز عبور</label><input id="uPass" placeholder="خالی = تولید خودکار"></div>
+<div class="field"><label>پروتکل</label><select id="uProtocol" onchange="updateClientProtocolFields()"><option value="vless">VLESS</option><option value="vmess">VMess</option><option value="trojan">Trojan</option><option value="reality">Reality</option><option value="ssh">SSH</option></select></div>
+<div class="field"><label>محدودیت دستگاه</label><input id="uDeviceLimit" type="number" min="0" value="0" placeholder="0 = نامحدود"></div>
+<div class="field"><label>حجم (GB)</label><input id="uTraffic" type="number" min="0" value="0" placeholder="0 = نامحدود"></div>
+<div class="field"><label>اعتبار (روز)</label><input id="uExpire" type="number" min="0" value="0" placeholder="0 = نامحدود"></div>
+<div class="field full"><label>اینباند‌ها</label><div id="inboundPicker" class="glassGrid"></div><input type="hidden" id="uInbound"></div>
 </div>
-<div class="field"><label data-i18n="server">Server</label><input id="uServer" value=""></div>
-<div class="field"><label data-i18n="sni">SNI</label><input id="uSni" placeholder="example.com"></div>
-<div class="field full"><label data-i18n="path">Path</label><input id="uPath" placeholder="/ws/..."></div>
-</div>
-<div class="card" style="margin-top:14px;background:var(--soft);box-shadow:none;padding:10px"><button type="button" class="foldToggle" onclick="toggleFold('clientProtocolBody',this)"><span><span data-i18n="protocolSettings">تنظیمات پروتکل</span><small class="muted" style="display:block;margin-top:3px">برای پروتکل انتخاب‌شده</small></span><span class="chev">⌄</span></button><div id="clientProtocolBody" class="foldBody"><div class="form" style="padding-top:12px">
+<div class="advancedBox" style="margin-top:14px"><div class="head"><div><b>Dark Tunnel</b><p class="muted">برای کاربر فعال می‌شود و در صورت داشتن SSH، پروفایل مستقیم آن را در اشتراک قرار می‌دهد.</p></div><input id="uDarkTunnel" class="switch" type="checkbox"></div><div class="field" style="margin-top:12px"><label>نوع</label><select id="uDarkTunnelType"><option value="auto">Auto</option><option value="ssh">SSH Direct</option></select></div></div>
+<div class="card" style="margin-top:14px;background:rgba(0,0,0,.12);box-shadow:none"><button type="button" class="foldToggle" onclick="toggleFold('clientAdvancedBody',this)"><span><b>تنظیمات بیشتر</b><small class="muted" style="display:block;margin-top:3px">SNI، Path، TLS، Reality و SSH فقط وقتی لازم باشند.</small></span><span class="chev">⌄</span></button><div id="clientAdvancedBody" class="foldBody"><div class="advancedGrid" style="padding-top:12px">
 <div class="field" id="cfNetwork"><label>Network</label><select id="cNetwork" onchange="updateClientProtocolFields()"><option value="ws">WebSocket</option><option value="grpc">gRPC</option><option value="tcp">TCP</option><option value="xhttp">XHTTP</option></select></div>
 <div class="field" id="cfSecurity"><label>Security</label><select id="cSecurity" onchange="updateClientProtocolFields()"><option value="tls">TLS</option><option value="none">None</option><option value="reality">Reality</option></select></div>
 <div class="field" id="cfPort"><label>Port</label><input id="cPort" type="number" value="443"></div>
-<div class="field" id="cfFingerprint"><label>Fingerprint</label><select id="cFingerprint"><option value="chrome">chrome</option><option value="firefox">firefox</option><option value="safari">safari</option><option value="edge">edge</option></select></div>
+<div class="field" id="cfFingerprint"><label>Fingerprint</label><select id="cFingerprint"><option>chrome</option><option>firefox</option><option>safari</option><option>edge</option></select></div>
 <div class="field" id="cfSni"><label>SNI</label><input id="cSni" placeholder="example.com"></div>
 <div class="field" id="cfAlpn"><label>TLS ALPN</label><input id="cAlpn" value="http/1.1"></div>
 <div class="field" id="cfWsPath"><label>WS Path</label><input id="cWsPath" value="/ws/{uuid}"></div>
 <div class="field" id="cfGrpcService"><label>gRPC Service</label><input id="cGrpcService" value="pars-space"></div>
-<div class="field" id="cfRealityDomain"><label>Reality external domain</label><input id="cRealityDomain" placeholder="reality.example.com"></div>
-<div class="field" id="cfRealityPort"><label>Reality external port</label><input id="cRealityPort" type="number" value="443"></div>
-<div class="field" id="cfRealityDest"><label>Reality destination</label><input id="cRealityDest" placeholder="is1-ssl.mzstatic.com:443"></div>
-<div class="field" id="cfRealitySid"><label>Reality short ID</label><input id="cRealitySid" placeholder="auto"></div>
-<div class="field" id="cfTrojanPass"><label>Trojan password</label><input id="cTrojanPass" type="password" placeholder="Uses user password if empty"></div>
-<div class="field full"><label>Final Mask · Pattern NG</label><textarea id="cFinalMask" class="finalmask" placeholder='{"tcp":[],"udp":[]}'></textarea></div>
+<div class="field" id="cfRealityDomain"><label>Reality External Host</label><input id="cRealityDomain" placeholder="reality.example.com"></div>
+<div class="field" id="cfRealityPort"><label>Reality External Port</label><input id="cRealityPort" type="number" value="443"></div>
+<div class="field" id="cfRealityDest"><label>Reality Destination</label><input id="cRealityDest" placeholder="is1-ssl.mzstatic.com:443"></div>
+<div class="field" id="cfRealitySid"><label>Reality Short ID</label><input id="cRealitySid" placeholder="auto"></div>
+<div class="field" id="cfTrojanPass"><label>Trojan Password</label><input id="cTrojanPass" type="password" placeholder="User password if empty"></div>
+<div class="field" id="cfSshHost"><label>SSH Host</label><input id="cSshHost" placeholder="server.example.com"></div>
+<div class="field" id="cfSshPort"><label>SSH Port</label><input id="cSshPort" type="number" value="22"></div>
+<div class="field" id="cfSshUser"><label>SSH Username</label><input id="cSshUser"></div>
+<div class="field" id="cfSshPass"><label>SSH Password</label><input id="cSshPass" type="password"></div>
+<div class="field full" id="cfFinalMask"><label>Final Mask / Pattern</label><textarea id="cFinalMask" class="finalmask" placeholder='Optional JSON'></textarea></div>
 </div></div></div>
-<div class="toolbar" style="margin-top:14px"><button class="btn dark" onclick="createClient()" data-i18n="createUserConfig">ایجاد کاربر + کانفیگ</button><button class="btn" onclick="clearClientForm()" data-i18n="clear">Clear</button><span class="spacer"></span><span class="muted" id="clientMsg"></span></div>
-<div class="configBox"><div class="output" id="clientOut">کانفیگ بعد از ساخت اینجا نمایش داده می‌شود.</div><div class="configActions"><button class="btn small" onclick="copyText($('#clientOut').textContent)" data-i18n="copy">کپی کانفیگ</button></div></div>
+<div class="toolbar" style="margin-top:14px"><button class="btn dark" onclick="createClient()">ساخت و تولید کانفیگ</button><button class="btn" onclick="clearClientForm()">پاک کردن</button><span class="spacer"></span><span class="muted" id="clientMsg"></span></div>
+<div class="configBox"><div class="output" id="clientOut">بعد از ساخت، کانفیگ و لینک اشتراک اینجا می‌آید.</div><div class="configActions"><button class="btn small" onclick="copyText($('#clientOut').textContent)">کپی</button></div></div>
 </div></div>
-<div class="modal" id="userEditModal"><div class="modalBox"><button class="close" onclick="closeUserEdit()">×</button><div class="head"><div><h2>Edit user</h2><p>تغییر اطلاعات، وضعیت و محدودیت کاربر</p></div></div><input type="hidden" id="editUserId"><div class="form"><div class="field"><label>Username</label><input id="editUsername"></div><div class="field"><label>Status</label><select id="editStatus"><option value="active">Active</option><option value="disabled">Disabled</option><option value="expired">Expired</option></select></div><div class="field"><label>Traffic GB</label><input id="editTraffic" type="number" min="0"></div><div class="field"><label>Expire days</label><input id="editExpire" type="number" min="0"></div><div class="field full"><label>SNI</label><input id="editSni"></div></div><div class="toolbar" style="margin-top:14px"><button class="btn dark" onclick="saveUserEdit()">Save</button><button class="btn" onclick="resetUserTrafficFromEdit()">Reset traffic</button></div></div></div>
+<div class="modal" id="userEditModal"><div class="modalBox"><button class="close" onclick="closeUserEdit()">×</button><div class="head"><div><h2>Edit user</h2><p>تغییر اطلاعات، وضعیت و محدودیت کاربر</p></div></div><input type="hidden" id="editUserId"><div class="form"><div class="field"><label>Username</label><input id="editUsername"></div><div class="field"><label>Status</label><select id="editStatus"><option value="active">Active</option><option value="disabled">Disabled</option><option value="expired">Expired</option></select></div><div class="field"><label>Traffic GB</label><input id="editTraffic" type="number" min="0"></div><div class="field"><label>Expire days</label><input id="editExpire" type="number" min="0"></div><div class="field"><label>Device limit</label><input id="editDeviceLimit" type="number" min="0" value="0"></div><div class="field full"><label>SNI</label><input id="editSni"></div></div><div class="toolbar" style="margin-top:14px"><button class="btn dark" onclick="saveUserEdit()">Save</button><button class="btn" onclick="resetUserTrafficFromEdit()">Reset traffic</button></div></div></div>
 <div class="modal" id="userQrModal"><div class="modalBox" style="max-width:430px;text-align:center"><button class="close" onclick="closeUserQR()">×</button><h2>Pars Space QR</h2><img id="userQrImage" style="width:280px;max-width:90%;border-radius:18px;background:#fff;padding:10px" alt="QR"><div class="output" id="userQrLink" style="margin-top:12px"></div><div class="toolbar" style="justify-content:center;margin-top:10px"><button class="btn dark" onclick="copyText($('#userQrLink').textContent)">Copy subscription</button></div></div></div>
 <div class="modal" id="inboundModal"><div class="modalBox">
-<button class="close" onclick="closeInbound()">×</button><input type="hidden" id="ibEditId"><h2 id="ibModalTitle" data-i18n="createInbound">Create inbound</h2><p class="muted" data-i18n="createInboundDesc">Only the settings relevant to the selected protocol are shown.</p>
-<div class="form" style="margin-top:15px">
-<div class="field"><label data-i18n="name">Name</label><input id="ibName" placeholder="Main inbound"></div>
-<div class="field"><label data-i18n="protocol">Protocol</label><select id="ibProtocol" onchange="renderInboundProtocolFields()"><option value="vless">VLESS</option><option value="vmess">VMess</option><option value="trojan">Trojan</option><option value="ssh">SSH</option><option value="reality">Reality</option></select></div>
-</div>
-<button type="button" class="foldToggle" style="margin-top:14px" onclick="toggleFold('ibProtocolBody',this)"><span>Protocol settings</span><span class="chev">⌄</span></button><div id="ibProtocolBody" class="foldBody"><div id="ibDynamic" class="form" style="margin-top:13px"></div></div>
-<div class="toolbar" style="margin-top:15px"><button class="btn dark" onclick="createInbound()" data-i18n="create">Create</button><button class="btn" onclick="closeInbound()" data-i18n="cancel">Cancel</button></div>
+<button class="close" onclick="closeInbound()">×</button><input type="hidden" id="ibEditId">
+<div class="sectionHero"><div><span class="eyebrow">TRANSPORT BUILDER</span><h2 id="ibModalTitle">ساخت اینباند</h2><p class="muted">پروتکل را انتخاب کن، فرم خودش را می‌سازد.</p></div><div class="heroIcon">◈</div></div>
+<div class="form"><div class="field"><label>نام</label><input id="ibName" placeholder="Main VLESS"></div><div class="field"><label>پروتکل</label><select id="ibProtocol" onchange="renderInboundProtocolFields()"><option value="vless">VLESS</option><option value="vmess">VMess</option><option value="trojan">Trojan</option><option value="reality">Reality</option><option value="ssh">SSH</option></select></div></div>
+<div class="card" style="margin-top:14px;background:rgba(0,0,0,.12);box-shadow:none"><div id="ibDynamic" class="advancedGrid" style="padding:12px"></div></div>
+<div class="toolbar" style="margin-top:15px"><button class="btn dark" onclick="createInbound()">ذخیره اینباند</button><button class="btn" onclick="closeInbound()">لغو</button><span class="muted" id="ibTestMsg"></span></div>
 </div></div>
 <div class="modal" id="nodeModal"><div class="modalBox"><button class="close" onclick="closeNode()">×</button><h2 data-i18n="connectNode">Connect Pars Space panel</h2><p class="muted" data-i18n="connectNodeDesc">Enter the HTTPS address and Pars API key from the remote Pars Space panel.</p><div class="form" style="margin-top:15px"><div class="field"><label data-i18n="nodeName">Node name</label><input id="nodeName" placeholder="Amsterdam Panel"></div><div class="field"><label data-i18n="nodeUrl">Panel URL</label><input id="nodeUrl" dir="ltr" placeholder="https://panel.example.com"></div><div class="field full"><label>Panel API Key</label><input id="nodeKey" dir="ltr" placeholder="psp_xxxxxxxxx"></div></div><div class="toolbar" style="margin-top:15px"><button class="btn dark" onclick="connectNode()" data-i18n="connect">Connect</button><button class="btn" onclick="closeNode()" data-i18n="cancel">Cancel</button></div></div></div>
 <div class="toast" id="toast"></div>
@@ -314,7 +316,7 @@ function setLang(x){lang=x;localStorage.setItem('ps_lang',x);applyI18n();toast(x
 function setTheme(x){theme=x;localStorage.setItem('ps_theme',x);applyTheme();toast('Theme updated')}
 $('#langBtn').onclick=()=>setLang(lang==='fa'?'en':'fa');$('#themeBtn').onclick=()=>setTheme(theme==='dark'?'light':'dark');$('#langSelect').onchange=e=>setLang(e.target.value);$('#themeSelect').onchange=e=>setTheme(e.target.value);
 $$('.nav button').forEach(b=>b.onclick=()=>go(b.dataset.view));
-function go(id){$$('.view').forEach(v=>v.classList.remove('active'));$('#'+id).classList.add('active');$$('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));window.scrollTo({top:0,behavior:'smooth'});if(id==='clients')loadClients();if(id==='inbounds')loadInbounds();if(id==='nodes')loadNodes();if(id==='scanner'){loadSniList();loadSniResults()}if(id==='terminal')loadTerminalInfo();if(id==='settings'){loadSettingsPanel();loadActivity()}}
+function go(id){$$('.view').forEach(v=>v.classList.remove('active'));$('#'+id).classList.add('active');$$('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));window.scrollTo({top:0,behavior:'smooth'});if(id==='clients')loadClients();if(id==='inbounds')loadInbounds();if(id==='nodes')loadNodes();if(id==='subs')loadSubs();if(id==='scanner'){loadSniList();loadSniResults()}if(id==='terminal')loadTerminalInfo();if(id==='settings'){loadSettingsPanel();loadActivity()}}
 let timer;function toast(m){let e=$('#toast');e.textContent=m;e.classList.add('show');clearTimeout(timer);timer=setTimeout(()=>e.classList.remove('show'),1900)}
 async function api(url,opt={}){let r=await fetch(url,{credentials:'same-origin',...opt,headers:{'Content-Type':'application/json',...(opt.headers||{})}});if(r.status===401){location.href='/login';throw Error('AUTH')}let txt=await r.text();let data;try{data=JSON.parse(txt)}catch{data=txt}if(!r.ok)throw Error(data?.detail||data?.message||txt||('HTTP '+r.status));return data}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -322,133 +324,40 @@ async function loadTraffic(){try{let range=$('#trafficRange')?.value||'day';let 
 
 async function loadOverview(){try{let s=await api('/api/server/stats');$('#sActive').textContent=s.active_users??s.total_users??0;$('#sConn').textContent=s.active_connections??0;let ib=await api('/api/inbounds');$('#sInbound').textContent=(ib.inbounds||[]).length;let q=await api('/api/pars/v1/subscriptions');$('#sSubs').textContent=(q.subs||q.subscriptions||[]).length;$('#heroTraffic').textContent=(s.total_traffic_used_gb||0)+' GB';loadTraffic()}catch(e){console.warn(e)}}
 let liveOverviewTimer=null;function startLiveOverview(){if(liveOverviewTimer)clearInterval(liveOverviewTimer);loadOverview();liveOverviewTimer=setInterval(loadOverview,3500)}
-async function loadInbounds(){try{let d=await api('/api/inbounds');let a=d.inbounds||[];$('#inboundBody').innerHTML=a.length?a.map(x=>`<tr><td><b>${esc(x.name||x.inbound_id)}</b></td><td>${esc(x.protocol||'-')}</td><td>${esc(x.network||'-')}</td><td>${esc(x.external_port||x.port||'-')}</td><td>${x.users_count??0}</td><td><span class="pill">${tr('online')}</span></td><td><button class="btn small" onclick="editInbound('${esc(x.inbound_id)}')">ویرایش</button></td></tr>`).join(''):`<tr><td colspan="7"><div class="empty">${tr('noData')}</div></td></tr>`;let sel=$('#uInbound');sel.innerHTML='<option value="">Auto / default</option>'+a.map(x=>`<option value="${esc(x.inbound_id)}">${esc(x.name||x.inbound_id)} · ${esc(x.protocol||'')}</option>`).join('')}catch(e){toast(e.message)}}
-async function loadClients(){try{let d=await api('/api/users');let a=d.users||[];$('#usersBody').innerHTML=a.length?a.map(u=>`<tr><td><b>${esc(u.username)}</b><div class="muted" dir="ltr">${esc(u.config_uuid||'')}</div></td><td>${esc(u.protocol||'-')}</td><td>${esc(u.traffic_used_fmt||'0 B')} / ${esc(u.traffic_limit_fmt||'∞')}</td><td><span class="pill">${esc(u.status)}</span></td><td><div class="toolbar"><button class="btn small" onclick="viewUserConfig('${esc(u.config_uuid||'')}')">Config</button><button class="btn small" onclick="copyText('${esc(u.subscription_url||'')}')">Sub</button><button class="btn small" onclick="showUserQR('${esc(u.user_id)}')">QR</button><button class="btn small" onclick="editUser('${esc(u.user_id)}')">Edit</button><button class="btn small" onclick="toggleUser('${esc(u.user_id)}')">${u.status==='disabled'?'Enable':'Disable'}</button><button class="btn small danger" onclick="deleteUser('${esc(u.user_id)}')">Delete</button></div></td></tr>`).join(''):`<tr><td colspan="5"><div class="empty">${tr('noData')}</div></td></tr>`;await loadInbounds()}catch(e){toast(e.message)}}
-function openClientBuilder(){ $('#clientBuilderModal').classList.add('open'); loadInbounds(); updateClientProtocolFields(); syncDarkTunnelUI(); const dt=$('#uDarkTunnel'); if(dt)dt.onchange=syncDarkTunnelUI; }
+async function loadInbounds(){try{let d=await api('/api/inbounds');let a=d.inbounds||[];$('#inboundBody').innerHTML=a.length?a.map(x=>`<tr><td><b>${esc(x.name||x.inbound_id)}</b><div class="muted">${esc((x.protocol||'').toUpperCase())}</div></td><td><span class="pill">${esc(x.protocol||'-')}</span></td><td>${esc(x.network||'-')}</td><td>${esc(x.external_port||x.port||'-')}</td><td>${x.users_count??0}</td><td><span class="pill">${tr('online')}</span></td><td><button class="btn small" onclick="editInbound('${esc(x.inbound_id)}')">ویرایش</button></td></tr>`).join(''):`<tr><td colspan="7"><div class="empty">${tr('noData')}</div></td></tr>`;renderInboundPicker(a)}catch(e){toast(e.message)}}
+function renderInboundPicker(a){const box=$('#inboundPicker');if(!box)return;const selected=new Set((box.dataset.selected||'').split(',').filter(Boolean));box.innerHTML='<div class="glassChoice '+(!selected.size?'active':'')+'" data-id="" onclick="selectInboundCard(this,\'\')"><b>Auto / Default</b><span>پیش‌فرض مدیریت‌شده</span></div>'+a.filter(x=>x.protocol!=='node').map(x=>`<div class="glassChoice ${selected.has(String(x.inbound_id))?'active':''}" data-id="${esc(x.inbound_id)}" onclick="selectInboundCard(this,'${esc(x.inbound_id)}')"><b>${esc(x.name||x.inbound_id)}</b><span>${esc((x.protocol||'').toUpperCase())} · ${esc(x.network||'tcp')} · ${esc(x.external_port||x.port||'-')}</span></div>`).join('');syncInboundPicker()}
+function selectInboundCard(el,id){if(!id){$$('#inboundPicker .glassChoice').forEach(x=>x.classList.remove('active'));el.classList.add('active');$('#inboundPicker').dataset.selected='';syncInboundPicker();return}$('#inboundPicker .glassChoice[data-id=""]').classList.remove('active');el.classList.toggle('active');let ids=$$('[data-id]').filter(x=>x.classList.contains('active')).map(x=>x.dataset.id).filter(Boolean);$('#inboundPicker').dataset.selected=ids.join(',');syncInboundPicker()}
+function syncInboundPicker(){const ids=($('#inboundPicker')?.dataset.selected||'').split(',').filter(Boolean);$('#uInbound').value=ids[0]||'';$('#uInbound').dataset.ids=ids.join(',')}
+function openClientBuilder(){ $('#clientBuilderModal').classList.add('open'); loadInbounds(); updateClientProtocolFields(); }
 function closeClientBuilder(){ $('#clientBuilderModal').classList.remove('open'); }
 async function viewUserConfig(uuid){try{let d=await api('/api/sub/'+encodeURIComponent(uuid));let configs=d.configs||[];let cfg=configs.find(x=>x&&x.indexOf('📊')<0)||d.config||'';$('#clientOut').textContent=cfg||'No config';$('#clientBuilderModal').classList.add('open')}catch(e){toast(e.message)}}
 function updateClientProtocolFields(){
- const p=$('#uProtocol').value;
- const net=$('#cNetwork').value;
+ const p=$('#uProtocol')?.value||'vless';
+ const net=$('#cNetwork')?.value||'ws';
  const show=(id,on)=>{const e=$(id);if(e)e.style.display=on?'grid':'none'};
- const reality=(p==='reality') || ($('#cSecurity').value==='reality');
- if(p==='ssh'){
-   ['#cfNetwork','#cfSecurity','#cfPort','#cfFingerprint','#cfSni','#cfAlpn','#cfWsPath','#cfGrpcService','#cfRealityDomain','#cfRealityPort','#cfRealityDest','#cfRealitySid','#cfTrojanPass'].forEach(id=>show(id,false));
-   return;
- }
- if((p==='vmess'||p==='trojan') && $('#cSecurity').value==='tls') $('#cSecurity').value='reality';
- show('#cfNetwork',!reality || p!=='reality');show('#cfPort',true);show('#cfFingerprint',true);show('#cfSni',true);
- show('#cfAlpn',!reality);show('#cfSecurity',p!=='reality');show('#cfRealityDomain',reality);show('#cfRealityPort',reality);show('#cfRealityDest',reality);show('#cfRealitySid',reality);show('#cfTrojanPass',p==='trojan');
- show('#cfWsPath',!reality && net==='ws');show('#cfGrpcService',!reality && net==='grpc');
- if(reality && $('#cNetwork').value==='ws') $('#cNetwork').value='tcp';
+ const ssh=p==='ssh', reality=p==='reality'||($('#cSecurity')?.value==='reality');
+ show('#cfNetwork',!ssh&&!reality);show('#cfSecurity',!ssh&&p!=='reality');show('#cfPort',!ssh);show('#cfFingerprint',!ssh);show('#cfSni',!ssh);show('#cfAlpn',!ssh&&!reality);show('#cfWsPath',!ssh&&!reality&&net==='ws');show('#cfGrpcService',!ssh&&!reality&&net==='grpc');show('#cfRealityDomain',reality);show('#cfRealityPort',reality);show('#cfRealityDest',reality);show('#cfRealitySid',reality);show('#cfTrojanPass',p==='trojan');show('#cfFinalMask',!ssh);show('#cfSshHost',ssh);show('#cfSshPort',ssh);show('#cfSshUser',ssh);show('#cfSshPass',ssh);
+ if(ssh){$('#cSshUser').value=$('#cSshUser').value||$('#uName').value.trim();}
+ if(reality&&$('#cNetwork')?.value==='ws')$('#cNetwork').value='tcp';
 }
-
 function toggleFold(id,btn){const e=$('#'+id);if(!e)return;e.classList.toggle('open');btn.classList.toggle('open',e.classList.contains('open'))}
-function parseFinalMask(raw){const s=String(raw||'').trim();if(!s)return {};try{const o=JSON.parse(s);if(!o||typeof o!=='object'||Array.isArray(o))throw Error();return o}catch(e){toast(lang==='fa'?'Final Mask JSON نامعتبر است':'Invalid Final Mask JSON');return {}}}
-function setDarkTunnelType(type,el){
- $('#uDarkTunnelType').value=type;
- $$('.dt-type').forEach(x=>x.classList.remove('active'));
- if(el)el.classList.add('active');
-}
-function syncDarkTunnelUI(){
- const on=!!$('#uDarkTunnel')?.checked;
- const wrap=$('#darkTunnelTypeWrap');
- if(wrap)wrap.classList.toggle('disabled',!on);
-}
-async function createClient(){
- try{
-  const protocol=$('#uProtocol').value;
-  let inboundId=$('#uInbound').value;
-  const dedicated=!inboundId && !['vmess','ssh'].includes(protocol);
-  if(dedicated && protocol==='ssh'){
-   const ib={name:($('#uName').value.trim()||'SSH')+' · SSH',protocol:'ssh',network:'tcp',security:'none',port:22,domain:$('#uServer').value.trim(),ssh_settings:{host:$('#uServer').value.trim(),port:22,username:$('#uName').value.trim(),password:$('#uPass').value||'',mode:'password'}};
-   const ir=await api('/api/pars/v1/inbounds',{method:'POST',body:JSON.stringify(ib)}); inboundId=ir.inbound_id;
-  }else if(dedicated){
-   const security=(protocol==='reality'||(protocol==='vmess'||protocol==='trojan')&&$('#cSecurity').value==='reality')?'reality':$('#cSecurity').value;
-   const network=(security==='reality' && $('#cNetwork').value==='ws')?'tcp':$('#cNetwork').value;
-   const ib={
-    name:($('#uName').value.trim()||'user')+' · '+protocol.toUpperCase(),protocol,network,security,
-    port:Number($('#cPort').value||443),external_port:protocol==='reality'?Number($('#cRealityPort').value||443):Number($('#cPort').value||443),
-    domain:$('#uServer').value.trim(),sni:$('#cSni').value.trim(),fingerprint:$('#cFingerprint').value,alpn:$('#cAlpn').value,
-    ws_settings:{path:$('#cWsPath').value||'/ws/{uuid}'},grpc_settings:{serviceName:$('#cGrpcService').value||'pars-space'},
-    reality_settings:{dest:$('#cRealityDest').value.trim(),sni:$('#cSni').value.trim(),short_id:$('#cRealitySid').value.trim(),fingerprint:$('#cFingerprint').value},tls_settings:{alpn:$('#cAlpn').value},finalmask:parseFinalMask($('#cFinalMask').value),
-    external_domain:$('#cRealityDomain').value.trim()
-   };
-   if(protocol==='reality' && !ib.external_domain) ib.external_domain=$('#uServer').value.trim();
-   const ir=await api('/api/pars/v1/inbounds',{method:'POST',body:JSON.stringify(ib)});
-   inboundId=ir.inbound_id;
-  }
-  const password=$('#uPass').value;
-  const body={username:$('#uName').value.trim(),password,protocol,traffic_limit_gb:Number($('#uTraffic').value||0),expire_days:Number($('#uExpire').value||0),server:$('#uServer').value,sni:$('#cSni').value||$('#uSni').value,path:$('#cWsPath').value,trojan_password:$('#cTrojanPass').value,dark_tunnel_enabled:!!$('#uDarkTunnel' )?.checked,dark_tunnel_type:$('#uDarkTunnelType')?.value||'auto'};
-  if(inboundId) body.inbound_id=inboundId;
-  const d=await api('/api/pars/v1/users',{method:'POST',body:JSON.stringify(body)});
-  const link=d.config||d.vmess_link||d.trojan_link||d.vless_link||'';
-  $('#clientOut').textContent=link||JSON.stringify(d,null,2);
-  if(d.subscription_url) $('#clientMsg').textContent=(lang==='fa'?'Sub: ':'Sub: ')+d.subscription_url;
-  toast(lang==='fa'?'کاربر ساخته شد و لینک مستقیم کانفیگ آماده است':'User created and direct config is ready');
-  loadClients();loadOverview();
- }catch(e){toast(e.message)}
-}
-
-function clearClientForm(){['uName','uPass','uSni','uPath'].forEach(id=>$('#'+id).value='');$('#uTraffic').value=0;$('#uExpire').value=30;$('#clientOut').textContent='Config / subscription URL will appear here.'}
+function parseFinalMask(raw){const s=String(raw||'').trim();if(!s)return {};try{const o=JSON.parse(s);if(!o||typeof o!=='object'||Array.isArray(o))throw Error();return o}catch(e){toast(lang==='fa'?'JSON نامعتبر است':'Invalid JSON');return {}}}
+async function createClient(){try{
+ const protocol=$('#uProtocol').value;const ids=($('#uInbound')?.dataset.ids||'').split(',').filter(Boolean);let inboundId=ids[0]||'';
+ // If nothing is selected, use managed default rather than creating a hidden dedicated inbound.
+ const password=$('#uPass').value;const body={username:$('#uName').value.trim(),password,protocol,traffic_limit_gb:Number($('#uTraffic').value||0),expire_days:Number($('#uExpire').value||0),concurrent_connections:Number($('#uDeviceLimit').value||0),dark_tunnel_enabled:$('#uDarkTunnel').checked,dark_tunnel_type:$('#uDarkTunnelType').value,ssh_username:$('#cSshUser').value.trim(),ssh_password:$('#cSshPass').value,sni:$('#cSni').value.trim(),path:$('#cWsPath').value};
+ if(ids.length)body.inbound_ids=ids;
+ if(protocol==='ssh'&&!ids.length){const ib={name:($('#uName').value.trim()||'SSH')+' · SSH',protocol:'ssh',network:'tcp',security:'none',port:Number($('#cSshPort').value||22),external_port:Number($('#cSshPort').value||22),domain:$('#cSshHost').value.trim(),external_domain:$('#cSshHost').value.trim(),ssh_settings:{host:$('#cSshHost').value.trim(),port:Number($('#cSshPort').value||22),username:$('#cSshUser').value.trim(),password:$('#cSshPass').value,auth_mode:'password'}};const ir=await api('/api/pars/v1/inbounds',{method:'POST',body:JSON.stringify(ib)});inboundId=ir.inbound_id;body.inbound_id=inboundId;body.inbound_ids=[inboundId];}
+ const d=await api('/api/pars/v1/users',{method:'POST',body:JSON.stringify(body)});const link=d.config||d.vmess_link||d.trojan_link||d.vless_link||'';$('#clientOut').textContent=link||JSON.stringify(d,null,2);$('#clientMsg').textContent=d.subscription_url||'';toast(lang==='fa'?'کاربر ساخته شد':'User created');loadClients();loadOverview();
+ }catch(e){toast(e.message)}}
+function clearClientForm(){['uName','uPass','uSni','uPath','cSshHost','cSshUser','cSshPass'].forEach(id=>{if($(id))$('#'+id).value=''});$('#uTraffic').value=0;$('#uExpire').value=0;$('#uDeviceLimit').value=0;$('#uDarkTunnel').checked=false;$('#uDarkTunnelType').value='auto';if($('#inboundPicker'))$('#inboundPicker').dataset.selected='';syncInboundPicker();$('#clientOut').textContent='بعد از ساخت، کانفیگ و لینک اشتراک اینجا می‌آید.'}
 function openInbound(){$('#ibEditId').value='';$('#ibModalTitle').textContent=tr('createInbound');$('#inboundModal').classList.add('open');renderInboundProtocolFields();let e=$('#ibProtocolBody'),b=e?.previousElementSibling;if(e){e.classList.remove('open');b?.classList.remove('open')}}function closeInbound(){$('#inboundModal').classList.remove('open')}
-function renderInboundProtocolFields(){
- const p=$('#ibProtocol').value;
- let html='';
- if(p==='ssh'){
-  html=`<div class="protocol-default-banner"><b>SSH Managed Inbound</b><span>تنظیمات امن و کم‌دردسر برای اتصال مستقیم TCP</span></div>
-   <div class="field"><label>SSH Port</label><input id="ibPort" type="number" value="22"></div>
-   <div class="field"><label>SSH Host</label><input id="ibDomain" placeholder="server.example.com"></div>
-   <div class="field"><label>SSH Username</label><input id="ibSshUser" placeholder="ssh-user"></div>
-   <div class="field"><label>SSH Password</label><input id="ibSshPass" type="password" placeholder="••••••••"></div>
-   <div class="field"><label>Auth Mode</label><select id="ibSshMode"><option value="password">Password</option><option value="key">SSH Key</option></select></div>
-   <div class="field full"><div class="default-note">این Inbound توسط Pars Space با تنظیمات پیش‌فرض مدیریت می‌شود. فقط وقتی واقعاً نیاز داری تغییرش بده.</div></div>`;
- }else if(p==='reality'){
-  html=`<div class="field"><label>Network</label><select id="ibNetwork"><option value="tcp">TCP</option><option value="xhttp">XHTTP</option><option value="grpc">gRPC</option></select></div>
-   <div class="field"><label>External port</label><input id="ibExtPort" type="number" value="443"></div>
-   <div class="field"><label>External domain</label><input id="ibExtDomain" placeholder="reality.example.com"></div>
-   <div class="field"><label>SNI</label><input id="ibSni" placeholder="is1-ssl.mzstatic.com"></div>
-   <div class="field"><label>Destination</label><input id="ibDest" value="is1-ssl.mzstatic.com:443"></div>
-   <div class="field"><label>Fingerprint</label><select id="ibFp"><option>chrome</option><option>firefox</option><option>safari</option><option>edge</option></select></div>
-   <div class="field"><label>Short ID</label><input id="ibSid" placeholder="Auto generate"></div>
-   <div class="field full"><label>XHTTP Path</label><input id="ibXPath" value="/"></div>
-   <div class="field full"><label>Final Mask · Pattern NG</label><textarea id="ibFinalMask" class="finalmask" placeholder='{"tcp":[],"udp":[]}'></textarea></div>`;
- }else{
-  html=`<div class="field"><label>Network</label><select id="ibNetwork" onchange="renderTransportExtras('ib')"><option value="ws">WebSocket</option><option value="grpc">gRPC</option><option value="tcp">TCP</option><option value="xhttp">XHTTP</option></select></div>
-   <div class="field"><label>Security</label><select id="ibSecurity" onchange="renderTransportExtras('ib')"><option value="tls">TLS</option><option value="none">None</option><option value="reality">Reality</option></select></div>
-   <div class="field" id="ibAlpnField"><label>TLS ALPN</label><input id="ibAlpn" value="http/1.1" placeholder="h2,http/1.1"></div>
-   <div class="field"><label>Port</label><input id="ibPort" type="number" value="443"></div>
-   <div class="field"><label>Domain</label><input id="ibDomain" placeholder="example.com"></div>
-   <div class="field"><label>SNI</label><input id="ibSni" placeholder="example.com"></div>
-   <div class="field"><label>Fingerprint</label><select id="ibFp"><option>chrome</option><option>firefox</option><option>safari</option><option>edge</option></select></div>
-   <div id="ibTransportExtras" class="field full"></div>
-   <div class="field full"><label>Final Mask · Pattern NG</label><textarea id="ibFinalMask" class="finalmask" placeholder='{"tcp":[],"udp":[]}'></textarea></div>`;
- }
- $('#ibDynamic').innerHTML=html; renderTransportExtras('ib');
-}
-function renderTransportExtras(prefix){
- const net=$('#ibNetwork')?.value, box=$('#ibTransportExtras'); if(!box)return; const sec=$('#ibSecurity')?.value; const af=$('#ibAlpnField'); if(af) af.style.display=(sec==='tls'?'grid':'none'); if(sec==='reality' && $('#ibNetwork')) $('#ibNetwork').value='tcp';
- if(net==='ws') box.innerHTML='<label>WS Path</label><input id="ibPath" value="/ws/{uuid}">';
- else if(net==='grpc') box.innerHTML='<label>gRPC Service Name</label><input id="ibGrpcService" value="pars-space">';
- else if(net==='xhttp') box.innerHTML='<label>XHTTP Path</label><input id="ibXPath2" value="/xhttp">';
- else box.innerHTML='<label>Transport</label><input value="TCP" disabled>';
-}
-async function editInbound(id){try{let d=await api('/api/inbounds');let ib=(d.inbounds||[]).find(x=>String(x.inbound_id)===String(id));if(!ib)throw Error('Inbound not found');$('#ibEditId').value=id;$('#ibModalTitle').textContent=lang==='fa'?'ویرایش اینباند':'Edit inbound';$('#ibName').value=ib.name||'';$('#ibProtocol').value=(ib.protocol||'vless').toLowerCase();renderInboundProtocolFields();setTimeout(()=>{let set=(id,v)=>{let e=$(id);if(e&&v!==undefined)e.value=v};set('#ibNetwork',ib.network||'tcp');set('#ibSecurity',ib.security||'tls');set('#ibPort',ib.port||443);set('#ibExtPort',ib.external_port||443);set('#ibDomain',ib.domain||'');set('#ibExtDomain',ib.external_domain||'');set('#ibSni',ib.sni||'');set('#ibFp',ib.fingerprint||'chrome');set('#ibPath',(ib.ws_settings||{}).path||ib.path||'/ws/{uuid}');set('#ibGrpcService',(ib.grpc_settings||{}).serviceName||'pars-space');set('#ibXPath2',(ib.xhttp_settings||{}).path||(ib.xhttp_settings||{}).path||'/xhttp');set('#ibXPath',(ib.xhttp_settings||{}).path||'/');set('#ibDest',(ib.reality_settings||{}).dest||'is1-ssl.mzstatic.com:443');set('#ibSid',(ib.reality_settings||{}).short_id||'');set('#ibFinalMask',JSON.stringify(ib.finalmask||{},null,2));renderTransportExtras('ib');},0);$('#inboundModal').classList.add('open')}catch(e){toast(e.message)}}
+function renderInboundProtocolFields(){const p=$('#ibProtocol').value;let h='';if(p==='ssh'){h=`<div class="field"><label>SSH Host</label><input id="ibSshHost" placeholder="server.example.com"></div><div class="field"><label>SSH Port</label><input id="ibSshPort" type="number" value="22"></div><div class="field"><label>SSH Username</label><input id="ibSshUser"></div><div class="field"><label>SSH Password</label><input id="ibSshPass" type="password"></div><div class="field"><label>Auth mode</label><select id="ibSshAuth"><option value="password">Password</option></select></div><div class="field full"><button class="btn" type="button" onclick="testInboundSSH()">تست پورت SSH</button></div>`}else if(p==='reality'){h=`<div class="field"><label>Network</label><select id="ibNetwork"><option value="tcp">TCP</option><option value="xhttp">XHTTP</option><option value="grpc">gRPC</option></select></div><div class="field"><label>External Port</label><input id="ibExtPort" type="number" value="443"></div><div class="field"><label>External Host</label><input id="ibExtDomain" placeholder="reality.example.com"></div><div class="field"><label>SNI</label><input id="ibSni" placeholder="is1-ssl.mzstatic.com"></div><div class="field"><label>Destination</label><input id="ibDest" value="is1-ssl.mzstatic.com:443"></div><div class="field"><label>Fingerprint</label><select id="ibFp"><option>chrome</option><option>firefox</option><option>safari</option><option>edge</option></select></div><div class="field"><label>Short ID</label><input id="ibSid" placeholder="auto"></div><div class="field full"><label>XHTTP Path</label><input id="ibXPath" value="/"></div>`}else{h=`<div class="field"><label>Network</label><select id="ibNetwork"><option value="ws">WebSocket</option><option value="grpc">gRPC</option><option value="tcp">TCP</option><option value="xhttp">XHTTP</option></select></div><div class="field"><label>Security</label><select id="ibSecurity"><option value="tls">TLS</option><option value="none">None</option></select></div><div class="field"><label>Port</label><input id="ibPort" type="number" value="443"></div><div class="field"><label>Server Host</label><input id="ibDomain" placeholder="example.com"></div><div class="field"><label>SNI</label><input id="ibSni" placeholder="example.com"></div><div class="field"><label>Fingerprint</label><select id="ibFp"><option>chrome</option><option>firefox</option><option>safari</option><option>edge</option></select></div><div class="field"><label>ALPN</label><input id="ibAlpn" value="http/1.1"></div><div class="field"><label>WS Path</label><input id="ibPath" value="/ws/{uuid}"></div><div class="field"><label>gRPC Service</label><input id="ibGrpcService" value="pars-space"></div><div class="field full"><label>XHTTP Path</label><input id="ibXPath2" value="/xhttp"></div>`}$('#ibDynamic').innerHTML=h}
+async function editInbound(id){try{let d=await api('/api/inbounds');let ib=(d.inbounds||[]).find(x=>String(x.inbound_id)===String(id));if(!ib)throw Error('Inbound not found');$('#ibEditId').value=id;$('#ibModalTitle').textContent='ویرایش اینباند';$('#ibName').value=ib.name||'';$('#ibProtocol').value=(ib.protocol||'vless').toLowerCase();renderInboundProtocolFields();setTimeout(()=>{let set=(id,v)=>{let e=$(id);if(e&&v!==undefined)e.value=v};let ss=ib.ssh_settings||{};set('#ibSshHost',ss.host||ib.domain||'');set('#ibSshPort',ss.port||ib.port||22);set('#ibSshUser',ss.username||'');set('#ibSshPass',ss.password||'');set('#ibSshAuth','password');set('#ibNetwork',ib.network||'ws');set('#ibSecurity',ib.security||'tls');set('#ibPort',ib.port||443);set('#ibExtPort',ib.external_port||443);set('#ibDomain',ib.domain||'');set('#ibExtDomain',ib.external_domain||'');set('#ibSni',ib.sni||'');set('#ibFp',ib.fingerprint||'chrome');set('#ibPath',(ib.ws_settings||{}).path||ib.path||'/ws/{uuid}');set('#ibGrpcService',(ib.grpc_settings||{}).serviceName||'pars-space');set('#ibXPath2',(ib.xhttp_settings||{}).path||'/xhttp');set('#ibXPath',(ib.xhttp_settings||{}).path||'/');set('#ibDest',(ib.reality_settings||{}).dest||'is1-ssl.mzstatic.com:443');set('#ibSid',(ib.reality_settings||{}).short_id||'');set('#ibAlpn',(ib.tls_settings||{}).alpn||'http/1.1');},0);$('#inboundModal').classList.add('open')}catch(e){toast(e.message)}}
+async function testInboundSSH(){try{const host=$('#ibSshHost').value.trim(),port=Number($('#ibSshPort').value||22);const d=await api('/api/tools/test-ssh',{method:'POST',body:JSON.stringify({host,port})});$('#ibTestMsg').textContent=d.ok?`✓ ${d.latency_ms} ms`:`✕ ${d.message}`;toast(d.ok?'پورت SSH قابل دسترسی است':'پورت SSH در دسترس نیست')}catch(e){toast(e.message)}}
+async function createInbound(){try{const p=$('#ibProtocol').value;let body={name:$('#ibName').value.trim(),protocol:p};if(p==='ssh'){body.network='tcp';body.security='none';body.port=Number($('#ibSshPort').value||22);body.external_port=body.port;body.domain=$('#ibSshHost').value.trim();body.external_domain=body.domain;body.ssh_settings={host:body.domain,port:body.port,username:$('#ibSshUser').value.trim(),password:$('#ibSshPass').value,auth_mode:$('#ibSshAuth').value}}else if(p==='reality'){body={...body,network:$('#ibNetwork').value,security:'reality',port:Number($('#ibExtPort').value||443),external_port:Number($('#ibExtPort').value||443),domain:$('#ibExtDomain').value.trim(),external_domain:$('#ibExtDomain').value.trim(),sni:$('#ibSni').value.trim(),fingerprint:$('#ibFp').value,reality_settings:{dest:$('#ibDest').value.trim(),sni:$('#ibSni').value.trim(),short_id:$('#ibSid').value.trim()},xhttp_settings:{path:$('#ibXPath').value||'/',mode:'stream-up'}}}else{body={...body,network:$('#ibNetwork').value,security:$('#ibSecurity').value,port:Number($('#ibPort').value||443),domain:$('#ibDomain').value.trim(),sni:$('#ibSni').value.trim(),fingerprint:$('#ibFp').value,tls_settings:{alpn:$('#ibAlpn').value||'http/1.1'},ws_settings:{path:$('#ibPath').value||'/ws/{uuid}'},grpc_settings:{serviceName:$('#ibGrpcService').value||'pars-space'},xhttp_settings:{path:$('#ibXPath2').value||'/xhttp',mode:'stream-up'}}}const editId=$('#ibEditId').value.trim();const d=await api('/api/inbounds'+(editId?'/'+encodeURIComponent(editId):''),{method:editId?'PATCH':'POST',body:JSON.stringify(body)});closeInbound();toast(editId?'اینباند ویرایش شد':'اینباند ساخته شد');loadInbounds();loadOverview()}catch(e){toast(e.message)}}
 
-async function createInbound(){
- try{
-  const p=$('#ibProtocol').value;
-  const net=$('#ibNetwork')?.value||'ws'; const reality=p==='reality';
-  const body={name:$('#ibName').value.trim(),protocol:p,network:p==='ssh'?'tcp':net,security:p==='ssh'?'none':(reality?'reality':($('#ibSecurity')?.value||'tls')),port:Number($('#ibPort')?.value||(p==='ssh'?22:443)),external_port:Number($('#ibExtPort')?.value||443),domain:$('#ibDomain')?.value||'',external_domain:$('#ibExtDomain')?.value||'',sni:$('#ibSni')?.value||'',fingerprint:$('#ibFp')?.value||'chrome',tls_settings:{alpn:$('#ibAlpn')?.value||'http/1.1'},ws_settings:{path:$('#ibPath')?.value||'/ws/{uuid}'},grpc_settings:{serviceName:$('#ibGrpcService')?.value||'pars-space'},xhttp_settings:{path:$('#ibXPath2')?.value||$('#ibXPath')?.value||'/',mode:'stream-up'},reality_settings:{dest:$('#ibDest')?.value||'',sni:$('#ibSni')?.value||'',short_id:$('#ibSid')?.value||'',fingerprint:$('#ibFp')?.value||'chrome'},finalmask:parseFinalMask($('#ibFinalMask')?.value||'')};
-  if(p==='ssh') body.ssh_settings={host:$('#ibDomain')?.value||'',port:Number($('#ibPort')?.value||22),username:$('#ibSshUser')?.value||'',password:$('#ibSshPass')?.value||'',mode:$('#ibSshMode')?.value||'password'};
-  const editId=$('#ibEditId').value.trim();
-  const d=await api('/api/inbounds'+(editId?'/'+encodeURIComponent(editId):''),{method:editId?'PATCH':'POST',body:JSON.stringify(body)});
-  closeInbound();toast(lang==='fa'?(editId?'اینباند ویرایش شد':'اینباند ساخته شد'):(editId?'Inbound updated':'Inbound created'));loadInbounds();loadOverview();
- }catch(e){toast(e.message)}
-}
-
-
-async function loadSubs(){try{let d=await api('/api/pars/v1/subscriptions');let a=d.subs||d.subscriptions||[];$('#subList').innerHTML=a.length?a.map(s=>`<div class="tableRow row" style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--soft);margin-bottom:8px"><div><b>${esc(s.name)}</b><div class="muted">${esc(s.desc||'')} · ${s.active_count??0} active · ${s.links_count??0} links</div><div class="output" style="margin-top:8px;min-height:0;padding:9px">${esc(s.sub_url||'')}</div></div><div class="toolbar"><button class="btn small" onclick="copyText('${esc(s.sub_url||'')}')">${tr('copy')} URL</button><button class="btn small" onclick="copyText('${esc(s.public_url||'')}')">${tr('copy')} Page</button></div></div>`).join(''):`<div class="empty">${tr('noData')}</div>`}catch(e){toast(e.message)}}
+async function loadSubs(){try{let d=await api('/api/pars/v1/subscriptions');let a=d.subs||d.subscriptions||[];$('#subList').innerHTML=a.length?a.map(s=>`<div class="tableRow row" style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(255,255,255,.02));margin-bottom:9px"><div><b>${esc(s.name)}</b><div class="muted">${esc(s.desc||'')} · ${s.active_count??0} active · ${s.links_count??0} links</div><div class="output" style="margin-top:8px;min-height:0;padding:9px">${esc(s.sub_url||'')}</div></div><div class="toolbar"><button class="btn small" onclick="copyText('${esc(s.sub_url||'')}')">کپی URL</button><button class="btn small" onclick="copyText('${esc(s.public_url||'')}')">کپی Page</button></div></div>`).join(''):`<div class="empty">${tr('noData')}</div>`}catch(e){toast(e.message)}}
 
 async function createSubscription(){
  let name=prompt(lang==='fa'?'نام اشتراک:':'Subscription name:','Pars Subscription');if(name===null)return;
@@ -483,9 +392,9 @@ async function toggleUser(id){try{await api('/api/users/'+encodeURIComponent(id)
 async function deleteUser(id){if(!confirm(lang==='fa'?'این کاربر و کانفیگش حذف شود؟':'Delete this user and its config?'))return;try{await api('/api/users/'+encodeURIComponent(id),{method:'DELETE'});await loadClients();await loadOverview();toast(lang==='fa'?'کاربر حذف شد':'User deleted')}catch(e){toast(e.message)}}
 async function showUserQR(id){try{const u=await api('/api/users/'+encodeURIComponent(id));$('#userQrImage').src=u.qr_url+'?t='+Date.now();$('#userQrLink').textContent=u.subscription_url||'';$('#userQrModal').classList.add('open')}catch(e){toast(e.message)}}
 function closeUserQR(){$('#userQrModal').classList.remove('open')}
-async function editUser(id){try{const u=await api('/api/users/'+encodeURIComponent(id));$('#editUserId').value=id;$('#editUsername').value=u.username||'';$('#editStatus').value=u.status||'active';$('#editTraffic').value=u.traffic_limit_bytes?Math.round(u.traffic_limit_bytes/1024**3*100)/100:0;let days=0;if(u.expire_at){days=Math.max(0,Math.ceil((new Date(u.expire_at)-Date.now())/86400000))}$('#editExpire').value=days;$('#editSni').value=u.sni||'';$('#userEditModal').classList.add('open')}catch(e){toast(e.message)}}
+async function editUser(id){try{const u=await api('/api/users/'+encodeURIComponent(id));$('#editUserId').value=id;$('#editUsername').value=u.username||'';$('#editStatus').value=u.status||'active';$('#editTraffic').value=u.traffic_limit_bytes?Math.round(u.traffic_limit_bytes/1024**3*100)/100:0;let days=0;if(u.expire_at){days=Math.max(0,Math.ceil((new Date(u.expire_at)-Date.now())/86400000))}$('#editExpire').value=days;$('#editDeviceLimit').value=u.concurrent_connections||0;$('#editSni').value=u.sni||'';$('#userEditModal').classList.add('open')}catch(e){toast(e.message)}}
 function closeUserEdit(){$('#userEditModal').classList.remove('open')}
-async function saveUserEdit(){try{const id=$('#editUserId').value;await api('/api/users/'+encodeURIComponent(id),{method:'PATCH',body:JSON.stringify({username:$('#editUsername').value.trim(),status:$('#editStatus').value,traffic_limit_gb:Number($('#editTraffic').value||0),expire_days:Number($('#editExpire').value||0),sni:$('#editSni').value.trim()})});closeUserEdit();await loadClients();await loadOverview();toast('User updated')}catch(e){toast(e.message)}}
+async function saveUserEdit(){try{const id=$('#editUserId').value;await api('/api/users/'+encodeURIComponent(id),{method:'PATCH',body:JSON.stringify({username:$('#editUsername').value.trim(),status:$('#editStatus').value,traffic_limit_gb:Number($('#editTraffic').value||0),expire_days:Number($('#editExpire').value||0),concurrent_connections:Number($('#editDeviceLimit').value||0),sni:$('#editSni').value.trim()})});closeUserEdit();await loadClients();await loadOverview();toast('User updated')}catch(e){toast(e.message)}}
 async function resetUserTrafficFromEdit(){try{const id=$('#editUserId').value;await api('/api/users/'+encodeURIComponent(id)+'/reset',{method:'PATCH'});toast('Traffic reset');await loadClients()}catch(e){toast(e.message)}}
 async function loadNodes(){try{let d=await api('/api/nodes');let a=d.nodes||[];$('#nodeList').innerHTML=a.length?a.map(n=>`<div class="row"><div><b>${esc(n.name||n.node_id)}</b><div class="muted" dir="ltr">${esc(n.url||'')}</div></div><div class="toolbar"><span class="pill">${esc(n.status||'unknown')}</span><button class="btn small" onclick="pingNode('${esc(n.node_id)}')">Ping</button><button class="btn small" onclick="syncNode('${esc(n.node_id)}')">Sync</button><button class="btn small danger" onclick="deleteNode('${esc(n.node_id)}')">${tr('delete')}</button></div></div>`).join(''):`<div class="empty">${tr('noData')}</div>`}catch(e){$('#nodeList').innerHTML='<div class="empty">'+esc(e.message)+'</div>'}}
 function openNode(){$('#nodeModal').classList.add('open')}
@@ -501,13 +410,18 @@ async function testSpeed(){try{let bytes=4*1024*1024,t=performance.now(),r=await
 async function loadParsApi(){try{let d=await api('/api/pars/v1/credentials');$('#parsApiKey').value=d.api_key||''}catch(e){$('#parsApiKey').value=''}}
 async function copyParsKey(){await copyText($('#parsApiKey').value)}
 async function regenerateParsKey(){if(!confirm(lang==='fa'?'کلید قبلی دیگر معتبر نباشد و کلید جدید ساخته شود؟':'Regenerate the Pars API key?'))return;try{let d=await api('/api/pars/v1/credentials/regenerate',{method:'POST'});$('#parsApiKey').value=d.api_key||'';toast(lang==='fa'?'کلید جدید ساخته شد':'New key generated')}catch(e){toast(e.message)}}
-async function loadSettingsPanel(){try{let d=await api('/api/settings');if($('#panelAlias'))$('#panelAlias').value=d.panel_alias||'Pars Space';}catch(e){}}
+async function loadSettingsPanel(){try{let d=await api('/api/settings');if($('#panelAlias'))$('#panelAlias').value=d.panel_alias||'Pars Space';protocolDefaults=d.protocol_defaults||{};renderServerAdvancedSettings();}catch(e){}}
 async function savePanelAlias(){try{let v=$('#panelAlias').value.trim()||'Pars Space';await api('/api/settings',{method:'POST',body:JSON.stringify({panel_alias:v})});toast(lang==='fa'?'نام مستعار ذخیره شد':'Alias saved')}catch(e){toast(e.message)}}
 async function loadActivity(){try{let d=await api('/api/activity');let a=d.activity||d.activities||d.logs||[];$('#activityList').innerHTML=a.length?a.slice(0,30).map(x=>`<div class="row"><span>${esc(x.message||x.action||x.event||JSON.stringify(x))}</span><span class="muted">${esc(x.created_at||x.time||'')}</span></div>`).join(''):`<div class="empty">${tr('noData')}</div>`}catch(e){toast(e.message)}}
 async function copyText(v){if(!v)return toast('No link');try{await navigator.clipboard.writeText(v);toast(lang==='fa'?'کپی شد':'Copied')}catch{prompt('Copy:',v)}}
 async function changeCredentials(){try{await api('/api/change-credentials',{method:'POST',body:JSON.stringify({username:$('#adminUser').value.trim(),current_password:$('#adminCurrent').value,new_password:$('#adminNew').value})});toast(lang==='fa'?'رمز عبور تغییر کرد':'Password updated')}catch(e){toast(e.message)}}
 async function boot(){applyI18n();applyTheme();try{let me=await api('/api/me');if(me.username)$('#adminUser').value=me.username}catch{}startLiveOverview();loadInbounds();loadParsApi();loadServerInfo();loadSettingsPanel();setTimeout(()=>$('#loadingScreen')?.classList.add('hide'),650)}
-updateClientProtocolFields();boot();
+
+let protocolDefaults={};
+function renderServerAdvancedSettings(){const p=$('#settingsProtocol')?.value||'vless';const box=$('#serverAdvancedSettings');if(!box)return;const d=protocolDefaults[p]||{};let h='';if(p==='ssh')h=`<div class="advancedGrid"><div class="field"><label>SSH Host</label><input id="setSshHost" value="${esc(d.host||'')}" placeholder="server.example.com"></div><div class="field"><label>SSH Port</label><input id="setSshPort" type="number" value="${esc(d.port||22)}"></div><div class="field"><label>SSH Username</label><input id="setSshUser" value="${esc(d.username||'')}"></div><div class="field"><label>SSH Password</label><input id="setSshPass" type="password" value="${esc(d.password||'')}"></div><div class="field"><label>Auth Mode</label><select id="setSshAuth"><option value="password" ${(d.auth_mode||'password')==='password'?'selected':''}>Password</option><option value="key" ${d.auth_mode==='key'?'selected':''}>Private key</option></select></div></div>`;else if(p==='reality')h=`<div class="advancedGrid"><div class="field"><label>SNI</label><input id="setSni" value="${esc(d.sni||'is1-ssl.mzstatic.com')}"></div><div class="field"><label>Destination</label><input id="setDest" value="${esc(d.dest||'is1-ssl.mzstatic.com:443')}"></div><div class="field"><label>External Port</label><input id="setPort" type="number" value="${esc(d.port||443)}"></div><div class="field"><label>XHTTP Path</label><input id="setPath" value="${esc(d.path||'/')}"></div></div>`;else h=`<div class="advancedGrid"><div class="field"><label>Network</label><select id="setNetwork"><option value="ws" ${d.network==='ws'?'selected':''}>WebSocket</option><option value="grpc" ${d.network==='grpc'?'selected':''}>gRPC</option><option value="tcp" ${d.network==='tcp'?'selected':''}>TCP</option><option value="xhttp" ${d.network==='xhttp'?'selected':''}>XHTTP</option></select></div><div class="field"><label>Security</label><select id="setSecurity"><option value="tls" ${d.security==='tls'?'selected':''}>TLS</option><option value="none" ${d.security==='none'?'selected':''}>None</option></select></div><div class="field"><label>Port</label><input id="setPort" type="number" value="${esc(d.port||443)}"></div><div class="field"><label>SNI</label><input id="setSni" value="${esc(d.sni||'')}"></div><div class="field"><label>Path</label><input id="setPath" value="${esc(d.path||'/ws/{uuid}')}"></div></div>`;box.innerHTML=h}
+async function saveProtocolDefaults(){const p=$('#settingsProtocol').value;let d={};if(p==='ssh')d={host:$('#setSshHost').value.trim(),port:Number($('#setSshPort').value||22),username:$('#setSshUser').value.trim(),password:$('#setSshPass').value,auth_mode:$('#setSshAuth').value};else if(p==='reality')d={network:'tcp',security:'reality',port:Number($('#setPort').value||443),sni:$('#setSni').value.trim(),dest:$('#setDest').value.trim(),path:$('#setPath').value.trim()||'/'};else d={network:$('#setNetwork').value,security:$('#setSecurity').value,port:Number($('#setPort').value||443),sni:$('#setSni').value.trim(),path:$('#setPath').value.trim()||'/ws/{uuid}'};try{let r=await api('/api/settings',{method:'POST',body:JSON.stringify({protocol_defaults:{[p]:d}})});protocolDefaults=r.settings?.protocol_defaults||{...protocolDefaults,[p]:d};renderServerAdvancedSettings();toast('تنظیمات پروتکل ذخیره شد')}catch(e){toast(e.message)}}
+function toggleActivity(){const c=$('#activityCard'),b=$('#activityShow');const hidden=c.style.display==='none';c.style.display=hidden?'':'none';b.style.display=hidden?'none':'inline-flex'}
+renderServerAdvancedSettings();updateClientProtocolFields();boot();
 </script>
 </body>
 </html>
