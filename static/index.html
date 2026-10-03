@@ -342,6 +342,50 @@ async function loadTraffic(){try{let range=$('#trafficRange')?.value||'day';let 
 
 async function loadOverview(){try{let s=await api('/api/server/stats');$('#sActive').textContent=s.active_users??s.total_users??0;$('#sConn').textContent=s.active_connections??0;let ib=await api('/api/inbounds');$('#sInbound').textContent=(ib.inbounds||[]).length;let q=await api('/api/pars/v1/subscriptions');$('#sSubs').textContent=(q.subs||q.subscriptions||[]).length;$('#heroTraffic').textContent=(s.total_traffic_used_gb||0)+' GB';loadTraffic()}catch(e){console.warn(e)}}
 let liveOverviewTimer=null;function startLiveOverview(){if(liveOverviewTimer)clearInterval(liveOverviewTimer);loadOverview();liveOverviewTimer=setInterval(loadOverview,3500)}
+async function loadClients(){
+ try{
+  const d=await api('/api/users');
+  const users=Array.isArray(d?.users)?d.users:[];
+  const body=$('#usersBody');
+  if(!body)return;
+  body.innerHTML=users.length?users.map(u=>{
+   const used=Number(u.traffic_used_bytes||0), limit=Number(u.traffic_limit_bytes||0);
+   const traffic=limit>0?(esc(u.traffic_used_fmt||formatBytes(used))+' / '+esc(u.traffic_limit_fmt||formatBytes(limit))):esc(u.traffic_used_fmt||formatBytes(used))+' / ∞';
+   const status=String(u.status||'active').toLowerCase();
+   const statusLabel=status==='active'?'Active':status==='disabled'?'Disabled':status;
+   const inbound=esc(u.inbound_name||u.inbound_id||'Auto / Default');
+   const expires=u.expire_at?new Date(u.expire_at).toLocaleString(): '∞';
+   return `<tr>
+    <td><b>${esc(u.username||u.user_id)}</b><div class="muted">${esc(u.user_id||'')}</div></td>
+    <td><span class="pill">${esc(String(u.protocol||'vless').toUpperCase())}</span><div class="muted">${inbound}</div></td>
+    <td><div>${traffic}</div><div class="muted">${esc(String(u.concurrent_connections||0))} device · expires ${esc(expires)}</div></td>
+    <td><span class="pill ${status==='active'?'onlinePill':''}">${esc(statusLabel)}</span></td>
+    <td><div class="toolbar">
+      <button class="btn small" onclick="editUser('${esc(u.user_id)}')">Edit</button>
+      <button class="btn small" onclick="showUserQR('${esc(u.user_id)}')">QR</button>
+      <button class="btn small" onclick="viewUserConfig('${esc(u.config_uuid||u.user_id)}')">Config</button>
+      <button class="btn small" onclick="toggleUser('${esc(u.user_id)}')">${status==='active'?'Disable':'Enable'}</button>
+      <button class="btn small danger" onclick="deleteUser('${esc(u.user_id)}')">Delete</button>
+    </div></td>
+   </tr>`;
+  }).join(''):`<tr><td colspan="5"><div class="empty">${tr('noData')}</div></td></tr>`;
+  const count=$('#sActive');
+  if(count)count.textContent=users.filter(u=>String(u.status||'active').toLowerCase()==='active').length;
+ }catch(e){
+  console.error('loadClients failed',e);
+  const body=$('#usersBody');
+  if(body)body.innerHTML=`<tr><td colspan="5"><div class="empty">${esc(e.message||'Failed to load users')}</div></td></tr>`;
+  toast(e.message||'Failed to load users');
+ }
+}
+function formatBytes(bytes){
+ const n=Number(bytes)||0;
+ if(n<=0)return '0 B';
+ const units=['B','KB','MB','GB','TB'];
+ const i=Math.min(Math.floor(Math.log(n)/Math.log(1024)),units.length-1);
+ return (n/Math.pow(1024,i)).toFixed(i?2:0)+' '+units[i];
+}
+
 async function loadInbounds(){try{let d=await api('/api/inbounds');let a=d.inbounds||[];$('#inboundBody').innerHTML=a.length?a.map(x=>`<tr><td><b>${esc(x.name||x.inbound_id)}</b><div class="muted">${esc((x.protocol||'').toUpperCase())}</div></td><td><span class="pill">${esc(x.protocol||'-')}</span></td><td>${esc(x.network||'-')}</td><td>${esc(x.external_port||x.port||'-')}</td><td>${x.users_count??0}</td><td><span class="pill">${tr('online')}</span></td><td><button class="btn small" onclick="editInbound('${esc(x.inbound_id)}')">ویرایش</button></td></tr>`).join(''):`<tr><td colspan="7"><div class="empty">${tr('noData')}</div></td></tr>`;renderInboundPicker(a)}catch(e){toast(e.message)}}
 function renderInboundPicker(a){const box=$('#inboundPicker');if(!box)return;const selected=new Set((box.dataset.selected||'').split(',').filter(Boolean));box.innerHTML='<div class="glassChoice '+(!selected.size?'active':'')+'" data-id="" onclick="selectInboundCard(this,\'\')"><b>Auto / Default</b><span>پیش‌فرض مدیریت‌شده</span></div>'+a.filter(x=>x.protocol!=='node').map(x=>`<div class="glassChoice ${selected.has(String(x.inbound_id))?'active':''}" data-id="${esc(x.inbound_id)}" onclick="selectInboundCard(this,'${esc(x.inbound_id)}')"><b>${esc(x.name||x.inbound_id)}</b><span>${esc((x.protocol||'').toUpperCase())} · ${esc(x.network||'tcp')} · ${esc(x.external_port||x.port||'-')}</span></div>`).join('');syncInboundPicker()}
 function selectInboundCard(el,id){if(!id){$$('#inboundPicker .glassChoice').forEach(x=>x.classList.remove('active'));el.classList.add('active');$('#inboundPicker').dataset.selected='';syncInboundPicker();return}$('#inboundPicker .glassChoice[data-id=""]').classList.remove('active');el.classList.toggle('active');let ids=$$('[data-id]').filter(x=>x.classList.contains('active')).map(x=>x.dataset.id).filter(Boolean);$('#inboundPicker').dataset.selected=ids.join(',');syncInboundPicker()}
