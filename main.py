@@ -673,7 +673,7 @@ TG_PROXY_INSTANCES: dict = {}
 # پروتکل‌های پشتیبانی‌شده برای هر کانفیگ
 PROTOCOLS = ("vless-ws", "xhttp-packet-up", "xhttp-stream-up", "xhttp-stream-one")
 
-USER_PROTOCOLS = ("vless", "vmess", "trojan", "shadowsocks", "reality", "ssh")
+USER_PROTOCOLS = ("vless",)
 DEFAULT_PROTOCOL = "vless-ws"
 
 def log_activity(kind: str, message: str, level: str = "info"):

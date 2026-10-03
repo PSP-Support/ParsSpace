@@ -110,9 +110,27 @@ input:focus,select:focus,textarea:focus{border-color:rgba(224,187,98,.72)!import
 @media(max-width:900px){.glassGrid{grid-template-columns:1fr 1fr}.advancedGrid{grid-template-columns:1fr}.app{padding:10px}.top{top:7px}.nav{overflow-x:auto;scrollbar-width:none}.nav button{white-space:nowrap}.hero{grid-template-columns:1fr!important}.cols,.split{grid-template-columns:1fr!important}}
 @media(max-width:620px){.glassGrid{grid-template-columns:1fr}.modalBox{width:calc(100vw - 16px)!important;max-height:92vh!important;padding:17px!important;border-radius:25px}.form{grid-template-columns:1fr!important}.field.full{grid-column:auto!important}.sectionHero{align-items:flex-start}.table{min-width:680px}.btn{min-height:42px}.cardPad{padding:16px!important}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.card:hover,.action:hover,.row:hover{transform:none!important}}
+
+/* Pars Space dynamic gold glass layer */
+.dynamicMesh{position:fixed;inset:0;pointer-events:none;z-index:-1;overflow:hidden;opacity:.95}
+.dynamicMesh:before,.dynamicMesh:after{content:"";position:absolute;border-radius:50%;filter:blur(42px);will-change:transform}
+.dynamicMesh:before{width:34vw;height:34vw;min-width:240px;min-height:240px;left:-8vw;top:8vh;background:radial-gradient(circle,rgba(224,187,98,.13),rgba(224,187,98,0) 68%);animation:meshFloat 18s ease-in-out infinite alternate}
+.dynamicMesh:after{width:30vw;height:30vw;min-width:220px;min-height:220px;right:-6vw;bottom:3vh;background:radial-gradient(circle,rgba(255,242,178,.09),rgba(255,242,178,0) 68%);animation:meshFloat2 22s ease-in-out infinite alternate}
+@keyframes meshFloat{to{transform:translate3d(12vw,8vh,0) scale(1.12)}}
+@keyframes meshFloat2{to{transform:translate3d(-10vw,-7vh,0) scale(1.08)}}
+.glassSheen{position:absolute;inset:-30%;pointer-events:none;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.055) 48%,rgba(224,187,98,.055) 50%,transparent 58%);transform:translateX(-35%) rotate(8deg);animation:sheen 13s ease-in-out infinite}
+@keyframes sheen{50%{transform:translateX(35%) rotate(8deg)}100%{transform:translateX(-35%) rotate(8deg)}}
+.card,.top,.modalBox{isolation:isolate}
+.card:after,.top:after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:linear-gradient(120deg,rgba(255,255,255,.055),transparent 28%,transparent 70%,rgba(224,187,98,.035));opacity:.7}
+.cardPad,.heroMain,.heroSide,.stat,.action,.row{position:relative;overflow:hidden}
+.nav button{position:relative;overflow:hidden}
+.nav button:before{content:"";position:absolute;inset:1px;border-radius:inherit;background:linear-gradient(110deg,transparent 20%,rgba(255,255,255,.12),transparent 65%);transform:translateX(-130%);transition:transform .45s ease}
+.nav button:hover:before{transform:translateX(130%)}
+@media (max-width:720px){.dynamicMesh:before{width:70vw;height:70vw;filter:blur(34px)}.dynamicMesh:after{width:62vw;height:62vw;filter:blur(34px)}.glassSheen{animation-duration:18s}.card:hover{transform:none!important}}
+@media (prefers-reduced-motion:reduce){.dynamicMesh:before,.dynamicMesh:after,.glassSheen{animation:none}.nav button:before{transition:none}}
 </style>
 </head>
-<body>
+<body><div class="dynamicMesh"><div class="glassSheen"></div></div>
 <div class="loadingScreen" id="loadingScreen"><div class="loaderCard"><div class="loaderRing"></div><b id="loadingTitle">Pars Space</b><div class="muted" id="loadingText" style="margin-top:7px">در حال آماده‌سازی پنل…</div><div class="loaderBar"><i></i></div></div></div>
 <div class="ambient"><i class="orb a"></i><i class="orb b"></i></div>
 <div class="app">
@@ -232,7 +250,7 @@ ls -la"></textarea></div>
    <button class="btn dark" style="margin-top:13px" onclick="changeCredentials()" data-i18n="save">Save changes</button>
   </div>
   <div class="card cardPad" style="margin-top:14px"><div class="head"><div><h2 data-i18n="panelAlias">نام مستعار پنل</h2><p data-i18n="panelAliasDesc">نامی که در داشبورد و بخش‌های مدیریتی نمایش داده می‌شود.</p></div></div><div class="form"><div class="field full"><label data-i18n="panelAlias">Panel alias</label><input id="panelAlias" placeholder="Pars Space"></div></div><button class="btn dark" style="margin-top:12px" onclick="savePanelAlias()" data-i18n="save">ذخیره</button></div>
-  <div class="card cardPad" style="margin-top:14px"><div class="head"><div><h2>تنظیمات بیشتر سرور</h2><p class="muted">پیش‌فرض‌های هر پروتکل. این مقادیر فقط برای اینباندهای جدید استفاده می‌شوند.</p></div><button class="btn dark" onclick="saveProtocolDefaults()">ذخیره تنظیمات</button></div><div class="form"><div class="field"><label>پروتکل</label><select id="settingsProtocol" onchange="renderServerAdvancedSettings()"><option value="vless">VLESS</option><option value="vmess">VMess</option><option value="trojan">Trojan</option><option value="reality">Reality</option><option value="ssh">SSH</option></select></div></div><div id="serverAdvancedSettings" style="margin-top:12px"></div></div>
+  <div class="card cardPad" style="margin-top:14px"><div class="head"><div><h2>تنظیمات بیشتر سرور</h2><p class="muted">پیش‌فرض‌های هر پروتکل. این مقادیر فقط برای اینباندهای جدید استفاده می‌شوند.</p></div><button class="btn dark" onclick="saveProtocolDefaults()">ذخیره تنظیمات</button></div><div class="form"><div class="field"><label>پروتکل</label><select id="settingsProtocol" onchange="renderServerAdvancedSettings()"><option value="vless">VLESS</option></select></div></div><div id="serverAdvancedSettings" style="margin-top:12px"></div></div>
   <div class="card cardPad" id="activityCard" style="margin-top:14px"><div class="head"><div><h2 data-i18n="activityTitle">Activity & Logs</h2><p data-i18n="activityDesc">لاگ‌ها و فعالیت‌های اخیر اینجا نمایش داده می‌شوند.</p></div><div class="toolbar"><button class="btn" onclick="loadActivity()">↻</button><button class="btn" onclick="toggleActivity()">×</button></div></div><div id="activityList" class="list"></div></div>
   <div class="card cardPad" style="margin-top:14px"><div class="head"><div><h2>Panel network</h2><p>Live public IP and detected location.</p></div><button class="btn small" onclick="loadServerInfo()">↻</button></div><div id="serverInfo" class="list"><div class="empty">Loading…</div></div></div>
   <div class="card cardPad" style="margin-top:14px"><div class="head"><div><h2 data-i18n="parsApi">Pars Space API</h2><p data-i18n="parsApiDesc">This is the current panel API key used for node connections.</p></div><button class="btn" onclick="regenerateParsKey()" data-i18n="regenerate">Regenerate</button></div><div class="field"><label>Pars API Key</label><input id="parsApiKey" dir="ltr" readonly value="Loading..." onclick="this.select()"></div><div class="toolbar" style="margin-top:10px"><button class="btn dark" onclick="copyParsKey()" data-i18n="copyKey">Copy API key</button><span class="muted" data-i18n="apiPrefix">Prefix: psp_</span></div></div>
@@ -248,7 +266,7 @@ ls -la"></textarea></div>
 <div class="form">
 <div class="field"><label>نام کاربری</label><input id="uName" placeholder="khosrow"></div>
 <div class="field"><label>رمز عبور</label><input id="uPass" placeholder="خالی = تولید خودکار"></div>
-<div class="field"><label>پروتکل</label><select id="uProtocol" onchange="updateClientProtocolFields()"><option value="vless">VLESS</option><option value="vmess">VMess</option><option value="trojan">Trojan</option><option value="reality">Reality</option><option value="ssh">SSH</option></select></div>
+<div class="field"><label>پروتکل</label><select id="uProtocol" onchange="updateClientProtocolFields()"><option value="vless">VLESS</option></select></div>
 <div class="field"><label>محدودیت دستگاه</label><input id="uDeviceLimit" type="number" min="0" value="0" placeholder="0 = نامحدود"></div>
 <div class="field"><label>حجم (GB)</label><input id="uTraffic" type="number" min="0" value="0" placeholder="0 = نامحدود"></div>
 <div class="field"><label>اعتبار (روز)</label><input id="uExpire" type="number" min="0" value="0" placeholder="0 = نامحدود"></div>
@@ -283,7 +301,7 @@ ls -la"></textarea></div>
 <div class="modal" id="inboundModal"><div class="modalBox">
 <button class="close" onclick="closeInbound()">×</button><input type="hidden" id="ibEditId">
 <div class="sectionHero"><div><span class="eyebrow">TRANSPORT BUILDER</span><h2 id="ibModalTitle">ساخت اینباند</h2><p class="muted">پروتکل را انتخاب کن، فرم خودش را می‌سازد.</p></div><div class="heroIcon">◈</div></div>
-<div class="form"><div class="field"><label>نام</label><input id="ibName" placeholder="Main VLESS"></div><div class="field"><label>پروتکل</label><select id="ibProtocol" onchange="renderInboundProtocolFields()"><option value="vless">VLESS</option><option value="vmess">VMess</option><option value="trojan">Trojan</option><option value="reality">Reality</option><option value="ssh">SSH</option></select></div></div>
+<div class="form"><div class="field"><label>نام</label><input id="ibName" placeholder="Main VLESS"></div><div class="field"><label>پروتکل</label><select id="ibProtocol" onchange="renderInboundProtocolFields()"><option value="vless">VLESS</option></select></div></div>
 <div class="card" style="margin-top:14px;background:rgba(0,0,0,.12);box-shadow:none"><div id="ibDynamic" class="advancedGrid" style="padding:12px"></div></div>
 <div class="toolbar" style="margin-top:15px"><button class="btn dark" onclick="createInbound()">ذخیره اینباند</button><button class="btn" onclick="closeInbound()">لغو</button><span class="muted" id="ibTestMsg"></span></div>
 </div></div>
@@ -422,6 +440,24 @@ function renderServerAdvancedSettings(){const p=$('#settingsProtocol')?.value||'
 async function saveProtocolDefaults(){const p=$('#settingsProtocol').value;let d={};if(p==='ssh')d={host:$('#setSshHost').value.trim(),port:Number($('#setSshPort').value||22),username:$('#setSshUser').value.trim(),password:$('#setSshPass').value,auth_mode:$('#setSshAuth').value};else if(p==='reality')d={network:'tcp',security:'reality',port:Number($('#setPort').value||443),sni:$('#setSni').value.trim(),dest:$('#setDest').value.trim(),path:$('#setPath').value.trim()||'/'};else d={network:$('#setNetwork').value,security:$('#setSecurity').value,port:Number($('#setPort').value||443),sni:$('#setSni').value.trim(),path:$('#setPath').value.trim()||'/ws/{uuid}'};try{let r=await api('/api/settings',{method:'POST',body:JSON.stringify({protocol_defaults:{[p]:d}})});protocolDefaults=r.settings?.protocol_defaults||{...protocolDefaults,[p]:d};renderServerAdvancedSettings();toast('تنظیمات پروتکل ذخیره شد')}catch(e){toast(e.message)}}
 function toggleActivity(){const c=$('#activityCard'),b=$('#activityShow');const hidden=c.style.display==='none';c.style.display=hidden?'':'none';b.style.display=hidden?'none':'inline-flex'}
 renderServerAdvancedSettings();updateClientProtocolFields();boot();
+</script>
+
+<script>
+(()=>{
+  const fine=matchMedia('(pointer:fine)').matches;
+  if(!fine)return;
+  let raf=0,last=null;
+  document.addEventListener('pointermove',e=>{
+    last=e;if(raf)return;
+    raf=requestAnimationFrame(()=>{
+      raf=0; const el=last.target?.closest?.('.card'); if(!el)return;
+      const r=el.getBoundingClientRect(); if(r.width<180||r.height<90)return;
+      const x=(last.clientX-r.left)/r.width-.5,y=(last.clientY-r.top)/r.height-.5;
+      el.style.transform=`perspective(1100px) rotateX(${(-y*1.6).toFixed(2)}deg) rotateY(${(x*1.6).toFixed(2)}deg) translateY(-2px)`;
+    });
+  },{passive:true});
+  document.addEventListener('pointerout',e=>{const el=e.target?.closest?.('.card');if(el&&!el.contains(e.relatedTarget))el.style.transform='';},{passive:true});
+})();
 </script>
 </body>
 </html>
