@@ -69,7 +69,7 @@ html[dir="ltr"] .close{float:right}html[dir="rtl"] .close{float:left}
 <div class="ambient"><i class="orb a"></i><i class="orb b"></i></div>
 <div class="app">
 <header class="top">
- <div class="brand"><span class="logo">P</span><span>PARS SPACE</span></div>
+ <div class="brand"><span class="logo">P</span><span id="brandAlias">PARS SPACE</span></div>
  <nav class="nav">
   <button class="active" data-view="overview" data-i18n="overview">Overview</button>
   <button data-view="clients" data-i18n="clients">Users & Config</button>
@@ -169,7 +169,7 @@ ls -la"></textarea></div>
 <section class="view" id="settings">
  <div class="split">
   <div class="card cardPad"><div class="head"><div><h2 data-i18n="appearance">Appearance</h2><p data-i18n="appearanceDesc">Theme is saved locally.</p></div></div>
-   <div class="form"><div class="field"><label data-i18n="theme">Theme</label><select id="themeSelect"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></div><div class="field"><label data-i18n="language">Language</label><select id="langSelect"><option value="fa">فارسی</option><option value="en">English</option></select></div></div>
+   <div class="form"><div class="field"><label data-i18n="theme">Theme</label><select id="themeSelect"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></div><div class="field"><label data-i18n="language">Language</label><select id="langSelect"><option value="fa">فارسی</option><option value="en">English</option></select></div></div><div class="field" style="margin-top:12px"><label>آدرس کانفیگ</label><select id="configAddressMode"><option value="panel_ip">IP عددی پنل</option><option value="hostname">دامنه پنل</option></select><small class="muted" style="display:block;margin-top:5px">SNI و Host همچنان دامنه می‌مانند؛ فقط فیلد Address می‌تواند IP باشد.</small></div>
   </div>
   <div class="card cardPad"><div class="head"><div><h2 data-i18n="account">Administrator account</h2><p data-i18n="accountDesc">Uses the real credentials endpoint.</p></div></div>
    <div class="form"><div class="field"><label data-i18n="newUsername">New username</label><input id="adminUser"></div><div class="field"><label data-i18n="currentPassword">Current password</label><input id="adminCurrent" type="password"></div><div class="field"><label data-i18n="newPassword">New password</label><input id="adminNew" type="password"></div></div>
@@ -188,7 +188,7 @@ ls -la"></textarea></div>
 <div class="modal" id="clientBuilderModal"><div class="modalBox"><button class="close" onclick="closeClientBuilder()">×</button><div class="head"><div><h2 data-i18n="createUserConfig">ایجاد کاربر + کانفیگ</h2><p class="muted">کاربر، اینباند و کانفیگ در یک مرحله ساخته می‌شوند.</p></div></div>
 <div class="form">
 <div class="field"><label data-i18n="username">Username</label><input id="uName" placeholder="khosrow"></div>
-<div class="field"><label data-i18n="protocol">Protocol</label><select id="uProtocol" onchange="updateClientProtocolFields()"><option value="vless">VLESS</option><option value="vmess">VMess</option><option value="trojan">Trojan</option><option value="reality">Reality</option></select></div>
+<div class="field"><label data-i18n="protocol">Protocol</label><select id="uProtocol" onchange="updateClientProtocolFields()"><option value="vless">VLESS</option><option value="vmess">VMess</option><option value="trojan">Trojan</option><option value="ssh">SSH</option><option value="reality">Reality</option></select></div>
 <div class="field"><label data-i18n="inbound">Inbound</label><select id="uInbound"><option value="">Auto / dedicated</option></select></div>
 <div class="field"><label data-i18n="trafficLimit">Traffic limit (GB)</label><input id="uTraffic" type="number" min="0" value="0"></div>
 <div class="field"><label data-i18n="expireDays">Expire days</label><input id="uExpire" type="number" min="0" value="30"></div>
@@ -197,6 +197,9 @@ ls -la"></textarea></div>
 <div class="field"><label data-i18n="server">Server</label><input id="uServer" value=""></div>
 <div class="field"><label data-i18n="sni">SNI</label><input id="uSni" placeholder="example.com"></div>
 <div class="field full"><label data-i18n="path">Path</label><input id="uPath" placeholder="/ws/..."></div>
+<div class="field full" id="sshUserWrap" style="display:none"><label>SSH Username</label><input id="uSshUser" dir="ltr" placeholder="ssh-user"></div>
+<div class="field full" id="sshPassWrap" style="display:none"><label>SSH Password</label><input id="uSshPass" type="password" dir="ltr" placeholder="SSH password"></div>
+<div class="field full"><label class="row" style="cursor:pointer"><span><b>Dark Tunnel</b><small class="muted" style="display:block">خروجی سازگار با Import / Clipboard در DarkTunnel</small></span><input id="uDarkTunnel" type="checkbox"></label></div>
 </div>
 <div class="card" style="margin-top:14px;background:var(--soft);box-shadow:none;padding:10px"><button type="button" class="foldToggle" onclick="toggleFold('clientProtocolBody',this)"><span><span data-i18n="protocolSettings">تنظیمات پروتکل</span><small class="muted" style="display:block;margin-top:3px">برای پروتکل انتخاب‌شده</small></span><span class="chev">⌄</span></button><div id="clientProtocolBody" class="foldBody"><div class="form" style="padding-top:12px">
 <div class="field" id="cfNetwork"><label>Network</label><select id="cNetwork" onchange="updateClientProtocolFields()"><option value="ws">WebSocket</option><option value="grpc">gRPC</option><option value="tcp">TCP</option><option value="xhttp">XHTTP</option></select></div>
@@ -218,11 +221,12 @@ ls -la"></textarea></div>
 </div></div>
 <div class="modal" id="userEditModal"><div class="modalBox"><button class="close" onclick="closeUserEdit()">×</button><div class="head"><div><h2>Edit user</h2><p>تغییر اطلاعات، وضعیت و محدودیت کاربر</p></div></div><input type="hidden" id="editUserId"><div class="form"><div class="field"><label>Username</label><input id="editUsername"></div><div class="field"><label>Status</label><select id="editStatus"><option value="active">Active</option><option value="disabled">Disabled</option><option value="expired">Expired</option></select></div><div class="field"><label>Traffic GB</label><input id="editTraffic" type="number" min="0"></div><div class="field"><label>Expire days</label><input id="editExpire" type="number" min="0"></div><div class="field full"><label>SNI</label><input id="editSni"></div><div class="field"><label>دستگاه همزمان</label><input id="editConcurrent" type="number" min="0" value="0"></div></div><div class="toolbar" style="margin-top:14px"><button class="btn dark" onclick="saveUserEdit()">Save</button><button class="btn" onclick="resetUserTrafficFromEdit()">Reset traffic</button></div></div></div>
 <div class="modal" id="userQrModal"><div class="modalBox" style="max-width:430px;text-align:center"><button class="close" onclick="closeUserQR()">×</button><h2>Pars Space QR</h2><img id="userQrImage" style="width:280px;max-width:90%;border-radius:18px;background:#fff;padding:10px" alt="QR"><div class="output" id="userQrLink" style="margin-top:12px"></div><div class="toolbar" style="justify-content:center;margin-top:10px"><button class="btn dark" onclick="copyText($('#userQrLink').textContent)">Copy subscription</button></div></div></div>
+<div class="modal" id="configViewerModal"><div class="modalBox"><button class="close" onclick="closeConfigViewer()">×</button><div class="head"><div><h2 id="configViewerTitle">User configs</h2><p class="muted">فقط کانفیگ‌های مربوط به همین کاربر</p></div></div><div id="configViewerBody"></div></div></div>
 <div class="modal" id="inboundModal"><div class="modalBox">
 <button class="close" onclick="closeInbound()">×</button><input type="hidden" id="ibEditId"><h2 id="ibModalTitle" data-i18n="createInbound">Create inbound</h2><p class="muted" data-i18n="createInboundDesc">Only the settings relevant to the selected protocol are shown.</p>
 <div class="form" style="margin-top:15px">
 <div class="field"><label data-i18n="name">Name</label><input id="ibName" placeholder="Main inbound"></div>
-<div class="field"><label data-i18n="protocol">Protocol</label><select id="ibProtocol" onchange="renderInboundProtocolFields()"><option value="vless">VLESS</option><option value="vmess">VMess</option><option value="trojan">Trojan</option><option value="reality">Reality</option><option value="node">Node</option></select></div>
+<div class="field"><label data-i18n="protocol">Protocol</label><select id="ibProtocol" onchange="renderInboundProtocolFields()"><option value="vless">VLESS</option><option value="vmess">VMess</option><option value="trojan">Trojan</option><option value="ssh">SSH</option><option value="reality">Reality</option><option value="node">Node</option></select></div>
 </div>
 <button type="button" class="foldToggle" style="margin-top:14px" onclick="toggleFold('ibProtocolBody',this)"><span>Protocol settings</span><span class="chev">⌄</span></button><div id="ibProtocolBody" class="foldBody"><div id="ibDynamic" class="form" style="margin-top:13px"></div></div>
 <div class="toolbar" style="margin-top:15px"><button class="btn dark" onclick="createInbound()" data-i18n="create">Create</button><button class="btn" onclick="closeInbound()" data-i18n="cancel">Cancel</button></div>
@@ -270,17 +274,22 @@ async function loadInbounds(){
   $('#inboundBody').innerHTML=a.length?a.map(x=>`<tr><td><b>${esc(x.name||x.inbound_id)}</b></td><td>${esc(x.protocol||'-')}</td><td>${esc(x.network||'-')}</td><td>${esc(x.external_port||x.port||'-')}</td><td>${x.users_count??0}</td><td><span class="pill">${tr('online')}</span></td><td><div class="toolbar"><button class="btn small" onclick="editInbound('${esc(x.inbound_id)}')">${(x.protocol||'').toLowerCase()==='node'?'انتخاب نود':'ویرایش'}</button>${(x.system?'':`<button class="btn small danger" onclick="deleteInbound('${esc(x.inbound_id)}')">${tr('delete')}</button>`)}</div></td></tr>`).join(''):`<tr><td colspan="7"><div class="empty">${tr('noData')}</div></td></tr>`;
   const currentProto=$('#uProtocol')?.value||'vless';
   const compatible=a.filter(x=>String(x.protocol||'').toLowerCase()===currentProto||String(x.protocol||'').toLowerCase()==='node');
-  $('#uInbound').innerHTML='<option value="">پیش‌فرض TLS + WS</option>'+compatible.map(x=>`<option value="${esc(x.inbound_id)}">${esc(x.name||x.inbound_id)} · ${esc(x.protocol||'')}</option>`).join('');
+  $('#uInbound').innerHTML=(currentProto==='ssh'?'':'<option value="">پیش‌فرض TLS + WS</option>')+compatible.map(x=>`<option value="${esc(x.inbound_id)}">${esc(x.name||x.inbound_id)} · ${esc(x.protocol||'')}</option>`).join('');
  }catch(e){toast(e.message)}
 }
 
-async function loadClients(){try{let d=await api('/api/users');let a=d.users||[];$('#usersBody').innerHTML=a.length?a.map(u=>`<tr><td><b>${esc(u.username)}</b><div class="muted" dir="ltr">${esc(u.config_uuid||'')}</div></td><td>${esc(u.protocol||'-')}</td><td>${esc(u.traffic_used_fmt||'0 B')} / ${esc(u.traffic_limit_fmt||'∞')}</td><td><span class="pill">${esc(u.status)}</span></td><td><div class="toolbar"><button class="btn small" onclick="viewUserConfig('${esc(u.config_uuid||'')}')">Config</button><button class="btn small" onclick="copyText('${esc(u.subscription_url||'')}')">Sub</button><button class="btn small" onclick="showUserQR('${esc(u.user_id)}')">QR</button><button class="btn small" onclick="editUser('${esc(u.user_id)}')">Edit</button><button class="btn small" onclick="toggleUser('${esc(u.user_id)}')">${u.status==='disabled'?'Enable':'Disable'}</button><button class="btn small danger" onclick="deleteUser('${esc(u.user_id)}')">Delete</button></div></td></tr>`).join(''):`<tr><td colspan="5"><div class="empty">${tr('noData')}</div></td></tr>`;await loadInbounds()}catch(e){toast(e.message)}}
+async function loadClients(){try{let d=await api('/api/users');let a=d.users||[];$('#usersBody').innerHTML=a.length?a.map(u=>`<tr><td><b>${esc(u.username)}</b><div class="muted" dir="ltr">${esc(u.config_uuid||'')}</div></td><td>${esc(u.protocol||'-')}</td><td>${esc(u.traffic_used_fmt||'0 B')} / ${esc(u.traffic_limit_fmt||'∞')}</td><td><span class="pill">${esc(u.status)}</span></td><td><div class="toolbar"><button class="btn small" onclick="viewUserConfigs('${esc(u.user_id)}')">Config</button><button class="btn small" onclick="copyText('${esc(u.subscription_url||'')}')">Sub</button><button class="btn small" onclick="showUserQR('${esc(u.user_id)}')">QR</button><button class="btn small" onclick="editUser('${esc(u.user_id)}')">Edit</button><button class="btn small" onclick="toggleUser('${esc(u.user_id)}')">${u.status==='disabled'?'Enable':'Disable'}</button><button class="btn small danger" onclick="deleteUser('${esc(u.user_id)}')">Delete</button></div></td></tr>`).join(''):`<tr><td colspan="5"><div class="empty">${tr('noData')}</div></td></tr>`;await loadInbounds()}catch(e){toast(e.message)}}
 function openClientBuilder(){ $('#clientBuilderModal').classList.add('open'); loadInbounds(); updateClientProtocolFields(); }
 function closeClientBuilder(){ $('#clientBuilderModal').classList.remove('open'); }
-async function viewUserConfig(uuid){try{let d=await api('/api/sub/'+encodeURIComponent(uuid));let configs=d.configs||[];let cfg=configs.find(x=>x&&x.indexOf('📊')<0)||d.config||'';$('#clientOut').textContent=cfg||'No config';$('#clientBuilderModal').classList.add('open')}catch(e){toast(e.message)}}
+function closeConfigViewer(){ $('#configViewerModal').classList.remove('open'); }
+async function viewUserConfigs(userId){try{let d=await api('/api/users/'+encodeURIComponent(userId)+'/config');let rows=d.configs||[];let base=d.config||'';if(!rows.length&&base)rows=[{name:'Primary',protocol:d.protocol,config:base}];$('#configViewerTitle').textContent=(d.username||'User')+' · Configs';$('#configViewerBody').innerHTML=rows.length?rows.map((x,i)=>`<div class="card cardPad" style="margin-bottom:10px"><div class="head"><div><b>${esc(x.name||x.inbound_id||('Config '+(i+1)))}</b><div class="muted">${esc((x.protocol||'').toUpperCase())}</div></div><button class="btn small" onclick='copyText(${JSON.stringify(x.config||'')})'>Copy</button></div><pre class="output" dir="ltr" style="white-space:pre-wrap;word-break:break-all">${esc(x.config||'')}</pre></div>`).join(''):`<div class="empty">No configs for this user.</div>`;$('#configViewerModal').classList.add('open')}catch(e){toast(e.message)}}
 function updateClientProtocolFields(){
  const p=$('#uProtocol').value;
  const net=$('#cNetwork').value;
+ const ssh=p==='ssh';
+ const showSsh=(id,on)=>{const e=$(id);if(e)e.style.display=on?'grid':'none'};
+ showSsh('#sshUserWrap',ssh);showSsh('#sshPassWrap',ssh);
+ if(ssh){ $('#cfNetwork').style.display='none'; $('#cfSecurity').style.display='none'; $('#cfPort').style.display='none'; $('#cfFingerprint').style.display='none'; $('#cfSni').style.display='none'; $('#cfAlpn').style.display='none'; $('#cfWsPath').style.display='none'; $('#cfGrpcService').style.display='none'; $('#cfRealityDomain').style.display='none'; $('#cfRealityPort').style.display='none'; $('#cfRealityDest').style.display='none'; $('#cfRealitySid').style.display='none'; $('#cfTrojanPass').style.display='none'; if(typeof loadInbounds==='function')setTimeout(loadInbounds,0); return; }
  const show=(id,on)=>{const e=$(id);if(e)e.style.display=on?'grid':'none'};
  const reality=(p==='reality') || ($('#cSecurity').value==='reality');
  if((p==='vmess'||p==='trojan') && $('#cSecurity').value==='tls') $('#cSecurity').value='reality';
@@ -301,10 +310,12 @@ async function createClient(){
   if(concurrent==='custom') concurrent=Math.max(1,Number($('#uConcurrentCustom').value||1));
   else concurrent=Number(concurrent||0);
   // No dedicated inbound creation here. "Auto" uses the existing default inbound.
-  const body={username:$('#uName').value.trim(),protocol,traffic_limit_gb:Number($('#uTraffic').value||0),expire_days:Number($('#uExpire').value||0),concurrent_connections:concurrent,server:$('#uServer').value,sni:$('#cSni').value||$('#uSni').value,path:$('#cWsPath').value,fingerprint:$('#cFingerprint').value};
+  const body={username:$('#uName').value.trim(),protocol,traffic_limit_gb:Number($('#uTraffic').value||0),expire_days:Number($('#uExpire').value||0),concurrent_connections:concurrent,server:$('#uServer').value,sni:$('#cSni').value||$('#uSni').value,path:$('#cWsPath').value,fingerprint:$('#cFingerprint').value,dark_tunnel:$('#uDarkTunnel')?.checked===true};
+  if(protocol==='ssh'){body.ssh_username=$('#uSshUser').value.trim();body.ssh_password=$('#uSshPass').value;}
+
   if(inboundId) body.inbound_id=inboundId;
   const d=await api('/api/pars/v1/users',{method:'POST',body:JSON.stringify(body)});
-  const link=d.config||d.vmess_link||d.trojan_link||d.vless_link||'';
+  const link=($('#uDarkTunnel')?.checked && d.dark_tunnel)?d.dark_tunnel:(d.config||d.vmess_link||d.trojan_link||d.vless_link||'');
   $('#clientOut').textContent=link||JSON.stringify(d,null,2);
   if(d.subscription_url) $('#clientMsg').textContent='Sub: '+d.subscription_url;
   toast(lang==='fa'?'کاربر ساخته شد و کانفیگ مستقیم آماده است':'User created and direct config is ready');
@@ -312,7 +323,7 @@ async function createClient(){
  }catch(e){toast(e.message)}
 }
 
-function clearClientForm(){['uName','uSni','uPath'].forEach(id=>{const e=$('#'+id);if(e)e.value=''});$('#uTraffic').value=0;$('#uExpire').value=30;$('#uConcurrent').value='0';$('#uConcurrentCustom').value=1;$('#uConcurrentCustomWrap').style.display='none';$('#clientOut').textContent=lang==='fa'?'کانفیگ / لینک اشتراک اینجا نمایش داده می‌شود.':'Config / subscription URL will appear here.'}
+function clearClientForm(){['uName','uSni','uPath','uSshUser','uSshPass'].forEach(id=>{const e=$('#'+id);if(e)e.value=''});$('#uTraffic').value=0;$('#uExpire').value=30;$('#uConcurrent').value='0';$('#uConcurrentCustom').value=1;$('#uDarkTunnel').checked=false;$('#uConcurrentCustomWrap').style.display='none';$('#clientOut').textContent=lang==='fa'?'کانفیگ / لینک اشتراک اینجا نمایش داده می‌شود.':'Config / subscription URL will appear here.'}
 async function deleteInbound(id){if(!confirm(lang==='fa'?'این اینباند حذف شود؟':'Delete this inbound?'))return;try{await api('/api/inbounds/'+encodeURIComponent(id),{method:'DELETE'});await loadInbounds();await loadOverview();toast(lang==='fa'?'اینباند حذف شد':'Inbound deleted')}catch(e){toast(e.message)}}
 function openInbound(){$('#ibEditId').value='';$('#ibModalTitle').textContent=tr('createInbound');$('#inboundModal').classList.add('open');renderInboundProtocolFields();let e=$('#ibProtocolBody'),b=e?.previousElementSibling;if(e){e.classList.remove('open');b?.classList.remove('open')}}function closeInbound(){$('#inboundModal').classList.remove('open')}
 function renderInboundProtocolFields(){
@@ -322,7 +333,13 @@ function renderInboundProtocolFields(){
   html=`<div class="field full"><label>انتخاب نودها</label><div id="ibNodeChoices" class="list"><div class="empty">در حال بارگذاری نودها…</div></div></div>`;
   $('#ibDynamic').innerHTML=html; loadInboundNodeChoices(); return;
  }
- if(p==='reality'){
+ if(p==='ssh'){
+  html=`<div class="field full"><label>SSH Host</label><input id="ibSshHost" placeholder="server.example.com"></div>
+   <div class="field"><label>SSH Port</label><input id="ibSshPort" type="number" value="22"></div>
+   <div class="field"><label>SSH Username</label><input id="ibSshUser" dir="ltr" placeholder="ssh-user"></div>
+   <div class="field"><label>SSH Password</label><input id="ibSshPass" type="password" dir="ltr" placeholder="SSH password"></div>
+   <div class="field"><label>DarkTunnel mode</label><select id="ibSshMode"><option value="direct">Direct</option><option value="direct-sni">Direct with SNI</option><option value="proxy">Proxy</option><option value="proxy-sni">Proxy with SNI</option></select></div>`;
+ } else if(p==='reality'){
   html=`<div class="field"><label>Network</label><select id="ibNetwork"><option value="tcp">TCP</option><option value="xhttp">XHTTP</option><option value="grpc">gRPC</option></select></div>
    <div class="field"><label>External port</label><input id="ibExtPort" type="number" value="443"></div>
    <div class="field"><label>External domain</label><input id="ibExtDomain" placeholder="reality.example.com"></div>
@@ -380,7 +397,9 @@ async function createInbound(){
    closeInbound();toast(lang==='fa'?'نودهای اینباند ذخیره شد':'Node inbound saved');loadInbounds();loadOverview();return;
   }
   const net=$('#ibNetwork')?.value||'ws'; const reality=p==='reality';
-  const body={name:$('#ibName').value.trim(),protocol:p,network:net,security:reality?'reality':($('#ibSecurity')?.value||'tls'),port:Number($('#ibPort')?.value||443),external_port:Number($('#ibExtPort')?.value||443),domain:$('#ibDomain')?.value||'',external_domain:$('#ibExtDomain')?.value||'',sni:$('#ibSni')?.value||'',fingerprint:$('#ibFp')?.value||'chrome',tls_settings:{alpn:$('#ibAlpn')?.value||'http/1.1'},ws_settings:{path:$('#ibPath')?.value||'/ws/{uuid}'},grpc_settings:{serviceName:$('#ibGrpcService')?.value||'pars-space'},xhttp_settings:{path:$('#ibXPath2')?.value||$('#ibXPath')?.value||'/',mode:'stream-up'},reality_settings:{dest:$('#ibDest')?.value||'',sni:$('#ibSni')?.value||'',short_id:$('#ibSid')?.value||'',fingerprint:$('#ibFp')?.value||'chrome'},finalmask:parseFinalMask($('#ibFinalMask')?.value||'')};
+  const body={name:$('#ibName').value.trim(),protocol:p,network:net,security:reality?'reality':($('#ibSecurity')?.value||'tls'),port:Number($('#ibPort')?.value||443),external_port:Number($('#ibExtPort')?.value||443),domain:$('#ibDomain')?.value||'',external_domain:$('#ibExtDomain')?.value||'',sni:$('#ibSni')?.value||'',fingerprint:$('#ibFp')?.value||'chrome',tls_settings:{alpn:$('#ibAlpn')?.value||'http/1.1'},ws_settings:{path:$('#ibPath')?.value||'/ws/{uuid}'},grpc_settings:{serviceName:$('#ibGrpcService')?.value||'pars-space'},xhttp_settings:{path:$('#ibXPath2')?.value||$('#ibXPath')?.value||'/',mode:'stream-up'},reality_settings:{dest:$('#ibDest')?.value||'',sni:$('#ibSni')?.value||'',short_id:$('#ibSid')?.value||'',fingerprint:$('#ibFp')?.value||'chrome'},ssh_settings:{host:$('#ibSshHost')?.value||'',port:Number($('#ibSshPort')?.value||22),username:$('#ibSshUser')?.value||'',password:$('#ibSshPass')?.value||'',mode:$('#ibSshMode')?.value||'direct'},finalmask:parseFinalMask($('#ibFinalMask')?.value||'')};
+  if(p==='ssh'){body.network='tcp';body.security='none';body.port=Number($('#ibSshPort')?.value||22);body.external_port=body.port;body.domain=$('#ibSshHost')?.value||'';body.external_domain=body.domain;body.sni='';}
+
   const editId=$('#ibEditId').value.trim();
   const d=await api('/api/inbounds'+(editId?'/'+encodeURIComponent(editId):''),{method:editId?'PATCH':'POST',body:JSON.stringify(body)});
   closeInbound();toast(lang==='fa'?(editId?'اینباند ویرایش شد':'اینباند ساخته شد'):(editId?'Inbound updated':'Inbound created'));loadInbounds();loadOverview();
@@ -468,9 +487,11 @@ async function testSpeed(){try{let bytes=4*1024*1024,t=performance.now(),r=await
 async function loadParsApi(){try{let d=await api('/api/pars/v1/credentials');$('#parsApiKey').value=d.api_key||''}catch(e){$('#parsApiKey').value=''}}
 async function copyParsKey(){await copyText($('#parsApiKey').value)}
 async function regenerateParsKey(){if(!confirm(lang==='fa'?'کلید قبلی دیگر معتبر نباشد و کلید جدید ساخته شود؟':'Regenerate the Pars API key?'))return;try{let d=await api('/api/pars/v1/credentials/regenerate',{method:'POST'});$('#parsApiKey').value=d.api_key||'';toast(lang==='fa'?'کلید جدید ساخته شد':'New key generated')}catch(e){toast(e.message)}}
-async function loadSettingsPanel(){try{let d=await api('/api/settings');if($('#panelAlias'))$('#panelAlias').value=d.panel_alias||'Pars Space';}catch(e){}}
+async function loadSettingsPanel(){try{let d=await api('/api/settings');let a=d.panel_alias||'Pars Space';if($('#panelAlias'))$('#panelAlias').value=a;if($('#configAddressMode'))$('#configAddressMode').value=d.config_address_mode||'panel_ip';if($('#brandAlias'))$('#brandAlias').textContent=a.toUpperCase();if($('#loadingTitle'))$('#loadingTitle').textContent=a;document.title=a;}catch(e){}}
 function applyWelcome(username){const e=$('#welcomeText');if(e)e.textContent=(T[lang]?.welcome||'Welcome back')+(username?' · '+username:'')}
-async function savePanelAlias(){try{let v=$('#panelAlias').value.trim()||'Pars Space';await api('/api/settings',{method:'POST',body:JSON.stringify({panel_alias:v})});toast(lang==='fa'?'نام مستعار ذخیره شد':'Alias saved')}catch(e){toast(e.message)}}
+async function savePanelAlias(){try{let v=$('#panelAlias').value.trim()||'Pars Space';await api('/api/settings',{method:'POST',body:JSON.stringify({panel_alias:v})});if($('#brandAlias'))$('#brandAlias').textContent=v.toUpperCase();if($('#loadingTitle'))$('#loadingTitle').textContent=v;document.title=v;toast(lang==='fa'?'نام مستعار ذخیره شد':'Alias saved')}catch(e){toast(e.message)}}
+async function saveConfigAddressMode(){try{let v=$('#configAddressMode').value;await api('/api/settings',{method:'POST',body:JSON.stringify({config_address_mode:v})});toast(lang==='fa'?'نوع آدرس کانفیگ ذخیره شد':'Config address mode saved')}catch(e){toast(e.message)}}
+$('#configAddressMode')?.addEventListener('change',saveConfigAddressMode);
 async function loadActivity(){try{let d=await api('/api/activity');let a=d.activity||d.activities||d.logs||[];$('#activityList').innerHTML=a.length?a.slice(0,30).map(x=>`<div class="row"><span>${esc(x.message||x.action||x.event||JSON.stringify(x))}</span><span class="muted">${esc(x.created_at||x.time||'')}</span></div>`).join(''):`<div class="empty">${tr('noData')}</div>`}catch(e){toast(e.message)}}
 async function copyText(v){if(!v)return toast('No link');try{await navigator.clipboard.writeText(v);toast(lang==='fa'?'کپی شد':'Copied')}catch{prompt('Copy:',v)}}
 async function changeCredentials(){try{await api('/api/change-credentials',{method:'POST',body:JSON.stringify({username:$('#adminUser').value.trim(),current_password:$('#adminCurrent').value,new_password:$('#adminNew').value})});toast(lang==='fa'?'رمز عبور تغییر کرد':'Password updated')}catch(e){toast(e.message)}}
