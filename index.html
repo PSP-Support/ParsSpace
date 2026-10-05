@@ -1219,11 +1219,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   outline-offset: 2px;
 }
 
-
-#app-loader{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(7,9,14,.97);backdrop-filter:blur(12px);transition:opacity .28s ease,visibility .28s ease}
-#app-loader.hide{opacity:0;visibility:hidden;pointer-events:none}
-.app-loader-card{width:min(360px,calc(100vw - 36px));padding:24px;border:1px solid var(--border);border-radius:22px;background:linear-gradient(145deg,rgba(20,22,30,.96),rgba(10,12,18,.96));box-shadow:0 22px 70px rgba(0,0,0,.42);text-align:center}.app-loader-spinner{width:42px;height:42px;border:3px solid rgba(255,255,255,.12);border-top-color:var(--neon);border-radius:50%;animation:parsSpin .8s linear infinite;margin:0 auto 14px}.app-loader-title{font-size:15px;font-weight:800}.app-loader-sub{font-size:11px;color:var(--txt2);margin-top:6px}.app-loader-bar{height:4px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:16px}.app-loader-bar i{display:block;height:100%;width:22%;border-radius:inherit;background:var(--neon);animation:parsLoad 1.2s ease-in-out infinite}@keyframes parsSpin{to{transform:rotate(360deg)}}@keyframes parsLoad{0%{transform:translateX(-120%)}100%{transform:translateX(520%)}}
-@media(max-width:640px){#particles{display:none!important}.app-loader-card{padding:20px}.panel,.stat,.tbl,.u-card,.settings-box{backdrop-filter:blur(10px)!important;-webkit-backdrop-filter:blur(10px)!important}}
 </style>
 
 /* Pars Space identity layer: original behavior and selectors are preserved. */
@@ -1312,7 +1307,6 @@ html{background:var(--pars-bg)}body{background:radial-gradient(ellipse at 78% -1
 <div class="bg-grid"></div>
 
 <!-- ═══════ LOGIN ═══════ -->
-<div id="app-loader" aria-live="polite"><div class="app-loader-card"><div class="app-loader-spinner"></div><div class="app-loader-title">در حال آماده‌سازی پنل</div><div class="app-loader-sub">اطلاعات اولیه در حال بارگذاری است...</div><div class="app-loader-bar"><i></i></div></div></div>
 <div class="login-wrap" id="login-wrap" style="display:none">
   <div class="login-bg">
     <canvas id="shader-canvas"></canvas>
@@ -1875,11 +1869,6 @@ html{background:var(--pars-bg)}body{background:radial-gradient(ellipse at 78% -1
         </div>
           </div>
         </div>
-
-        <div class="spd-acc" style="margin-bottom:10px">
-          <button type="button" class="spd-acc-head" onclick="toggleSettingsActivity(this)" aria-expanded="false"><span class="spd-acc-title"><strong>لاگ و فعالیت</strong></span><span class="material-symbols-outlined spd-acc-arrow">expand_more</span></button>
-          <div class="spd-acc-body" id="acc-set-activity"><div class="panel settings-box"><div class="panel-h"><span class="glow">لاگ و فعالیت</span><button class="btn btn-sm btn-g" onclick="loadSettingsActivity()">بروزرسانی</button></div><div id="settings-activity-list" class="scn-list"><div class="empty">برای نمایش فعالیت‌ها باز کنید.</div></div></div></div>
-        </div>
       </div>
 
       <!-- AUTO CONFIG TAB -->
@@ -2024,9 +2013,7 @@ html{background:var(--pars-bg)}body{background:radial-gradient(ellipse at 78% -1
   <form onsubmit="submitCreateUser(event)">
     <div class="f-r">
       <div class="f-g"><label data-i18n="username">نام کاربری</label><input type="text" id="cu-name" placeholder="خالی = تصادفی"></div>
-      <div class="f-g"><label data-i18n="protocol">پروتکل</label><select id="cu-protocol" onchange="filterCreateUserInbounds()"><option value="vless">VLESS</option><option value="vmess">VMess</option><option value="trojan">Trojan</option></select></div>
-      <div class="f-g"><label data-i18n="conn">دستگاه همزمان</label><select id="cu-conn" onchange="syncCustomConn('cu-conn','cu-conn-custom')"><option value="0">نامحدود</option><option value="1">۱ دستگاه</option><option value="2">۲ دستگاه</option><option value="3">۳ دستگاه</option><option value="4">۴ دستگاه</option><option value="5">۵ دستگاه</option><option value="10">۱۰ دستگاه</option><option value="custom">سفارشی</option></select></div>
-      <input type="number" id="cu-conn-custom" min="1" max="9999" style="display:none" placeholder="تعداد دلخواه">
+      <div class="f-g"><label data-i18n="conn">اتصال همزمان</label><input type="number" id="cu-conn" placeholder="∞ نامحدود"></div>
     </div>
     <div class="f-r">
       <div class="f-g"><label data-i18n="volume">حجم</label><input type="number" id="cu-vol" placeholder="∞ نامحدود"></div>
@@ -2054,7 +2041,7 @@ html{background:var(--pars-bg)}body{background:radial-gradient(ellipse at 78% -1
     <div class="f-g"><label data-i18n="username">نام کاربری</label><input type="text" id="eu-name" required></div>
     <div class="f-g"><label data-i18n="volEdit">حجم (GB - ۰=نامحدود)</label><input type="number" id="eu-vol" value="20"></div>
     <div class="f-g"><label data-i18n="daysEdit">روز اعتبار (۰=نامحدود)</label><input type="number" id="eu-exp" value="30"></div>
-    <div class="f-g"><label data-i18n="conn">دستگاه همزمان</label><select id="eu-conn" onchange="syncCustomConn('eu-conn','eu-conn-custom')"><option value="0">نامحدود</option><option value="1">۱ دستگاه</option><option value="2">۲ دستگاه</option><option value="3">۳ دستگاه</option><option value="4">۴ دستگاه</option><option value="5">۵ دستگاه</option><option value="10">۱۰ دستگاه</option><option value="custom">سفارشی</option></select><input type="number" id="eu-conn-custom" min="1" max="9999" style="display:none;margin-top:7px" placeholder="تعداد دلخواه"></div>
+    <div class="f-g"><label data-i18n="conn">اتصال همزمان</label><input type="number" id="eu-conn" value="0" placeholder="۰=نامحدود"></div>
     <div class="f-g"><label data-i18n="status">وضعیت</label><select id="eu-status"><option value="active" data-i18n="active">فعال</option><option value="inactive" data-i18n="inactive">غیرفعال</option></select></div>
     <div class="f-g" style="display:flex;align-items:center;gap:8px">
       <input type="checkbox" id="eu-reset" style="width:auto">
@@ -2083,11 +2070,6 @@ html{background:var(--pars-bg)}body{background:radial-gradient(ellipse at 78% -1
         <option value="config">Config</option>
         <option value="telegram">Telegram Proxy</option>
       </select></div>
-      <div class="f-g" id="ib-protocol-wrap"><label data-i18n="protocol">پروتکل</label><select id="ib-protocol" onchange="onInboundProtocolChange()">
-        <option value="vless">VLESS</option>
-        <option value="vmess">VMess</option>
-        <option value="trojan">Trojan</option>
-      </select></div>
     </div>
 
     <!-- Internal listen port: the port the server/Xray actually listens on. -->
@@ -2098,12 +2080,6 @@ html{background:var(--pars-bg)}body{background:radial-gradient(ellipse at 78% -1
     </div>
 
     <div id="ib-tls-fields">
-    <div class="f-r">
-      <div class="f-g"><label data-i18n="sni">SNI</label><input type="text" id="ib-sni" dir="ltr" placeholder="example.com"></div>
-      <div class="f-g"><label data-i18n="fingerprint">Fingerprint</label><select id="ib-fingerprint">
-        <option value="chrome">chrome</option><option value="firefox">firefox</option><option value="safari">safari</option><option value="ios">ios</option><option value="android">android</option><option value="edge">edge</option><option value="360">360</option><option value="qq">qq</option><option value="random">random</option><option value="randomized">randomized</option>
-      </select></div>
-    </div>
     <div class="f-g"><label data-i18n="securityType">امنیت</label><select id="ib-security" onchange="onSecurityChange()">
       <option value="tls">TLS</option>
       <option value="reality">Reality</option>
@@ -2121,10 +2097,10 @@ html{background:var(--pars-bg)}body{background:radial-gradient(ellipse at 78% -1
     <div id="ib-reality-fields" class="hidden">
       <div class="divider"></div>
       <div style="font-size:11px;color:var(--neon);font-weight:700;margin-bottom:8px" data-i18n="realitySettings">تنظیمات Reality</div>
-      <div class="f-g"><label>SNI / Reality Target</label>
+      <div class="f-g"><label>SNI (Server Name / Destination)</label>
         <div style="display:flex;gap:6px;align-items:flex-end">
-          <div class="px-hint" style="flex:1;margin:0">همان SNI بالای فرم برای TLS و Reality استفاده می‌شود.</div>
-          <button type="button" class="btn btn-sm btn-b" onclick="snPickFastest()" title="سریع‌ترین SNI از SNI Scanner" style="border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <input type="text" id="ib-sni" value="" dir="ltr" placeholder="مثلاً www.google.com" style="flex:1">
+          <button type="button" class="btn btn-sm btn-b" onclick="snPickFastest()" title="سریع‌ترین SNI از sni_reality.txt" style="border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
           </button>
         </div>
@@ -2240,7 +2216,7 @@ var I18N = {
     'panelMusic': 'Panel Music', 'bgMusic': 'Background Music', 'toggleMusic': 'روشن/خاموش', 'changePassword': 'Change Password', 'curPass': 'رمز فعلی', 'newPass': 'رمز جدید', 'changePassBtn': 'تغییر رمز',
     'contactSub': 'برای پشتیبانی و همکاری با من در ارتباط باشید',
     'createUser': 'ایجاد کاربر جدید', 'editUser': 'ویرایش کاربر', 'username': 'نام کاربری', 'conn': 'اتصال همزمان', 'volume': 'حجم', 'unit': 'واحد', 'expire': 'اعتبار', 'day': 'روز', 'month': 'ماه',
-    'inboundsMulti': 'اینباندها (چندتایی)', 'protocol':'پروتکل', 'sni':'SNI', 'fingerprint':'Fingerprint', 'noInboundOpt': 'اینباندی وجود ندارد',
+    'inboundsMulti': 'اینباندها (چندتایی)', 'noInboundOpt': 'اینباندی وجود ندارد',
     'inboundPickHint': 'برای هر اینباند، گزینه‌های مخصوصش نمایش داده می‌شود: Worker → انتخاب کشور؛ VLESS غیرپیش‌فرض → Cloudflare و Railway؛ Reality → بدون گزینه.',
     'workerCountries': 'کشورهای چندمنطقه‌ای (برای هر کشور یک تیک فعال کنید):',
     'addCfIps': 'افزودن ۱۰ کانفیگ با IPهای Cloudflare اسکن‌شده',
@@ -2383,13 +2359,44 @@ async function api(url, opts) {
     opts.headers['Content-Type'] = 'application/json';
     opts.body = JSON.stringify(opts.body);
   }
-  var r = await fetch(url, opts);
-  if (!r.ok) {
-    var txt = await r.text();
-    try { var j = JSON.parse(txt); throw new Error(j.detail || j.error || txt); } catch(e) { if (e.message && e.message !== txt) throw e; }
-    throw new Error('خطای سرور: ' + r.status);
+
+  // Never let a dead API endpoint keep the whole panel looking like it is
+  // loading forever. Each request gets a bounded timeout and can still be
+  // cancelled by callers that provide their own signal.
+  var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  var externalSignal = opts.signal;
+  var timeoutMs = Number(opts.timeout || 12000);
+  delete opts.timeout;
+  if (controller) {
+    opts.signal = controller.signal;
+    if (externalSignal) {
+      if (externalSignal.aborted) controller.abort();
+      else externalSignal.addEventListener('abort', function(){ controller.abort(); }, {once:true});
+    }
   }
-  return r.json();
+  var timer = controller ? setTimeout(function(){ controller.abort(); }, timeoutMs) : null;
+
+  try {
+    var r = await fetch(url, opts);
+    if (!r.ok) {
+      var txt = await r.text();
+      var msg = '';
+      try { var j = JSON.parse(txt); msg = j.detail || j.error || txt; } catch(e) { msg = txt; }
+      throw new Error(msg || ('خطای سرور: ' + r.status));
+    }
+    var contentType = r.headers.get('content-type') || '';
+    if (contentType.indexOf('application/json') === -1) {
+      throw new Error('پاسخ نامعتبر از سرور برای ' + url);
+    }
+    return await r.json();
+  } catch(e) {
+    if (e && e.name === 'AbortError') {
+      throw new Error('ارتباط با سرور برای ' + url + ' بیش از حد طول کشید');
+    }
+    throw e;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 // ─── Toast ───
@@ -2438,12 +2445,16 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initParticles() {
-  var c = $id('particles'), ctx = c.getContext('2d');
+  var c = $id('particles');
+  if (!c || !c.getContext) return;
+  var ctx = c.getContext('2d');
+  if (!ctx) return;
   var w, h, particles = [];
+  var isMobile = window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
   function resize() { w = c.width = window.innerWidth; h = c.height = window.innerHeight; }
   resize(); window.addEventListener('resize', resize);
 
-  for (var i = 0; i < (window.innerWidth <= 640 ? 8 : 24); i++) {
+  for (var i = 0; i < (isMobile ? 0 : 40); i++) {
     particles.push({
       x: Math.random() * w, y: Math.random() * h,
       r: Math.random() * 1.5 + 0.5,
@@ -2451,6 +2462,8 @@ function initParticles() {
       alpha: Math.random() * 0.5 + 0.1
     });
   }
+
+  if (isMobile) return;
 
   function draw() {
     ctx.clearRect(0, 0, w, h);
@@ -2679,9 +2692,11 @@ function toggleSidebar() { $id('sidebar').classList.contains('open') ? closeSide
 
 // ─── Load All ───
 async function loadAll() {
-  var loader=$id('app-loader');
-  try { await Promise.allSettled([loadDashboard(), loadUsers(), loadInbounds()]); }
-  finally { if (typeof loadProxyCountries === 'function') loadProxyCountries(); requestAnimationFrame(function(){ if(loader) loader.classList.add('hide'); }); }
+  // Start sections independently. A single slow/broken endpoint must not
+  // block the rest of the dashboard or leave its placeholders forever.
+  var jobs = [loadDashboard(), loadUsers(), loadInbounds(), loadProxyCountries()];
+  if (typeof loadWorker === 'function') jobs.push(loadWorker());
+  await Promise.allSettled(jobs);
 }
 
 // ─── Dashboard ───
@@ -2862,10 +2877,7 @@ async function openCreateUser() {
   $id('cu-vol-u').value = 'GB';
   $id('cu-exp').value = '';
   $id('cu-exp-u').value = 'days';
-  $id('cu-protocol').value = 'vless';
-  $id('cu-conn').value = '0';
-  $id('cu-conn-custom').value = ''; $id('cu-conn-custom').style.display='none';
-  filterCreateUserInbounds();
+  $id('cu-conn').value = '';
   openModal('mod-user');
 }
 
@@ -2900,8 +2912,7 @@ async function submitCreateUser(e) {
       username: $id('cu-name').value,
       traffic_limit_gb: vu === 'GB' ? v : v / 1024,
       expire_days: eu === 'months' ? ex * 30 : ex,
-      protocol: $id('cu-protocol').value || 'vless',
-      concurrent_connections: getConnValue('cu-conn','cu-conn-custom'),
+      concurrent_connections: parseInt($id('cu-conn').value) || 0,
       inbound_ids: inbound_ids,
       proxy_countries: allCountries,
       proxy_country: firstCountry,
@@ -2995,11 +3006,7 @@ function editUser(uid) {
   $id('eu-vol').value = (u.traffic_limit_bytes ? (u.traffic_limit_bytes / 1073741824).toFixed(0) : '0');
   $id('eu-exp').value = u.expire_at ? Math.ceil((new Date(u.expire_at) - new Date()) / 86400000) : 0;
   $id('eu-status').value = u.status || 'active';
-  var _ec = (u.concurrent_connections != null ? Number(u.concurrent_connections) : 0);
-  var _ep = [0,1,2,3,4,5,10].indexOf(_ec) >= 0 ? String(_ec) : 'custom';
-  $id('eu-conn').value = _ep;
-  $id('eu-conn-custom').value = _ep==='custom' ? _ec : '';
-  $id('eu-conn-custom').style.display = _ep==='custom' ? 'block' : 'none';
+  $id('eu-conn').value = (u.concurrent_connections != null ? u.concurrent_connections : 0);
   renderEditInboundPicker(u);
   openModal('mod-edit-user');
 }
@@ -3027,7 +3034,7 @@ async function submitEditUser(e) {
       username: $id('eu-name').value,
       traffic_limit_gb: $id('eu-vol').value ? parseFloat($id('eu-vol').value) : 0,
       expire_days: parseInt($id('eu-exp').value) || 0,
-      concurrent_connections: getConnValue('eu-conn','eu-conn-custom'),
+      concurrent_connections: parseInt($id('eu-conn').value) || 0,
       status: $id('eu-status').value,
       reset_traffic: $id('eu-reset') ? $id('eu-reset').checked : false,
       fake_sni: fakeSni,
@@ -3175,44 +3182,9 @@ function selectedInboundIds() {
   return ids;
 }
 
-function syncCustomConn(selectId, customId) {
-  var s=$id(selectId), c=$id(customId); if(!s||!c)return;
-  if(s.value==='custom'){ c.style.display='block'; c.focus(); } else { c.style.display='none'; }
-}
-function getConnValue(selectId, customId){
-  var s=$id(selectId); if(!s)return 0;
-  if(s.value==='custom'){ var c=$id(customId); return Math.max(0, parseInt(c&&c.value)||0); }
-  return Math.max(0, parseInt(s.value)||0);
-}
-function filterCreateUserInbounds(){
-  var proto=($id('cu-protocol')&&$id('cu-protocol').value)||'vless';
-  // Rebuild the picker so a VMess/Trojan user cannot accidentally be attached
-  // to a VLESS-only inbound and receive an empty config.
-  populateInboundSelects();
-  var cards=document.querySelectorAll('#cu-inbound .ib-pick');
-  cards.forEach(function(card){
-    var id=card.getAttribute('data-id');
-    var ib=ALL_IB.find(function(x){return String(x.inbound_id)===String(id);});
-    var p=String((ib&&ib.protocol)||'').toLowerCase();
-    var compatible=(proto==='vless' ? p==='vless' : (p===proto || p==='reality'));
-    card.style.display=compatible?'':'none';
-    if(!compatible){ card.classList.remove('selected'); if(cuInboundState&&cuInboundState.picks) delete cuInboundState.picks[id]; }
-  });
-}
-function onInboundProtocolChange(){
-  var proto=($id('ib-protocol')&&$id('ib-protocol').value)||'vless';
-  var sec=$id('ib-security'), net=$id('ib-network');
-  if(proto==='trojan'){ sec.value='tls'; }
-  if(sec && sec.value==='reality' && net && net.value==='ws') net.value='tcp';
-  onSecurityChange(); onNetworkChange();
-}
-
 function onSecurityChange() {
   var sec = $id('ib-security').value;
   var isReality = sec === 'reality';
-  var proto = ($id('ib-protocol') && $id('ib-protocol').value) || 'vless';
-  var net = $id('ib-network');
-  if (isReality && proto !== 'vless' && net && net.value === 'ws') net.value = 'tcp';
   toggleById('ib-reality-fields', isReality);
   // External Domain/Port are Reality-only. TLS must never expose or submit them.
   toggleById('ib-external-address-fields', isReality);
@@ -3376,8 +3348,6 @@ function openCreateInbound() {
   $id('ib-title').textContent = t('newInbound');
   $id('ib-name').value = '';
   $id('ib-inbound-type').value = 'config';
-  $id('ib-protocol').value = 'vless';
-  $id('ib-fingerprint').value = 'chrome';
   $id('ib-port').value = '443';
   $id('ib-security').value = 'tls';
   $id('ib-network').value = 'ws';
@@ -3410,9 +3380,7 @@ async function editInbound(iid) {
   $id('ib-id').value = iid;
   $id('ib-name').value = ib.name || '';
   $id('ib-inbound-type').value = isTg ? 'telegram' : 'config';
-  $id('ib-protocol').value = isTg ? 'vless' : ((ib.protocol || 'vless').toLowerCase() === 'reality' ? 'vless' : (ib.protocol || 'vless').toLowerCase());
-  $id('ib-sni').value = ib.sni || ib.domain || '';
-  $id('ib-fingerprint').value = ib.fingerprint || 'chrome';
+  $id('ib-sni').value = ib.sni || 'is1-ssl.mzstatic.com';
   var rs = ib.reality_settings || {};
   $id('ib-privkey').value = (rs || {}).private_key || '';
   $id('ib-pubkey').value = (rs || {}).public_key || '';
@@ -3488,7 +3456,7 @@ async function submitInbound(e) {
   btn.textContent = t('saving');
   var iid = $id('ib-id').value;
   var type = $id('ib-inbound-type').value;
-  var proto = type === 'telegram' ? 'telegram' : (($id('ib-protocol') && $id('ib-protocol').value) || 'vless');
+  var proto = type === 'telegram' ? 'telegram' : 'vless';
 
   // Collect selected node IDs for Inbound "Node"
   var nodeIds = [];
@@ -3533,7 +3501,6 @@ async function submitInbound(e) {
     body.network = network;
     body.security = security;
     body.sni = sni;
-    body.fingerprint = ($id('ib-fingerprint') && $id('ib-fingerprint').value) || 'chrome';
     if (security === 'reality') {
       body.external_port = parseInt($id('ib-extport').value) || null;
       body.external_domain = $id('ib-extdomain').value || '';
@@ -3575,10 +3542,6 @@ async function deleteInbound(iid) {
   if (!confirm(t('confirmDeleteInbound'))) return;
   try { await api('/api/inbounds/' + iid, {method: 'DELETE'}); toast(t('inboundDeleted'), 'ok'); loadInbounds(); } catch(e) { toast(e.message, 'err'); }
 }
-
-// ─── Settings activity ───
-async function toggleSettingsActivity(btn){var body=$id('acc-set-activity');if(!body)return;var acc=body.parentElement,open=acc.classList.toggle('open');btn.setAttribute('aria-expanded',String(open));if(open)await loadSettingsActivity();}
-async function loadSettingsActivity(){var el=$id('settings-activity-list');if(!el)return;el.innerHTML='<div class="empty">در حال بارگذاری...</div>';try{var d=await api('/api/activity');var rows=d.activity||d.logs||[];if(!rows.length){el.innerHTML='<div class="empty">فعالیتی ثبت نشده.</div>';return;}el.innerHTML=rows.slice().reverse().slice(0,80).map(function(a){return '<div class="scn-row" style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><b>'+esc(a.kind||'system')+'</b><div style="font-size:11px;color:var(--txt2);margin-top:3px;word-break:break-word">'+esc(a.message||'')+'</div></div><span dir="ltr" style="font-size:10px;color:var(--txt2);white-space:nowrap">'+esc(a.time||'')+'</span></div>';}).join('');}catch(e){el.innerHTML='<div class="empty" style="color:var(--red)">'+esc(e.message||'خطا')+'</div>';}}
 
 // ─── Settings ───
 function loadSettings() {
@@ -5027,9 +4990,6 @@ function renderNodes() {
         '<div class="set-row"><span class="set-lbl">Inbound Count</span><b>' + esc(String(node.enabled_inbound_count != null ? node.enabled_inbound_count : 0)) + '</b></div>' +
         '<div class="set-row"><span class="set-lbl">Synced Users</span><b>' + esc(String(node.synced_user_count != null ? node.synced_user_count : node.remote_users || 0)) + '</b></div>' +
         '<div class="set-row"><span class="set-lbl">Last Error</span><span style="font-size:11px;color:' + (lastErr === '—' ? 'var(--txt2)' : 'var(--red)') + ';word-break:break-word">' + esc(lastErr) + '</span></div>' +
-        '<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border)"><div style="font-size:11px;font-weight:800;margin-bottom:8px">کاربران و کانفیگ‌های این نود</div>' +
-          ((node.assigned_users||[]).length ? (node.assigned_users||[]).map(function(au){return '<div style="padding:9px 0;border-bottom:1px solid var(--bg3)"><div style="display:flex;justify-content:space-between;gap:8px"><b>'+esc(au.username||au.user_id)+'</b><span class="badge">'+esc(String(au.protocol||'vless').toUpperCase())+'</span></div><div style="font-size:10px;color:var(--txt2);margin-top:4px">Sync: '+esc(au.sync_status||'—')+(au.last_sync?' · '+esc(au.last_sync):'')+'</div><div dir="ltr" style="font-size:10px;line-height:1.5;margin-top:5px;word-break:break-all">'+esc(au.config||'—')+'</div><button class="btn btn-sm btn-g" style="margin-top:6px" onclick="_copyNodeConfigEncoded(encodeURIComponent(au.config||null))">کپی کانفیگ</button></div>';}).join(''):'<div style="font-size:11px;color:var(--txt2)">هنوز کاربری روی این نود سینک نشده.</div>')+'</div>' +
-        '<div class="set-row"><span class="set-lbl">Node Traffic</span><b>'+esc(fmtBytes(Number(node.node_traffic_used_bytes||0)))+'</b></div>' +
         '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">' +
           '<button class="btn btn-g btn-sm" onclick="syncNode(\'' + esc(node.node_id) + '\')">Refresh / Test</button>' +
           '<button class="btn btn-g btn-sm" onclick="editNode(\'' + esc(node.node_id) + '\')">' + esc(t('edit')) + '</button>' +
