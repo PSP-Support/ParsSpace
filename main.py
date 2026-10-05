@@ -1550,6 +1550,8 @@ async def _sync_tg_traffic(user_id: str, nbytes: int):
         async with USERS_LOCK:
             u = USERS.get(user_id)
             if u:
+                _record_user_traffic(u, u.get("traffic_used_bytes", 0) + nbytes)
+                _record_user_traffic(u, u.get("traffic_used_bytes", 0) + n)
                 u["traffic_used_bytes"] = u.get("traffic_used_bytes", 0) + nbytes
         asyncio.create_task(save_state())
     except Exception:
@@ -2500,7 +2502,11 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
         logger.warning("Skipping config for user %s: invalid config UUID %r", user_id, config_uuid)
         return ""
     username = user.get("username", user_id)
-    rem = f"Pars Space - {username}"
+    support_channel = str(user.get("support_channel_id") or "").strip()
+    if support_channel:
+        rem = f"{support_channel} PSP"
+    else:
+        rem = f"Pars Space - {username}"
     if remark_tag:
         rem = f"{rem} {remark_tag}"
     remark = quote(rem)
@@ -3544,7 +3550,7 @@ async def link_page(uuid: str, request: Request):
         headers={
             "profile-title": quote(username),
             "profile-update-interval": "12",
-            "support-url": "Pars Space",
+            "support-url": str(sub.get("support_channel_id") or SETTINGS.get("panel_alias") or "Pars Space"),
         },
     )
 
@@ -3572,6 +3578,7 @@ async def create_sub(request: Request, _=Depends(require_auth)):
     name = (body.get("name") or "گروه جدید").strip()[:60]
     desc = (body.get("desc") or body.get("description") or "").strip()[:200]
     password = (body.get("password") or "").strip()
+    support_channel_id = str(body.get("support_channel_id") or "").strip()[:160]
     sub_id = generate_uuid()
     uuid_key = secrets.token_urlsafe(16)
     async with SUBS_LOCK:
@@ -3582,6 +3589,7 @@ async def create_sub(request: Request, _=Depends(require_auth)):
             "uuid_key": uuid_key,
             "created_at": datetime.now().isoformat(),
             "link_ids": [],
+            "support_channel_id": support_channel_id,
         }
     asyncio.create_task(save_state())
     log_activity("sub", f"گروه «{name}» ساخته شد", "ok")
@@ -3600,11 +3608,24 @@ async def list_subs(_=Depends(require_auth)):
         snap_subs = dict(SUBS)
     async with LINKS_LOCK:
         snap_links = dict(LINKS)
+    async with USERS_LOCK:
+        snap_users = dict(USERS)
     result = []
     for sid, s in snap_subs.items():
         link_ids = s.get("link_ids", [])
         active_count = sum(1 for lid in link_ids if is_link_allowed(snap_links.get(lid)))
         total_used = sum(snap_links[lid].get("used_bytes", 0) for lid in link_ids if lid in snap_links)
+        total_limit = sum(snap_links[lid].get("limit_bytes", 0) for lid in link_ids if lid in snap_links)
+        daily = {}
+        for lid in link_ids:
+            link = snap_links.get(lid) or {}
+            uid = link.get("user_id")
+            u = snap_users.get(uid) if uid else None
+            for row in ((u or {}).get("traffic_history") or []):
+                    day = str(row.get("date") or "")
+                    if day:
+                        daily[day] = daily.get(day, 0) + int(row.get("bytes") or 0)
+        daily_usage = [{"date":k,"bytes":v,"fmt":fmt_bytes(v)} for k,v in sorted(daily.items(), reverse=True)[:31]]
         result.append({
             "sub_id": sid,
             **s,
@@ -3614,6 +3635,10 @@ async def list_subs(_=Depends(require_auth)):
             "active_count": active_count,
             "total_used_bytes": total_used,
             "total_used_fmt": fmt_bytes(total_used),
+            "total_limit_bytes": total_limit,
+            "total_limit_fmt": "∞" if total_limit == 0 else fmt_bytes(total_limit),
+            "daily_usage": daily_usage,
+            "support_channel_id": s.get("support_channel_id", ""),
             "public_url": f"https://{host}/p/{s['uuid_key']}",
             "sub_url": f"https://{host}/sub/{s['uuid_key']}",
         })
@@ -3659,6 +3684,8 @@ async def assign_link_to_sub(sub_id: str, request: Request, _=Depends(require_au
     body = await request.json()
     link_id = str(body.get("link_id", ""))
     action = str(body.get("action", "add"))
+    label = str(body.get("label") or "").strip()[:80]
+    support_channel_id = str(body.get("support_channel_id") or "").strip()[:160]
     async with SUBS_LOCK:
         if sub_id not in SUBS:
             raise HTTPException(status_code=404, detail="sub not found")
@@ -3673,6 +3700,10 @@ async def assign_link_to_sub(sub_id: str, request: Request, _=Depends(require_au
     async with LINKS_LOCK:
         if link_id in LINKS:
             LINKS[link_id]["sub_id"] = sub_id if action == "add" else None
+            if action == "add" and label:
+                LINKS[link_id]["label"] = label
+            if action == "add" and support_channel_id:
+                LINKS[link_id]["support_channel_id"] = support_channel_id
     asyncio.create_task(save_state())
     return {"ok": True}
 
@@ -4933,6 +4964,7 @@ async def list_users(_=Depends(require_auth)):
             "qr_url": f"https://{host}/api/users/{uid}/qr",
             "subscription_url": f"https://{host}/link/{u.get('config_uuid')}",
             "subscription_type": "per-user",
+            "support_channel_id": u.get("support_channel_id", ""),
             "connections": sum(1 for c in connections.values() if c.get("uuid") == u.get("config_uuid")),
             "node_configs": dict(u.get("node_configs") or {}),
             "node_sync_state": dict(u.get("node_sync_state") or {}),
@@ -5082,7 +5114,8 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
     password = str(body.get("password") or secrets.token_urlsafe(12))
     traffic_limit_gb = float(body.get("traffic_limit_gb") or 0)
     expire_days = int(body.get("expire_days") or 0)
-    protocol = str(body.get("protocol") or "vless").lower()
+    support_channel_id = str(body.get("support_channel_id") or "").strip()[:160]
+    protocol = "vless"
     trojan_password = str(body.get("trojan_password") or (password if protocol == "trojan" else ""))
     _cc_raw = body.get("concurrent_connections")
     concurrent_connections = int(_cc_raw) if _cc_raw is not None else 0
@@ -5249,6 +5282,9 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
             "traffic_limit_bytes": traffic_limit_bytes,
             "traffic_used_bytes": 0,
             "expire_at": expire_at,
+            "quota_expire_days": expire_days,
+            "quota_traffic_limit_gb": traffic_limit_gb,
+            "support_channel_id": support_channel_id,
             "concurrent_connections": concurrent_connections,
             "created_at": datetime.now().isoformat(),
             "status": "active",
@@ -5393,6 +5429,34 @@ async def toggle_user(user_id: str, _=Depends(require_auth)):
         asyncio.create_task(_sync_user_to_selected_nodes(user_id, dict(u)))
     return {"ok": True, "user_id": user_id, "status": new_status}
 
+def _record_user_traffic(user: dict, new_total: int):
+    try:
+        old = int(user.get("traffic_used_bytes") or 0)
+        new = int(new_total)
+        delta = max(0, new - old)
+        if delta <= 0:
+            return
+        day = datetime.now().strftime("%Y-%m-%d")
+        hist = user.setdefault("traffic_history", [])
+        row = next((x for x in hist if x.get("date") == day), None)
+        if row is None:
+            hist.append({"date": day, "bytes": delta})
+        else:
+            row["bytes"] = int(row.get("bytes") or 0) + delta
+        if len(hist) > 45:
+            del hist[:-45]
+    except Exception:
+        pass
+
+@app.get("/api/users/{user_id}/traffic-history")
+async def user_traffic_history(user_id: str, _=Depends(require_auth)):
+    async with USERS_LOCK:
+        u = USERS.get(user_id)
+        if not u:
+            raise HTTPException(status_code=404, detail="user not found")
+        hist = list(u.get("traffic_history") or [])[-31:]
+    return {"history":[{"date":x.get("date"),"bytes":int(x.get("bytes") or 0),"fmt":fmt_bytes(int(x.get("bytes") or 0))} for x in hist]}
+
 @app.patch("/api/users/{user_id}/reset")
 async def reset_user_traffic(user_id: str, _=Depends(require_auth)):
     """Reset a user's traffic usage to zero."""
@@ -5412,6 +5476,26 @@ async def reset_user_traffic(user_id: str, _=Depends(require_auth)):
         asyncio.create_task(_sync_user_to_selected_nodes(user_id, dict(u), force_reset=True))
     log_activity("user", f"مصرف کاربر «{username}» ریست شد", "info")
     return {"ok": True, "user_id": user_id, "traffic_used_bytes": 0}
+
+@app.patch("/api/users/{user_id}/reset-quota")
+async def reset_user_quota(user_id: str, _=Depends(require_auth)):
+    """Reset usage and restart the original quota window without changing the config UUID."""
+    async with USERS_LOCK:
+        u = USERS.get(user_id)
+        if not u:
+            raise HTTPException(status_code=404, detail="user not found")
+        u["traffic_used_bytes"] = 0
+        gb = float(u.get("quota_traffic_limit_gb") or 0)
+        days = int(u.get("quota_expire_days") or 0)
+        u["traffic_limit_bytes"] = int(gb * 1024 ** 3) if gb > 0 else 0
+        u["expire_at"] = (datetime.now() + timedelta(days=days)).isoformat() if days > 0 else None
+        u["status"] = "active"
+        u["traffic_history"] = []
+    asyncio.create_task(save_state())
+    if _selected_node_ids_for_user(u):
+        asyncio.create_task(_sync_user_to_selected_nodes(user_id, dict(u), force_reset=True))
+    log_activity("user", f"سهم کاربر «{u.get('username', user_id)}» از نو تنظیم شد", "info")
+    return {"ok": True, "user_id": user_id, "traffic_used_bytes": 0, "expire_at": u.get("expire_at"), "traffic_limit_bytes": u.get("traffic_limit_bytes", 0)}
 
 @app.patch("/api/users/{user_id}")
 async def edit_user(user_id: str, request: Request, _=Depends(require_auth)):
@@ -5442,6 +5526,8 @@ async def edit_user(user_id: str, request: Request, _=Depends(require_auth)):
             p = str(body["protocol"]).lower()
             if p in USER_PROTOCOLS:
                 u["protocol"] = p
+        if "support_channel_id" in body:
+            u["support_channel_id"] = str(body.get("support_channel_id") or "").strip()[:160]
         if "status" in body:
             u["status"] = str(body["status"])
         if "sni" in body:
@@ -5811,6 +5897,49 @@ async def test_config(request: Request, _=Depends(require_auth)):
     except Exception as exc:
         latency = round((time.perf_counter() - start) * 1000, 1)
         return {"ok": False, "host": host, "port": port, "latency_ms": latency, "message": f"TCP check failed: {str(exc)[:180]}"}
+
+@app.post("/api/tools/test-subscription")
+async def test_subscription(request: Request, _=Depends(require_auth)):
+    """Fetch this panel's subscription and TCP-test each VLESS entry, sorted by latency."""
+    import base64 as _b64
+    from urllib.parse import urlparse as _urlparse
+    body = await request.json()
+    raw = str(body.get("url") or "").strip()
+    if not raw.startswith(("http://", "https://")):
+        raise HTTPException(status_code=400, detail="لینک ساب معتبر نیست")
+    parsed = _urlparse(raw)
+    panel_host = _urlparse(get_public_endpoint().get("url") or f"https://{get_host()}").hostname
+    if parsed.hostname and panel_host and parsed.hostname.lower() != panel_host.lower():
+        raise HTTPException(status_code=400, detail="برای امنیت، فقط ساب همین پنل قابل تست است")
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=8, follow_redirects=True) as client:
+            r = await client.get(raw)
+        if r.status_code >= 400:
+            raise HTTPException(status_code=400, detail=f"Subscription HTTP {r.status_code}")
+        text = r.text.strip()
+        try:
+            text = _b64.b64decode(text + "=" * (-len(text) % 4)).decode("utf-8", "ignore")
+        except Exception:
+            pass
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Subscription fetch failed: {str(exc)[:160]}")
+    lines=[x.strip() for x in text.splitlines() if x.strip().startswith("vless://")]
+    async def one(cfg):
+        u=_urlparse(cfg); host=u.hostname; port=int(u.port or 443); start=time.perf_counter()
+        try:
+            rd,wr=await asyncio.wait_for(asyncio.open_connection(host,port),timeout=4)
+            lat=round((time.perf_counter()-start)*1000,1); wr.close();
+            try: await wr.wait_closed()
+            except Exception: pass
+            return {"ok":True,"latency_ms":lat,"remark":u.fragment or host,"config":cfg}
+        except Exception as exc:
+            return {"ok":False,"latency_ms":round((time.perf_counter()-start)*1000,1),"remark":u.fragment or host,"config":cfg,"error":str(exc)[:100]}
+    results=await asyncio.gather(*(one(x) for x in lines[:50])) if lines else []
+    results=sorted(results,key=lambda x:(not x["ok"], x.get("latency_ms",999999)))
+    return {"ok_count":sum(1 for x in results if x["ok"]),"total":len(results),"results":results}
 
 @app.get("/api/tools/speed-test")
 async def speed_test(bytes: int = 524288, _=Depends(require_auth)):
@@ -6351,6 +6480,8 @@ async def update_settings(request: Request, _=Depends(require_auth)):
                     SETTINGS["protocol_defaults"] = current
                 elif isinstance(v, bool):
                     SETTINGS[k] = v
+                elif isinstance(v, str) and k in ("panel_alias", "server_ip", "country", "country_code", "country_flag"):
+                    SETTINGS[k] = v.strip()[:200]
     asyncio.create_task(save_state())
     log_activity("settings", "تنظیمات پیشرفته به‌روزرسانی شد", "info")
     async with SETTINGS_LOCK:
