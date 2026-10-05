@@ -128,9 +128,36 @@ input:focus,select:focus,textarea:focus{border-color:rgba(224,187,98,.72)!import
 .nav button:hover:before{transform:translateX(130%)}
 @media (max-width:720px){.dynamicMesh:before{width:70vw;height:70vw;filter:blur(34px)}.dynamicMesh:after{width:62vw;height:62vw;filter:blur(34px)}.glassSheen{animation-duration:18s}.card:hover{transform:none!important}}
 @media (prefers-reduced-motion:reduce){.dynamicMesh:before,.dynamicMesh:after,.glassSheen{animation:none}.nav button:before{transition:none}}
+
+/* PARS SPACE LITE RESTORE: previous clean glass visual */
+:root{--bg:#e8ebf0;--surface:rgba(255,255,255,.72);--surface2:rgba(255,255,255,.90);--text:#17191d;--muted:#5f6670;--line:rgba(20,24,32,.13);--soft:rgba(232,235,240,.82);--accent:#15171b;--accentText:#fff;--shadow:0 20px 60px rgba(20,24,32,.11);--radius:24px}
+[data-theme=dark]{--bg:#0d0e10;--surface:rgba(25,26,29,.78);--surface2:#18191c;--text:#f5f5f5;--muted:#9a9da4;--line:rgba(255,255,255,.09);--soft:#24262a;--accent:#f5f5f5;--accentText:#111;--shadow:0 25px 80px rgba(0,0,0,.28)}
+html,body{background:var(--bg)}
+.ambient{background:radial-gradient(circle at 15% 20%,color-mix(in srgb,var(--accent) 5%,transparent),transparent 32%),radial-gradient(circle at 85% 75%,color-mix(in srgb,var(--accent) 6%,transparent),transparent 30%)}
+.orb{background:color-mix(in srgb,var(--surface) 34%,transparent);border-color:var(--line);box-shadow:inset 0 0 80px color-mix(in srgb,var(--text) 4%,transparent),0 0 120px color-mix(in srgb,var(--text) 5%,transparent)}
+.top{background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow),inset 0 1px rgba(255,255,255,.10);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+.card{background:linear-gradient(145deg,color-mix(in srgb,var(--surface) 94%,transparent),color-mix(in srgb,var(--surface) 72%,transparent));box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.08);backdrop-filter:blur(18px) saturate(125%);-webkit-backdrop-filter:blur(18px) saturate(125%)}
+.logo{color:var(--accent);text-shadow:none}
+.nav button{border:1px solid transparent;color:var(--muted)}
+.nav button:hover{color:var(--text);background:var(--soft);transform:none}
+.nav button.active{background:var(--accent);color:var(--accentText);box-shadow:none}
+.card:hover{box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.10);transform:none}
+.btn:hover,.action:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(0,0,0,.07)}
+.mobileMenuBtn{display:none}
+.dynamicMesh,.glassSheen{display:none!important}
+@media(max-width:720px){
+ .app{padding:8px}.top{top:6px;display:grid;grid-template-columns:1fr auto;gap:8px;padding:8px;border-radius:18px;overflow:visible}
+ .brand{min-width:0}.tools{grid-column:2;grid-row:1;margin:0;gap:5px}.mobileMenuBtn{display:grid!important}
+ .nav{grid-column:1/-1;grid-row:2;display:none;flex-direction:column;gap:5px;width:100%;padding:8px;margin:0;border-top:1px solid var(--line);background:color-mix(in srgb,var(--surface) 92%,transparent);border-radius:0 0 15px 15px;max-height:65vh;overflow:auto;animation:mobileNavDown .22s ease}
+ .top.menu-open .nav{display:flex}
+ .nav button{width:100%;padding:12px 14px;text-align:right;border-radius:12px}
+ html[dir=ltr] .nav button{text-align:left}
+ .top.menu-open{padding-bottom:9px}
+}
+@keyframes mobileNavDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
 </style>
 </head>
-<body><div class="dynamicMesh"><div class="glassSheen"></div></div>
+<body>
 <div class="loadingScreen" id="loadingScreen"><div class="loaderCard"><div class="loaderRing"></div><b id="loadingTitle">Pars Space</b><div class="muted" id="loadingText" style="margin-top:7px">در حال آماده‌سازی پنل…</div><div class="loaderBar"><i></i></div></div></div>
 <div class="ambient"><i class="orb a"></i><i class="orb b"></i></div>
 <div class="app">
@@ -147,7 +174,7 @@ input:focus,select:focus,textarea:focus{border-color:rgba(224,187,98,.72)!import
   <button data-view="terminal" data-i18n="terminal">Terminal</button>
   <button data-view="settings" data-i18n="settings">Settings</button>
  </nav>
- <div class="tools"><button class="iconbtn" id="themeBtn" title="Theme">◐</button><button class="iconbtn" id="langBtn">FA</button></div>
+ <div class="tools"><button class="iconbtn mobileMenuBtn" id="mobileMenuBtn" title="Menu">☰</button><button class="iconbtn" id="themeBtn" title="Theme">◐</button><button class="iconbtn" id="langBtn">FA</button></div>
 </header>
 
 <main>
@@ -483,13 +510,16 @@ let protocolDefaults={};
 function renderServerAdvancedSettings(){const p=$('#settingsProtocol')?.value||'vless';const box=$('#serverAdvancedSettings');if(!box)return;const d=protocolDefaults[p]||{};let h='';if(p==='ssh')h=`<div class="advancedGrid"><div class="field"><label>SSH Host</label><input id="setSshHost" value="${esc(d.host||'')}" placeholder="server.example.com"></div><div class="field"><label>SSH Port</label><input id="setSshPort" type="number" value="${esc(d.port||22)}"></div><div class="field"><label>SSH Username</label><input id="setSshUser" value="${esc(d.username||'')}"></div><div class="field"><label>SSH Password</label><input id="setSshPass" type="password" value="${esc(d.password||'')}"></div><div class="field"><label>Auth Mode</label><select id="setSshAuth"><option value="password" ${(d.auth_mode||'password')==='password'?'selected':''}>Password</option><option value="key" ${d.auth_mode==='key'?'selected':''}>Private key</option></select></div></div>`;else if(p==='reality')h=`<div class="advancedGrid"><div class="field"><label>SNI</label><input id="setSni" value="${esc(d.sni||'is1-ssl.mzstatic.com')}"></div><div class="field"><label>Destination</label><input id="setDest" value="${esc(d.dest||'is1-ssl.mzstatic.com:443')}"></div><div class="field"><label>External Port</label><input id="setPort" type="number" value="${esc(d.port||443)}"></div><div class="field"><label>XHTTP Path</label><input id="setPath" value="${esc(d.path||'/')}"></div></div>`;else h=`<div class="advancedGrid"><div class="field"><label>Network</label><select id="setNetwork"><option value="ws" ${d.network==='ws'?'selected':''}>WebSocket</option><option value="grpc" ${d.network==='grpc'?'selected':''}>gRPC</option><option value="tcp" ${d.network==='tcp'?'selected':''}>TCP</option><option value="xhttp" ${d.network==='xhttp'?'selected':''}>XHTTP</option></select></div><div class="field"><label>Security</label><select id="setSecurity"><option value="tls" ${d.security==='tls'?'selected':''}>TLS</option><option value="none" ${d.security==='none'?'selected':''}>None</option></select></div><div class="field"><label>Port</label><input id="setPort" type="number" value="${esc(d.port||443)}"></div><div class="field"><label>SNI</label><input id="setSni" value="${esc(d.sni||'')}"></div><div class="field"><label>Path</label><input id="setPath" value="${esc(d.path||'/ws/{uuid}')}"></div></div>`;box.innerHTML=h}
 async function saveProtocolDefaults(){const p=$('#settingsProtocol').value;let d={};if(p==='ssh')d={host:$('#setSshHost').value.trim(),port:Number($('#setSshPort').value||22),username:$('#setSshUser').value.trim(),password:$('#setSshPass').value,auth_mode:$('#setSshAuth').value};else if(p==='reality')d={network:'tcp',security:'reality',port:Number($('#setPort').value||443),sni:$('#setSni').value.trim(),dest:$('#setDest').value.trim(),path:$('#setPath').value.trim()||'/'};else d={network:$('#setNetwork').value,security:$('#setSecurity').value,port:Number($('#setPort').value||443),sni:$('#setSni').value.trim(),path:$('#setPath').value.trim()||'/ws/{uuid}'};try{let r=await api('/api/settings',{method:'POST',body:JSON.stringify({protocol_defaults:{[p]:d}})});protocolDefaults=r.settings?.protocol_defaults||{...protocolDefaults,[p]:d};renderServerAdvancedSettings();toast('تنظیمات پروتکل ذخیره شد')}catch(e){toast(e.message)}}
 function toggleActivity(){const c=$('#activityCard'),b=$('#activityShow');const hidden=c.style.display==='none';c.style.display=hidden?'':'none';b.style.display=hidden?'none':'inline-flex'}
-renderServerAdvancedSettings();updateClientProtocolFields();boot();
+renderServerAdvancedSettings();updateClientProtocolFields();
+const mobileMenuBtn=$('#mobileMenuBtn');
+if(mobileMenuBtn){mobileMenuBtn.onclick=()=>{const top=document.querySelector('.top');const open=top.classList.toggle('menu-open');mobileMenuBtn.textContent=open?'×':'☰';};}
+$$('.nav button').forEach(b=>b.addEventListener('click',()=>{if(window.matchMedia('(max-width:720px)').matches){document.querySelector('.top')?.classList.remove('menu-open');if(mobileMenuBtn)mobileMenuBtn.textContent='☰';}}));
+boot();
 </script>
 
 <script>
 (()=>{
-  const fine=matchMedia('(pointer:fine)').matches;
-  if(!fine)return;
+  return; // lightweight mobile/desktop layout, no pointer tilt
   let raf=0,last=null;
   document.addEventListener('pointermove',e=>{
     last=e;if(raf)return;
