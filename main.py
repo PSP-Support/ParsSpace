@@ -25,7 +25,7 @@ import io
 import logging
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-logger = logging.getLogger("Spider-Gateway")
+logger = logging.getLogger("Pars-Gateway")
 
 try:
     import qrcode
@@ -53,7 +53,7 @@ _sys.modules.setdefault("main", _sys.modules[__name__])
 
 IRAN_TZ = ZoneInfo("Asia/Tehran")
 
-app = FastAPI(title="Spider Gateway", docs_url=None, redoc_url=None)
+app = FastAPI(title="Pars Space Gateway", docs_url=None, redoc_url=None)
 
 # Import and include xhttp_siz10 router - deferred until globals are defined
 xhttp_router = None
@@ -62,7 +62,7 @@ PANEL_PORT = 8080
 
 
 def _env_port(default: int = PANEL_PORT) -> int:
-    """Return the canonical SpiderPanel listen port.
+    """Return the canonical Pars Space listen port.
 
     Provider-injected PORT values are intentionally ignored. The panel itself
     always listens on 8080; a platform reverse proxy may still expose another
@@ -73,7 +73,7 @@ def _env_port(default: int = PANEL_PORT) -> int:
 
 CONFIG = {
     "port": PANEL_PORT,
-    "secret": os.environ.get("SECRET_KEY", "spider-panel-secret-key-v2"),
+    "secret": os.environ.get("SECRET_KEY", "pars-space-secret-key-v2"),
     # Public host is discovered at runtime. Never use localhost as a public
     # endpoint or as a value embedded in client configs.
     "host": "",
@@ -89,7 +89,7 @@ app.add_middleware(
 
 # ── Persistence ───────────────────────────────────────────────────────────────
 DATA_DIR = Path(os.environ.get("DATA_DIR", "/data"))
-DATA_FILE = DATA_DIR / "spider_state.json"
+DATA_FILE = DATA_DIR / "pars_state.json"
 SAVE_LOCK = asyncio.Lock()
 
 # ── Official MTProxy runtime paths/settings ──────────────────────────────────
@@ -233,7 +233,7 @@ def _validate_listener_port(port: int, exclude_id: str | None = None) -> None:
         raise HTTPException(status_code=400, detail="Internal Port must be between 1 and 65535")
     owner = _listener_port_in_use(port, exclude_id=exclude_id)
     if owner == "panel":
-        raise HTTPException(status_code=409, detail=f"Internal Port {port} is already used by the SpiderPanel HTTP server")
+        raise HTTPException(status_code=409, detail=f"Internal Port {port} is already used by the Pars Space HTTP server")
     if owner and owner != "invalid":
         raise HTTPException(status_code=409, detail=f"Internal Port {port} is already used by inbound {owner}")
 
@@ -473,7 +473,7 @@ SUBS_LOCK = asyncio.Lock()
 USERS: dict = {}
 USERS_LOCK = asyncio.Lock()
 
-# ── Remote nodes (other SpiderPanel instances we sync configs to) ──────────────
+# ── Remote nodes (other Pars Space instances we sync configs to) ──────────────
 # node_id -> {domain, api_key, name, added_at, last_status, last_checked,
 #             latency_ms, user_count, error}
 NODES: dict = {}
@@ -484,7 +484,7 @@ NODE_HEARTBEAT_TASK = None
 
 # ── Settings ──────────────────────────────────────────────────────────────
 SETTINGS = {
-    # Canonical SpiderPanel-to-SpiderPanel API credential. `security_token`
+    # Canonical Pars Space-to-Pars Space API credential. `security_token`
     # remains as a backwards-compatible alias for older features.
     "panel_api_key": "spdr_" + secrets.token_urlsafe(24),
     "server_ip": "",
@@ -517,7 +517,7 @@ SETTINGS = {
             "enabled": False,
             "channel": "",
             "interval_minutes": 60,
-            "username_prefix": "spider",
+            "username_prefix": "pars",
             "traffic_limit_gb": 0,
             "expire_days": 30,
             "inbound_id": "",
@@ -618,7 +618,7 @@ WORKER: dict = {
     "control_token": "",
     # Panel domain injected into the worker so it can expose panel info.
     "panel_domain": "",
-    # KV namespace id + title for the worker's dedicated SPIDER_KV binding
+    # KV namespace id + title for the worker's dedicated PARS_KV binding
     # ({worker_name}-db — one namespace per worker, never shared).
     "kv_namespace_id": "",
     "kv_namespace_title": "",
@@ -686,7 +686,7 @@ def log_activity(kind: str, message: str, level: str = "info"):
     })
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
-SESSION_COOKIE = "spider_session"
+SESSION_COOKIE = "pars_session"
 SESSION_TTL = 60 * 60 * 24 * 7
 
 def hash_password(pw: str) -> str:
@@ -727,7 +727,7 @@ async def require_auth(request: Request):
     return token
 
 async def require_replication_auth(request: Request):
-    """Authenticate local admins with the session cookie or remote SpiderPanels
+    """Authenticate local admins with the session cookie or remote Pars Spaces
     with X-API-Key. The API-key path is intentionally used only on replication
     endpoints, never as a blanket replacement for the browser session."""
     token = request.cookies.get(SESSION_COOKIE)
@@ -735,7 +735,7 @@ async def require_replication_auth(request: Request):
         return {"kind": "session", "token": token}
     key = str(request.headers.get("X-API-Key") or "").strip()
     if not key:
-        # Backward compatibility with older SpiderPanel peers. New clients use X-API-Key.
+        # Backward compatibility with older Pars Space peers. New clients use X-API-Key.
         key = str(request.headers.get("X-Node-Key") or "").strip()
     async with SETTINGS_LOCK:
         expected = str(SETTINGS.get("panel_api_key") or SETTINGS.get("security_token") or "")
@@ -799,7 +799,7 @@ def _xray_gen_keypair(cmd: str, timeout: float = 5.0) -> dict:
     'Name: value' lines. Keys are produced by the Xray binary itself so they
     always match what the running Xray instance expects."""
     import subprocess
-    bin_path = _xray_bin_path()
+    bin_path = _parsx_bin_path()
     if not bin_path.exists():
         return {}
     try:
@@ -984,24 +984,24 @@ def generate_telegram_proxy_link(user_id: str, user: dict, inbound: dict, remark
     return link
 
 
-XRAY_URL = "https://github.com/XTLS/Xray-core/releases/download/v26.3.27/Xray-linux-64.zip"
+PARSX_URL = "https://github.com/XTLS/Xray-core/releases/download/v26.9.9/Xray-linux-64.zip"
 
 
-async def _ensure_xray() -> bool:
+async def _ensure_parsx() -> bool:
     """Download + unzip the Xray binary once into BASE/xray so a Reality/xhttp
     inbound can actually be served (the panel's own relay only handles VLESS
     ws/xhttp; Reality needs the real Xray). Safe to call on every startup —
     it no-ops when the binary already exists."""
     import subprocess, zipfile, shutil
-    xray_dir = Path(os.path.dirname(os.path.abspath(__file__))) / "xray"
-    bin_path = xray_dir / "xray"
+    xray_dir = Path(os.path.dirname(os.path.abspath(__file__))) / "parsx"
+    bin_path = xray_dir / "parsx"
     if bin_path.exists() and bin_path.stat().st_size > 100000:
         return True
     try:
         xray_dir.mkdir(parents=True, exist_ok=True)
         zip_path = xray_dir / "xray.zip"
         async with httpx.AsyncClient(timeout=60, follow_redirects=True) as c:
-            r = await c.get(XRAY_URL)
+            r = await c.get(PARSX_URL)
             if r.status_code != 200:
                 logger.warning(f"Xray download failed: HTTP {r.status_code}")
                 return False
@@ -1400,14 +1400,14 @@ async def startup():
 
     # Ensure Xray is installed and serving reality BEFORE the panel is fully up,
     # so reality configs work immediately (not in a background task).
-    await _ensure_xray()
-    if _xray_bin_path().exists():
+    await _ensure_parsx()
+    if _parsx_bin_path().exists():
         try:
             await _xray_apply()
         except Exception as e:
             logger.warning(f"Xray apply on boot failed: {e}")
     log_activity("system", "سرور راه‌اندازی شد", "ok")
-    logger.info(f"Spider Panel v8 (commit 24d7594) started on port {CONFIG['port']}")
+    logger.info(f"Pars Space v8 (commit 24d7594) started on port {CONFIG['port']}")
     # Include XHTTP router for xhttp-siz10 endpoints (already merged into main.py)
     global xhttp_router
     # router is already defined in this module
@@ -1420,17 +1420,17 @@ async def startup():
     asyncio.create_task(_xray_client_audit_loop())
     global BOT_SCHEDULER_TASK, BOT_POLL_TASK, BOT_EXPIRY_TASK
     if BOT_SCHEDULER_TASK is None or BOT_SCHEDULER_TASK.done():
-        BOT_SCHEDULER_TASK = asyncio.create_task(_channel_bot_loop(), name="spider-channel-bot")
+        BOT_SCHEDULER_TASK = asyncio.create_task(_channel_bot_loop(), name="pars-channel-bot")
     if BOT_POLL_TASK is None or BOT_POLL_TASK.done():
-        BOT_POLL_TASK = asyncio.create_task(_sell_bot_loop(), name="spider-sell-bot")
+        BOT_POLL_TASK = asyncio.create_task(_sell_bot_loop(), name="pars-sell-bot")
     if BOT_EXPIRY_TASK is None or BOT_EXPIRY_TASK.done():
-        BOT_EXPIRY_TASK = asyncio.create_task(_sell_bot_expiry_loop(), name="spider-expiry-sweeper")
+        BOT_EXPIRY_TASK = asyncio.create_task(_sell_bot_expiry_loop(), name="pars-expiry-sweeper")
 
     # Start Telegram Proxy instances for all existing TG inbounds
     await _start_all_telegram_proxies()
     global NODE_HEARTBEAT_TASK
     if NODE_HEARTBEAT_TASK is None or NODE_HEARTBEAT_TASK.done():
-        NODE_HEARTBEAT_TASK = asyncio.create_task(_node_heartbeat_loop(), name="spider-node-heartbeat")
+        NODE_HEARTBEAT_TASK = asyncio.create_task(_node_heartbeat_loop(), name="pars-node-heartbeat")
 
 
 # ── Telegram Proxy Lifecycle ────────────────────────────────────────────────
@@ -1519,12 +1519,12 @@ async def _stop_telegram_proxy(inbound_id: str):
     if is_docker_available():
         # Stop all containers for this inbound_id
         for i in range(10):  # Try up to 10 possible container names (for different secrets)
-            container_name = f"spider-tg-proxy-{inbound_id}-"
+            container_name = f"pars-tg-proxy-{inbound_id}-"
             # We can't know the exact secret suffix, so we'll stop any matching
             import subprocess
             try:
                 result = subprocess.run(
-                    ["docker", "ps", "-a", "--filter", f"name=spider-tg-proxy-{inbound_id}-", "--format", "{{.Names}}"],
+                    ["docker", "ps", "-a", "--filter", f"name=pars-tg-proxy-{inbound_id}-", "--format", "{{.Names}}"],
                     capture_output=True, text=True, timeout=10
                 )
                 for name in result.stdout.strip().split('\n'):
@@ -1665,7 +1665,7 @@ async def shutdown():
 # ── Public endpoint discovery ────────────────────────────────────────────────
 # A container cannot query "the internet" to magically learn a hostname that a
 # deployer has not assigned. The portable strategy is:
-#   1) explicit SpiderPanel public URL/domain env vars,
+#   1) explicit Pars Space public URL/domain env vars,
 #   2) deployer-provided public URL/domain env vars,
 #   3) the real external Host/X-Forwarded-Host seen on an incoming request,
 #   4) a persisted value from a previous successful discovery.
@@ -1700,8 +1700,8 @@ except ValueError:
     PUBLIC_ENDPOINT_REFRESH_SECONDS = 60.0
 
 PUBLIC_ENDPOINT_ENV_VARS = (
-    "SPIDER_PANEL_PUBLIC_URL",
-    "SPIDER_PANEL_PUBLIC_DOMAIN",
+    "PARS_SPACE_PUBLIC_URL",
+    "PARS_SPACE_PUBLIC_DOMAIN",
     "PUBLIC_URL",
     "PUBLIC_DOMAIN",
     "PUBLIC_HOST",
@@ -1803,11 +1803,11 @@ def _deployer_env_candidates() -> list[tuple[str, str, str]]:
     """Return (raw_value, source, variable_name) candidates."""
     out = []
 
-    # Explicit SpiderPanel configuration wins over provider defaults.
-    for var in ("SPIDER_PANEL_PUBLIC_URL", "SPIDER_PANEL_PUBLIC_DOMAIN"):
+    # Explicit Pars Space configuration wins over provider defaults.
+    for var in ("PARS_SPACE_PUBLIC_URL", "PARS_SPACE_PUBLIC_DOMAIN"):
         val = str(os.environ.get(var) or "").strip()
         if val:
-            out.append((val, "spider-env", var))
+            out.append((val, "pars-env", var))
 
     # Provider-native values. These are intentionally independent of Railway.
     provider_vars = (
@@ -2124,8 +2124,8 @@ def _client_public_domain() -> str:
     """
     candidates = [
         SETTINGS.get("domain"),
-        os.environ.get("SPIDER_PANEL_PUBLIC_DOMAIN"),
-        os.environ.get("SPIDER_PANEL_PUBLIC_URL"),
+        os.environ.get("PARS_SPACE_PUBLIC_DOMAIN"),
+        os.environ.get("PARS_SPACE_PUBLIC_URL"),
     ]
     for raw in candidates:
         ep = _normalize_public_endpoint(str(raw or ""))
@@ -2707,7 +2707,7 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
                   f"&fp=chrome&alpn={quote(alpn)}&mode={xmode}&extra={extra}")
     elif transport == "grpc":
         gs = (inbound.get("grpc_settings") or {}) if inbound else {}
-        service = str(gs.get("serviceName") or gs.get("service_name") or "pars-space").strip() or "spider"
+        service = str(gs.get("serviceName") or gs.get("service_name") or "pars-space").strip() or "pars"
         params = (f"encryption=none&security={security}&type=grpc"
                   f"&serviceName={quote(service)}&sni={quote(host)}"
                   f"&fp=chrome&alpn={quote(alpn)}")
@@ -3065,7 +3065,7 @@ async def deployment_ui_fixes(request: Request, call_next):
 
 
 # ── Telegram Proxy Module (merged from telegram_proxy.py) ──
-def derive_secret_from_uuid(config_uuid: str, salt: str = "spider-tg-proxy") -> str:
+def derive_secret_from_uuid(config_uuid: str, salt: str = "pars-tg-proxy") -> str:
     """Return the exact 16-byte / 32-hex client secret expected by official MTProxy."""
     return hashlib.sha256(f"{salt}:{config_uuid}".encode()).hexdigest()[:32]
 
@@ -3873,7 +3873,7 @@ async def regenerate_panel_api_key(_=Depends(require_auth)):
         SETTINGS["security_token"] = new_key
         SETTINGS["panel_api_key_rotated_at"] = datetime.now().isoformat()
     await save_state()
-    log_activity("auth", "SpiderPanel API Key regenerated", "warn")
+    log_activity("auth", "Pars Space API Key regenerated", "warn")
     return {"ok": True, "api_key": new_key, "prefix": "spdr_", "rotated_at": SETTINGS.get("panel_api_key_rotated_at")}
 
 
@@ -4268,7 +4268,7 @@ async def _tunnel_relay(ws: WebSocket, uuid: str, worker_domain: str):
     worker_ws = None
     try:
         wss_url = f"wss://{worker_domain}/{uuid}"
-        headers = {"User-Agent": "Spider-Tunnel"}
+        headers = {"User-Agent": "Pars-Tunnel"}
         worker_ws = await asyncio.wait_for(
             _websockets.connect(wss_url, extra_headers=headers, max_size=None), timeout=10.0)
 
@@ -4380,7 +4380,7 @@ async def create_inbound(request: Request, auth=Depends(require_replication_auth
     """Create an inbound locally, or ensure the managed default inbound for a remote Node."""
     body = await request.json()
     if auth.get("kind") == "api_key":
-        # Remote SpiderPanels only need the managed TLS+WS transport. Never let
+        # Remote Pars Spaces only need the managed TLS+WS transport. Never let
         # an API key create arbitrary admin inbounds on the target panel.
         async with INBOUNDS_LOCK:
             iid = find_default_tls_ws_inbound_id()
@@ -4977,7 +4977,7 @@ async def list_users(_=Depends(require_auth)):
     return {"users": result}
 
 async def _upsert_remote_user(body: dict) -> dict:
-    """Create/update a replica user from a trusted SpiderPanel API-key call."""
+    """Create/update a replica user from a trusted Pars Space API-key call."""
     username = str(body.get("username") or "").strip()[:40]
     config_uuid = str(body.get("config_uuid") or "").strip()
     if not username or not config_uuid or not _is_valid_uuid(config_uuid):
@@ -6094,7 +6094,7 @@ async def public_sub_data(uuid_key: str, request: Request):
 # ══════════════════════════════════════════════════════════════════════════════
 # PARS SPACE API v1
 # Thin public contract over the existing local data model. The dashboard uses
-# this namespace only, so its frontend no longer depends on Spider-named routes.
+# this namespace only, so its frontend no longer depends on Pars-named routes.
 # ══════════════════════════════════════════════════════════════════════════════
 PARS_API_KEY = str(SETTINGS.get("pars_api_key") or "").strip()
 if not PARS_API_KEY.startswith("psp_"):
@@ -6246,8 +6246,8 @@ async def dashboard_redirect(request: Request):
     await ensure_default_link()
     return FileResponse(_os.path.join(_STATIC_DIR, "index.html"))
 
-@app.get("/spider", response_class=HTMLResponse)
-async def spider_panel(request: Request):
+@app.get("/pars", response_class=HTMLResponse)
+async def pars_space(request: Request):
     return RedirectResponse(url="/dashboard", status_code=307)
 
 @app.get("/test-ws", response_class=HTMLResponse)
@@ -6507,7 +6507,7 @@ async def update_settings(request: Request, _=Depends(require_auth)):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# BACKUP / RESTORE - full SpiderPanel state
+# BACKUP / RESTORE - full Pars Space state
 # ══════════════════════════════════════════════════════════════════════════════
 
 BACKUP_VERSION = 2
@@ -6531,7 +6531,7 @@ def _build_backup_payload() -> dict:
         "detected_at": SETTINGS.get("server_info_detected_at") or None,
     }
     return {
-        "backup_format": "SpiderPanel",
+        "backup_format": "Pars Space",
         "backup_version": BACKUP_VERSION,
         "created_at": datetime.now().isoformat(),
         "state": {
@@ -6568,11 +6568,11 @@ def _validate_backup_payload(payload: dict) -> dict:
     if not isinstance(state, dict):
         raise HTTPException(status_code=400, detail="ساختار فایل بکاپ نامعتبر است")
 
-    # Require a meaningful SpiderPanel state marker so arbitrary JSON cannot be
+    # Require a meaningful Pars Space state marker so arbitrary JSON cannot be
     # accidentally imported over a live installation.
     required_any = ("users", "settings", "links", "inbounds", "groups", "worker")
     if not any(k in state for k in required_any):
-        raise HTTPException(status_code=400, detail="این فایل بکاپ SpiderPanel نیست")
+        raise HTTPException(status_code=400, detail="این فایل بکاپ Pars Space نیست")
 
     # Keep only the expected container/value shapes. Individual records remain
     # intentionally schema-compatible with older panel versions.
@@ -6590,10 +6590,10 @@ def _validate_backup_payload(payload: dict) -> dict:
 
 @app.get("/api/settings/backup")
 async def download_backup(_=Depends(require_auth)):
-    """Download the complete current SpiderPanel state as a JSON file."""
+    """Download the complete current Pars Space state as a JSON file."""
     payload = _build_backup_payload()
     body = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
-    filename = "spider-panel-backup-" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".json"
+    filename = "pars-space-backup-" + datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".json"
     return Response(
         content=body,
         media_type="application/json; charset=utf-8",
@@ -6606,7 +6606,7 @@ async def download_backup(_=Depends(require_auth)):
 
 @app.post("/api/settings/restore")
 async def restore_backup(request: Request, _=Depends(require_auth)):
-    """Restore a downloaded SpiderPanel JSON backup atomically."""
+    """Restore a downloaded Pars Space JSON backup atomically."""
     form = await request.form()
     file = form.get("file")
     if not file or not hasattr(file, "read"):
@@ -6627,7 +6627,7 @@ async def restore_backup(request: Request, _=Depends(require_auth)):
 
     # Do not mutate live state until the backup has been fully parsed and
     # validated. The disk write is also atomic so a failed restore cannot leave
-    # a half-written spider_state.json.
+    # a half-written pars_state.json.
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     current_bytes = None
     if DATA_FILE.exists():
@@ -6684,12 +6684,12 @@ async def restore_backup(request: Request, _=Depends(require_auth)):
 
 @app.post("/api/settings/security-token/rotate")
 async def rotate_security_token(_=Depends(require_auth)):
-    """Legacy alias for SpiderPanel API-key regeneration."""
+    """Legacy alias for Pars Space API-key regeneration."""
     return await regenerate_panel_api_key()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# REMOTE NODES — real SpiderPanel-to-SpiderPanel replication
+# REMOTE NODES — real Pars Space-to-Pars Space replication
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _get_panel_api_key_sync() -> str:
@@ -6709,7 +6709,7 @@ def _normalize_node_key(value: str) -> str:
 
 
 def _normalize_node_base_url(domain: str) -> str:
-    """Normalize a remote SpiderPanel URL and enforce HTTPS except localhost."""
+    """Normalize a remote Pars Space URL and enforce HTTPS except localhost."""
     from urllib.parse import urlsplit, urlunsplit
     raw = str(domain or "").strip()
     if not raw:
@@ -6832,7 +6832,7 @@ def _pending_delete_remove(node_id: str, config_uuid: str) -> None:
 
 
 async def _probe_node(node: dict) -> dict:
-    """Verify a remote SpiderPanel with GET /api/server-info and X-API-Key."""
+    """Verify a remote Pars Space with GET /api/server-info and X-API-Key."""
     base = _normalize_node_base_url(node.get("domain", ""))
     key = _normalize_node_key(node.get("api_key", ""))
     started = time.perf_counter()
@@ -6932,7 +6932,7 @@ async def _probe_node(node: dict) -> dict:
 
 
 async def _remote_request(node: dict, method: str, path: str, json_body=None, timeout: float = 15.0):
-    """Call a remote SpiderPanel using its stored API key."""
+    """Call a remote Pars Space using its stored API key."""
     base = _normalize_node_base_url(node.get("domain", ""))
     key = _normalize_node_key(node.get("api_key", ""))
     if not base or not key:
@@ -10168,14 +10168,14 @@ async def _xray_client_audit_loop():
         await asyncio.sleep(60)
 
 
-def _xray_bin_path() -> Path:
-    return Path(os.path.dirname(os.path.abspath(__file__))) / "xray" / "xray"
+def _parsx_bin_path() -> Path:
+    return Path(os.path.dirname(os.path.abspath(__file__))) / "parsx" / "parsx"
 
 
 async def _xray_start(config: dict) -> bool:
     """Write config.json and start the Xray subprocess (or restart if running)."""
     global _xray_proc
-    bin_path = _xray_bin_path()
+    bin_path = _parsx_bin_path()
     if not bin_path.exists():
         logger.warning("xray binary missing; skipping xray start")
         return False
@@ -10210,7 +10210,7 @@ async def _xray_start(config: dict) -> bool:
             logger.warning(f"xray config write failed: {e}")
             return False
         try:
-            log_path = bin_path.parent / "xray-runtime.log"
+            log_path = bin_path.parent / "parsx-runtime.log"
             log_fp = open(log_path, "ab", buffering=0)
             _xray_proc = await asyncio.create_subprocess_exec(
                 str(bin_path), "-c", str(cfg_path),
@@ -10625,7 +10625,7 @@ async def scan_railway_ips(_=Depends(require_auth)):
 # ══════════════════════════════════════════════════════════════════════════════
 
 CF_API = "https://api.cloudflare.com/client/v4"
-CF_TOKEN_LINK = "https://dash.cloudflare.com/profile/api-tokens?permissionGroupKeys=%5B%7B%22key%22%3A%22workers_scripts%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_kv_storage%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_routes%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22account_settings%22%2C%22type%22%3A%22read%22%7D%2C%7B%22key%22%3A%22zone%22%2C%22type%22%3A%22read%22%7D%2C%7B%22key%22%3A%22dns%22%2C%22type%22%3A%22edit%22%7D%5D&accountId=*&zoneId=all&name=spider-Token"
+CF_TOKEN_LINK = "https://dash.cloudflare.com/profile/api-tokens?permissionGroupKeys=%5B%7B%22key%22%3A%22workers_scripts%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_kv_storage%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_routes%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22account_settings%22%2C%22type%22%3A%22read%22%7D%2C%7B%22key%22%3A%22zone%22%2C%22type%22%3A%22read%22%7D%2C%7B%22key%22%3A%22dns%22%2C%22type%22%3A%22edit%22%7D%5D&accountId=*&zoneId=all&name=pars-Token"
 
 # Worker script deployed to the user's Cloudflare account lives in the project
 # at worker/worker.js (source of truth; deployment uploads it as _worker.js).
@@ -10667,7 +10667,7 @@ async def _cf_api(method: str, path: str, token: str, payload: dict = None, emai
     """
     token = str(token or "").strip()
     email = str(email or "").strip()
-    headers = {"Content-Type": "application/json", "User-Agent": "Spider-Panel"}
+    headers = {"Content-Type": "application/json", "User-Agent": "Pars-Space"}
     # Cloudflare Global API Key (cfk_/cf_ prefix or 37-char hex) → Global Key
     # auth (X-Auth-Email + X-Auth-Key). Modern Bearer tokens → Authorization.
     # Only a real GAK is sent via X-Auth-Key; a Bearer token always uses Bearer
@@ -10752,7 +10752,7 @@ async def _ensure_worker_kv() -> str | None:
     if existing:
         return existing
     wname = str(WORKER.get("worker_name") or "").strip()
-    kv_title = f"{wname}-db" if wname else "spider-worker-kv"
+    kv_title = f"{wname}-db" if wname else "pars-worker-kv"
     # List existing namespaces, reuse ours if a previous deploy created it.
     code, data = await _cf_api("GET", f"/accounts/{acct}/storage/kv/namespaces", cf_token, email="")
     if code == 200:
@@ -10792,8 +10792,8 @@ async def _ensure_tunnel_kv() -> str | None:
     if existing:
         return existing
     wname = str(WORKER.get("worker_name") or "").strip()
-    base = f"{wname}-db" if wname else "spider-worker-kv"
-    kv_title = f"{base}-tunnel"  # e.g. spider-a1b2c3-db-tunnel
+    base = f"{wname}-db" if wname else "pars-worker-kv"
+    kv_title = f"{base}-tunnel"  # e.g. pars-a1b2c3-db-tunnel
     code, data = await _cf_api("GET", f"/accounts/{acct}/storage/kv/namespaces", cf_token, email="")
     if code == 200:
         for ns in (data.get("result") or []):
@@ -10832,8 +10832,8 @@ async def _ensure_reverse_kv() -> str | None:
     if existing:
         return existing
     wname = str(WORKER.get("worker_name") or "").strip()
-    base = f"{wname}-db" if wname else "spider-worker-kv"
-    kv_title = f"{base}-reverse"  # e.g. spider-a1b2c3-db-reverse
+    base = f"{wname}-db" if wname else "pars-worker-kv"
+    kv_title = f"{base}-reverse"  # e.g. pars-a1b2c3-db-reverse
     code, data = await _cf_api("GET", f"/accounts/{acct}/storage/kv/namespaces", cf_token, email="")
     if code == 200:
         for ns in (data.get("result") or []):
@@ -10861,7 +10861,7 @@ async def _ensure_worker_pages_project(kv_id: str | None, tunnel_kv_id: str | No
     """Create/refresh a Cloudflare Pages project used for the managed worker.
 
     The Pages project runs the advanced-mode `_worker.js` file generated from
-    the local `worker/worker.js` source and binds the dedicated SPIDER_KV
+    the local `worker/worker.js` source and binds the dedicated PARS_KV
     namespace (plus optional tunnel/reverse namespaces).
     """
     acct = str(WORKER.get("account_id") or "").strip()
@@ -10870,7 +10870,7 @@ async def _ensure_worker_pages_project(kv_id: str | None, tunnel_kv_id: str | No
     if not acct or not token or not name:
         return {"ok": False, "detail": "Cloudflare account, token or Pages project name missing"}
     if not re.fullmatch(r"[a-z][a-z0-9-]{0,30}", name):
-        name = "spider-" + secrets.token_hex(3)
+        name = "pars-" + secrets.token_hex(3)
         async with WORKER_LOCK:
             WORKER["pages_project_name"] = name
             WORKER["worker_name"] = name
@@ -10878,7 +10878,7 @@ async def _ensure_worker_pages_project(kv_id: str | None, tunnel_kv_id: str | No
     def deployment_config():
         kvs = {}
         if kv_id:
-            kvs["SPIDER_KV"] = {"namespace_id": kv_id}
+            kvs["PARS_KV"] = {"namespace_id": kv_id}
         if tunnel_kv_id:
             kvs["TUNNEL_KV"] = {"namespace_id": tunnel_kv_id}
         if reverse_kv_id:
@@ -11005,7 +11005,7 @@ async def _worker_deploy() -> tuple:
     if not project_name:
         return 0, {"errors": [{"message": "Pages project name missing"}]}
 
-    boundary = "----SpiderPages" + secrets.token_hex(12)
+    boundary = "----ParsPages" + secrets.token_hex(12)
     def field(name: str, value: str) -> bytes:
         return (
             f"--{boundary}\r\n"
@@ -11016,7 +11016,7 @@ async def _worker_deploy() -> tuple:
     body = bytearray()
     body += field("branch", "main")
     body += field("commit_dirty", "false")
-    body += field("commit_message", "SpiderPanel managed worker deploy")
+    body += field("commit_message", "Pars Space managed worker deploy")
     body += field("manifest", manifest)
     body += (
         f"--{boundary}\r\n"
@@ -11574,7 +11574,7 @@ async def worker_setup(request: Request, _=Depends(require_auth)):
 
     The supplied Cloudflare API token is validated first. A dedicated KV
     namespace is created/attached, then the project is deployed in Pages
-    Advanced Mode with `_worker.js` and the SPIDER_KV binding.
+    Advanced Mode with `_worker.js` and the PARS_KV binding.
     """
     body = await request.json()
     token = str(body.get("token") or "").strip()
@@ -11616,7 +11616,7 @@ async def worker_setup(request: Request, _=Depends(require_auth)):
 
     worker_name = str(body.get("worker_name") or "").strip().lower()
     if not re.fullmatch(r"[a-z][a-z0-9-]{0,30}", worker_name or ""):
-        worker_name = "spider-" + secrets.token_hex(3)
+        worker_name = "pars-" + secrets.token_hex(3)
 
     stable_domain = f"{worker_name}.pages.dev"
 
@@ -12374,7 +12374,7 @@ def _bot_cfg() -> dict:
     ch.setdefault("enabled", False)
     ch.setdefault("channel", "")
     ch.setdefault("interval_minutes", 60)
-    ch.setdefault("username_prefix", "spider")
+    ch.setdefault("username_prefix", "pars")
     ch.setdefault("traffic_limit_gb", 0)
     ch.setdefault("expire_days", 30)
     ch.setdefault("inbound_id", "")
@@ -12589,7 +12589,7 @@ async def _create_bot_user(body: dict) -> dict:
                 "http://127.0.0.1:8080/api/users",
                 json=body,
                 cookies={SESSION_COOKIE: token},
-                headers={"X-Spider-Bot": "1"},
+                headers={"X-Pars-Bot": "1"},
                 timeout=30.0,
             )
         finally:
@@ -12617,7 +12617,7 @@ async def _delete_bot_user(user_id: str) -> None:
             r = await client.delete(
                 f"http://127.0.0.1:8080/api/users/{quote(str(user_id), safe='')}",
                 cookies={SESSION_COOKIE: token},
-                headers={"X-Spider-Bot": "1"},
+                headers={"X-Pars-Bot": "1"},
                 timeout=30.0,
             )
         finally:
@@ -12634,7 +12634,7 @@ async def _delete_bot_user(user_id: str) -> None:
 
 
 def _make_bot_username(prefix: str) -> str:
-    safe = re.sub(r"[^A-Za-z0-9_-]+", "-", str(prefix or "spider")).strip("-_")[:18] or "spider"
+    safe = re.sub(r"[^A-Za-z0-9_-]+", "-", str(prefix or "pars")).strip("-_")[:18] or "pars"
     return f"{safe}-{datetime.now().strftime('%m%d%H%M%S')}-{secrets.token_hex(2)}"[:40]
 
 
@@ -12743,7 +12743,7 @@ async def _channel_bot_run_once() -> dict:
         channel_url = channel_input
     inbound_id = str(ch.get("inbound_id") or _bot_default_inbound_id()).strip()
     body = {
-        "username": _make_bot_username(ch.get("username_prefix") or "spider"),
+        "username": _make_bot_username(ch.get("username_prefix") or "pars"),
         "traffic_limit_gb": max(0.0, float(ch.get("traffic_limit_gb") or 0)),
         "expire_days": max(0, int(ch.get("expire_days") or 0)),
         "inbound_id": inbound_id or None,
@@ -12759,7 +12759,7 @@ async def _channel_bot_run_once() -> dict:
     qr_png = _subscription_qr_bytes(sub_url)
     channel_link = _html_tag_link(channel_label or "Channel", channel_url)
     caption = (
-        f"<b>🕷 SpiderPanel</b>\n"
+        f"<b>🕷 Pars Space</b>\n"
         f"👤 <code>{username}</code>\n"
         f"🔗 {_html_tag_link('لینک ساب', sub_url)}\n"
         f"📣 {channel_link}"
@@ -12883,7 +12883,7 @@ def _sell_main_menu_markup():
 
 
 async def _sell_bot_send_main_menu(token: str, chat_id, welcome: str | None = None):
-    text = str(welcome or "🕷 <b>SpiderPanel Shop</b>\n\nیکی از بخش‌های زیر را انتخاب کنید:")
+    text = str(welcome or "🕷 <b>Pars Space Shop</b>\n\nیکی از بخش‌های زیر را انتخاب کنید:")
     sent = await _telegram_send_message(token, chat_id, text, reply_markup=_sell_main_menu_markup())
     return await _sell_bot_track_customer_message(chat_id, sent, "menu")
 
@@ -14194,7 +14194,7 @@ async def bot_config_save(request: Request, _=Depends(require_auth)):
     ch["enabled"] = bool(ch_in.get("enabled", ch.get("enabled")))
     ch["channel"] = str(ch_in.get("channel", ch.get("channel")) or "").strip()[:300]
     ch["interval_minutes"] = max(1, min(int(ch_in.get("interval_minutes", ch.get("interval_minutes") or 60)), 10080))
-    ch["username_prefix"] = str(ch_in.get("username_prefix", ch.get("username_prefix") or "spider")).strip()[:24] or "spider"
+    ch["username_prefix"] = str(ch_in.get("username_prefix", ch.get("username_prefix") or "pars")).strip()[:24] or "pars"
     ch["traffic_limit_gb"] = max(0.0, float(ch_in.get("traffic_limit_gb", ch.get("traffic_limit_gb") or 0) or 0))
     ch["expire_days"] = max(0, int(ch_in.get("expire_days", ch.get("expire_days") or 0) or 0))
     ch["inbound_id"] = str(ch_in.get("inbound_id", ch.get("inbound_id") or "")).strip()
