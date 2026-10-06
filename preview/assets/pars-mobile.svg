@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 650">
+<defs><radialGradient id="g" cx="18%" cy="8%" r="70%"><stop offset="0" stop-color="#e7c66f" stop-opacity=".18"/><stop offset="1" stop-color="#07080a" stop-opacity="0"/></radialGradient></defs>
+<rect width="1200" height="650" fill="#07080a"/><rect width="1200" height="650" fill="url(#g)"/>
+<text x="70" y="78" fill="#fff" font-size="28" font-family="Tahoma,Arial,sans-serif" font-weight="800">PARS SPACE</text>
+<text x="70" y="112" fill="#858b95" font-size="15" font-family="Tahoma,Arial,sans-serif">MOBILE · DEMO</text>
+<rect x="370" y="105" width="460" height="500" rx="48" fill="#0e0f12" stroke="#30333a" stroke-width="3"/>
+        <rect x="505" y="122" width="190" height="24" rx="12" fill="#191b20"/>
+        <text x="405" y="205" fill="#e7c66f" font-size="16" font-weight="700">PARS SPACE</text><text x="405" y="245" fill="#fff" font-size="31" font-weight="800">کنترل پنل</text>
+        <rect x="405" y="280" width="390" height="92" rx="24" fill="#17191d" stroke="#292c32"/><text x="430" y="318" fill="#8d939d" font-size="14">کاربران فعال</text><text x="430" y="354" fill="#fff" font-size="28" font-weight="800">128</text>
+        <rect x="405" y="390" width="185" height="72" rx="20" fill="#e7c66f"/><text x="497" y="432" text-anchor="middle" fill="#111" font-size="17" font-weight="800">ساخت کانفیگ</text>
+        <rect x="610" y="390" width="185" height="72" rx="20" fill="#17191d" stroke="#292c32"/><text x="702" y="432" text-anchor="middle" fill="#fff" font-size="17" font-weight="800">اشتراک‌ها</text>
+        <rect x="405" y="480" width="390" height="72" rx="20" fill="#17191d" stroke="#292c32"/><text x="430" y="523" fill="#fff" font-size="17">منوی کشویی سریع</text><text x="770" y="523" text-anchor="end" fill="#858b95" font-size="13">↓</text>
+</svg>
