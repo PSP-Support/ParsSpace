@@ -760,8 +760,333 @@ input:focus,select:focus,textarea:focus{
   *,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}
 }
 
+
+/* =========================================================
+   PARS SPACE v8.3 — FINAL INDEX REPAIR
+   This layer intentionally comes last and neutralizes legacy
+   mobile/dark hard-codes without changing application logic.
+   ========================================================= */
+
+/* ---------- Theme: one source of truth ---------- */
+html[data-theme="light"]{
+  color-scheme:light;
+  --ps-bg:#eef1f5;
+  --ps-bg2:#e5e9ef;
+  --ps-surface:rgba(255,255,255,.84);
+  --ps-surface-solid:#fff;
+  --ps-surface-soft:rgba(238,241,245,.92);
+  --ps-text:#171a1f;
+  --ps-muted:#68707c;
+  --ps-line:rgba(20,25,32,.12);
+  --ps-soft:rgba(20,25,32,.055);
+  --ps-accent:#171a1f;
+  --ps-accent-text:#fff;
+  --ps-shadow:0 18px 55px rgba(20,25,32,.10);
+  --ps-overlay:rgba(10,12,15,.28);
+  --ps-input:#fff;
+}
+html[data-theme="dark"]{
+  color-scheme:dark;
+  --ps-bg:#0b0d10;
+  --ps-bg2:#101318;
+  --ps-surface:rgba(24,27,32,.86);
+  --ps-surface-solid:#181b20;
+  --ps-surface-soft:rgba(255,255,255,.055);
+  --ps-text:#f4f6f8;
+  --ps-muted:#a2a9b3;
+  --ps-line:rgba(255,255,255,.105);
+  --ps-soft:rgba(255,255,255,.055);
+  --ps-accent:#f4f6f8;
+  --ps-accent-text:#0c0e11;
+  --ps-shadow:0 22px 65px rgba(0,0,0,.34);
+  --ps-overlay:rgba(0,0,0,.66);
+  --ps-input:#15181d;
+}
+html,body{
+  width:100%!important;
+  max-width:100%!important;
+  min-height:100%;
+  margin:0!important;
+  background:var(--ps-bg)!important;
+  color:var(--ps-text)!important;
+}
+body{overflow-x:hidden!important}
+.app{width:min(1500px,100%)!important;max-width:1500px!important;margin:0 auto!important}
+
+/* ---------- Desktop shell ---------- */
+.top{
+  position:sticky!important;
+  top:12px!important;
+  z-index:500!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:62px!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:12px!important;
+  padding:10px 12px!important;
+  overflow:visible!important;
+  background:var(--ps-surface)!important;
+  color:var(--ps-text)!important;
+  border:1px solid var(--ps-line)!important;
+  border-radius:20px!important;
+  box-shadow:var(--ps-shadow)!important;
+  backdrop-filter:blur(22px) saturate(125%)!important;
+  -webkit-backdrop-filter:blur(22px) saturate(125%)!important;
+}
+.brand{min-width:0!important;color:var(--ps-text)!important}
+.brand span:last-child{min-width:0;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.logo{background:var(--ps-accent)!important;color:var(--ps-accent-text)!important}
+.nav{
+  flex:1 1 auto!important;
+  min-width:0!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:4px!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+}
+.nav button{
+  flex:0 0 auto!important;
+  min-height:40px!important;
+  padding:9px 11px!important;
+  border:1px solid transparent!important;
+  border-radius:12px!important;
+  background:transparent!important;
+  color:var(--ps-muted)!important;
+  white-space:nowrap!important;
+}
+.nav button:hover{background:var(--ps-soft)!important;color:var(--ps-text)!important}
+.nav button.active{background:var(--ps-accent)!important;color:var(--ps-accent-text)!important}
+.tools{display:flex!important;align-items:center!important;gap:5px!important;flex:0 0 auto!important;margin:0!important}
+.iconbtn{
+  width:40px!important;height:40px!important;
+  display:grid!important;place-items:center!important;
+  padding:0!important;
+  background:var(--ps-soft)!important;
+  color:var(--ps-text)!important;
+  border:1px solid var(--ps-line)!important;
+  border-radius:12px!important;
+}
+.mobileMenuBtn{display:none!important}
+
+/* ---------- Content ---------- */
+main{min-width:0!important}
+.hero,.cols,.split{min-width:0!important}
+.hero{grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr)!important}
+.cols{grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr)!important}
+.grid4{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+.card{
+  min-width:0!important;
+  background:var(--ps-surface)!important;
+  color:var(--ps-text)!important;
+  border:1px solid var(--ps-line)!important;
+  box-shadow:var(--ps-shadow),inset 0 1px rgba(255,255,255,.08)!important;
+  backdrop-filter:blur(18px) saturate(120%)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(120%)!important;
+}
+.card:before,.card:after,.top:after{display:none!important}
+.muted{color:var(--ps-muted)!important}
+.btn,.action{
+  background:var(--ps-surface-soft)!important;
+  color:var(--ps-text)!important;
+  border:1px solid var(--ps-line)!important;
+  box-shadow:none!important;
+}
+.btn.dark{background:var(--ps-accent)!important;color:var(--ps-accent-text)!important;border-color:var(--ps-accent)!important}
+input,select,textarea{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  background:var(--ps-input)!important;
+  color:var(--ps-text)!important;
+  border:1px solid var(--ps-line)!important;
+}
+input::placeholder,textarea::placeholder{color:var(--ps-muted)!important}
+select option{background:var(--ps-surface-solid)!important;color:var(--ps-text)!important}
+.tableWrap{max-width:100%!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch}
+.table td{background:var(--ps-soft)!important;color:var(--ps-text)!important}
+.table th{color:var(--ps-muted)!important}
+.pill{background:var(--ps-soft)!important;color:var(--ps-text)!important;border-color:var(--ps-line)!important}
+
+/* ---------- Modal: NEVER hard-code dark ---------- */
+.modal{
+  background:var(--ps-overlay)!important;
+}
+.modalBox,.modalBox[style]{
+  background:var(--ps-surface-solid)!important;
+  color:var(--ps-text)!important;
+  border:1px solid var(--ps-line)!important;
+}
+
+/* ---------- Tablet / phone ---------- */
+@media (max-width:980px){
+  .app{width:100%!important;max-width:none!important;padding:8px!important}
+  .top{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    gap:7px!important;
+    padding:8px!important;
+  }
+  .tools{grid-column:2!important;grid-row:1!important}
+  .mobileMenuBtn{display:grid!important}
+  .top .nav{
+    position:absolute!important;
+    top:calc(100% + 7px)!important;
+    left:0!important;right:0!important;
+    z-index:700!important;
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:6px!important;
+    width:100%!important;
+    max-height:0!important;
+    padding:0!important;
+    margin:0!important;
+    overflow:hidden!important;
+    opacity:0!important;
+    pointer-events:none!important;
+    transform:translateY(-7px) scale(.985)!important;
+    transform-origin:top center!important;
+    background:var(--ps-surface)!important;
+    border:1px solid transparent!important;
+    border-radius:18px!important;
+    box-shadow:var(--ps-shadow)!important;
+    backdrop-filter:blur(18px)!important;
+    -webkit-backdrop-filter:blur(18px)!important;
+    transition:max-height .20s ease,opacity .15s ease,transform .20s ease,padding .20s ease,border-color .20s ease!important;
+  }
+  .top.menu-open .nav{
+    max-height:min(72vh,540px)!important;
+    padding:8px!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+    transform:translateY(0) scale(1)!important;
+    overflow-y:auto!important;
+    border-color:var(--ps-line)!important;
+  }
+  .nav button{
+    width:100%!important;
+    min-height:42px!important;
+    padding:9px 8px!important;
+    white-space:normal!important;
+    text-align:center!important;
+    background:var(--ps-soft)!important;
+    color:var(--ps-text)!important;
+    border-color:var(--ps-line)!important;
+  }
+  .nav button.active{background:var(--ps-accent)!important;color:var(--ps-accent-text)!important}
+  .hero,.cols,.split{grid-template-columns:1fr!important}
+  .grid4{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .form{grid-template-columns:1fr!important}
+  .field.full{grid-column:auto!important}
+  input,select,textarea{min-height:44px!important;font-size:14px!important}
+  .btn{min-height:42px!important}
+  .card,.top,.modalBox{
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
+  .card{box-shadow:0 12px 34px rgba(0,0,0,.14),inset 0 1px rgba(255,255,255,.06)!important}
+  .ambient,.orb,.dynamicMesh,.glassSheen{display:none!important}
+  .card:hover,.action:hover,.row:hover,.btn:hover{transform:none!important}
+  #clients .tableWrap{overflow:visible!important;border:0!important;background:transparent!important}
+  #clients .table{display:block!important;min-width:0!important;border-spacing:0!important}
+  #clients .table thead{display:none!important}
+  #clients .table tbody{display:grid!important;gap:8px!important}
+  #clients .table tbody tr{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    gap:8px 10px!important;
+    padding:13px!important;
+    border:1px solid var(--ps-line)!important;
+    border-radius:17px!important;
+    background:var(--ps-soft)!important;
+  }
+  #clients .table td{display:block!important;padding:0!important;background:transparent!important;border:0!important;min-width:0!important}
+  #clients .table td:nth-child(1){grid-column:1;grid-row:1}
+  #clients .table td:nth-child(2){grid-column:1;grid-row:2}
+  #clients .table td:nth-child(3){grid-column:2;grid-row:1/3}
+  #clients .table td:nth-child(4){grid-column:1/-1;grid-row:3;padding-top:3px!important}
+  #clients .table td:nth-child(4) .toolbar{width:100%!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #clients .table td:nth-child(4) .btn{width:100%!important}
+  .modal{
+    align-items:flex-end!important;
+    justify-content:center!important;
+    padding:0!important;
+  }
+  .modalBox,.modalBox[style]{
+    width:100vw!important;
+    max-width:none!important;
+    max-height:calc(100dvh - 10px)!important;
+    margin:0!important;
+    border-radius:24px 24px 0 0!important;
+    background:var(--ps-surface-solid)!important;
+    color:var(--ps-text)!important;
+    border-color:var(--ps-line)!important;
+  }
+}
+
+@media (max-width:620px){
+  .app{padding:6px!important}
+  .top{top:5px!important;border-radius:17px!important}
+  .grid4{grid-template-columns:1fr 1fr!important}
+  .actions{grid-template-columns:1fr!important}
+  h1{font-size:36px!important;line-height:.98!important}
+  .sectionHero h1{font-size:29px!important}
+  .cardPad{padding:14px!important}
+  .head{align-items:flex-start!important}
+  .head .toolbar{width:100%!important}
+  .head .toolbar .btn{flex:1 1 120px!important}
+}
+
+@media (max-width:420px){
+  .app{padding:5px!important}
+  .top{border-radius:15px!important}
+  .brand{font-size:12px!important}
+  .logo{width:34px!important;height:34px!important}
+  .iconbtn{width:36px!important;height:36px!important}
+  .heroMain{padding:19px!important}
+  .heroSide{padding:15px!important}
+  .cardPad{padding:13px!important}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+
 </style>
-<script>(function(){try{var t=localStorage.getItem('ps_theme')||'system';if(!['system','light','dark'].includes(t))t='system';var d=t==='system'?(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'):t;document.documentElement.dataset.theme=d;}catch(e){document.documentElement.dataset.theme='light';}})();</script></head>
+<script>(function(){try{var t=localStorage.getItem('ps_theme')||'system';if(!['system','light','dark'].includes(t))t='system';var d=t==='system'?(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'):t;document.documentElement.dataset.theme=d;}catch(e){document.documentElement.dataset.theme='light';}})();</script><style>
+/* PARS SPACE v8.5 — SUBSCRIPTION UX + COPY REPAIR */
+.subUsage{
+  position:relative;display:flex;align-items:center;gap:9px;min-width:0;
+  height:34px;margin-top:10px;padding:0 11px;border:1px solid var(--line);
+  border-radius:999px;background:var(--soft);overflow:hidden;isolation:isolate;
+}
+.subUsage .subUsageFill{
+  position:absolute;inset:0 auto 0 0;width:var(--usage-pct,0%);z-index:-1;
+  border-radius:inherit;background:linear-gradient(90deg,var(--gold),var(--gold2));
+  transform-origin:left center;animation:psSubUsageIn .9s cubic-bezier(.2,.8,.2,1) both;
+  box-shadow:0 0 22px rgba(224,187,98,.16);
+}
+.subUsage .subUsageText{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-width:0;font-size:12px;font-weight:700;white-space:nowrap}
+.subUsage .subUsageMain{overflow:hidden;text-overflow:ellipsis;direction:rtl}
+.subUsage .subUsagePct{flex:0 0 auto;font-size:11px;opacity:.86}
+.subUsage.is-unlimited .subUsageFill{width:0!important;animation:none}
+.subCard .toolbar{flex:0 0 auto}
+.subCard .copyData{min-width:94px}
+@keyframes psSubUsageIn{from{width:0;opacity:.45;transform:scaleX(.15)}to{width:var(--usage-pct,0%);opacity:1;transform:scaleX(1)}}
+@media(max-width:980px){
+  .subCard{width:100%!important;box-sizing:border-box!important}
+  .subCard>div:first-child{width:100%!important;min-width:0!important}
+  .subUsage{width:100%;box-sizing:border-box}
+}
+@media(max-width:620px){
+  .subCard .toolbar{width:100%!important;display:grid!important;grid-template-columns:1fr 1fr!important}
+  .subCard .toolbar .btn{width:100%!important}
+  .subUsage{height:32px;padding:0 10px}
+  .subUsage .subUsageText{font-size:11px}
+}
+</style>
+</head>
 <body>
 <div class="loadingScreen" id="loadingScreen"><div class="loaderCard"><div class="loaderRing"></div><b id="loadingTitle">Pars Space</b><div class="muted" id="loadingText" style="margin-top:7px">در حال آماده‌سازی Pars Space…</div><div class="loaderBar"><i></i></div></div></div><script id="loadingFailSafe">setTimeout(function(){var e=document.getElementById("loadingScreen");if(e)e.classList.add("hide")},1500);</script>
 <div class="ambient"><i class="orb a"></i><i class="orb b"></i></div>
@@ -924,7 +1249,6 @@ ls -la"></textarea></div>
 <div class="field full"><label>آیدی کانال پشتیبانی</label><input id="uSupport" placeholder="@support یا ID"><div class="hint">نام Pars Space در Remark با این آیدی جایگزین می‌شود و در انتها PSP اضافه می‌شود.</div></div>
 <div class="field full"><label>اینباند‌ها</label><div id="inboundPicker" class="glassGrid"></div><input type="hidden" id="uInbound"></div>
 </div>
-</div>
 <div class="card" style="margin-top:14px;background:rgba(0,0,0,.12);box-shadow:none"><button type="button" class="foldToggle" onclick="toggleFold('clientAdvancedBody',this)"><span><b>تنظیمات بیشتر</b><small class="muted" style="display:block;margin-top:3px">SNI، Path و TLS فقط وقتی لازم باشند.</small></span><span class="chev">⌄</span></button><div id="clientAdvancedBody" class="foldBody"><div class="advancedGrid" style="padding-top:12px">
 <div class="field" id="cfNetwork"><label>Network</label><select id="cNetwork" onchange="updateClientProtocolFields()"><option value="ws">WebSocket</option><option value="grpc">gRPC</option><option value="tcp">TCP</option><option value="xhttp">XHTTP</option></select></div>
 <div class="field" id="cfSecurity"><label>Security</label><select id="cSecurity" onchange="updateClientProtocolFields()"><option value="tls">TLS</option><option value="none">None</option><option value="reality">Reality</option></select></div>
@@ -980,11 +1304,18 @@ createInbound:'Create inbound',createInboundDesc:'Only settings relevant to the 
 function tr(k){return (T[lang]||T.fa)[k]||k}
 function applyI18n(){document.documentElement.lang=lang;document.documentElement.dir=lang==='fa'?'rtl':'ltr';$$('[data-i18n]').forEach(e=>e.innerHTML=tr(e.dataset.i18n));$('#langBtn').textContent=lang==='fa'?'EN':'FA';$('#langSelect').value=lang}
 function applyTheme(){
-  let x=theme;
-  if(!['system','light','dark'].includes(x))x='system';
-  if(x==='system')x=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
-  document.documentElement.dataset.theme=x;
+  if(!['system','light','dark'].includes(theme))theme='system';
+  const resolved=theme==='system'
+    ?(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light')
+    :theme;
+  document.documentElement.dataset.theme=resolved;
+  document.documentElement.style.colorScheme=resolved;
   const select=$('#themeSelect');if(select)select.value=theme;
+  const btn=$('#themeBtn');
+  if(btn){
+    btn.setAttribute('aria-label',resolved==='dark'?'Switch to light mode':'Switch to dark mode');
+    btn.title=resolved==='dark'?'Light mode':'Dark mode';
+  }
 }
 function setLang(x){lang=x;localStorage.setItem('ps_lang',x);applyI18n();toast(x==='fa'?'زبان فارسی فعال شد':'English enabled')}
 function setTheme(x){theme=['system','light','dark'].includes(x)?x:'system';localStorage.setItem('ps_theme',theme);applyTheme();toast(lang==='fa'?'تم تغییر کرد':'Theme updated')}
@@ -1062,7 +1393,52 @@ function renderInboundProtocolFields(){const h=`<div class="field"><label>Networ
 async function editInbound(id){try{let d=await api('/api/inbounds');let ib=(d.inbounds||[]).find(x=>String(x.inbound_id)===String(id));if(!ib)throw Error('Inbound not found');$('#ibEditId').value=id;$('#ibModalTitle').textContent='ویرایش اینباند';$('#ibName').value=ib.name||'';$('#ibProtocol').value=(ib.protocol||'vless').toLowerCase();renderInboundProtocolFields();setTimeout(()=>{let set=(id,v)=>{let e=$(id);if(e&&v!==undefined)e.value=v};let ss=ib.ssh_settings||{};set('#ibSshHost',ss.host||ib.domain||'');set('#ibSshPort',ss.port||ib.port||22);set('#ibSshUser',ss.username||'');set('#ibSshPass',ss.password||'');set('#ibSshAuth','password');set('#ibNetwork',ib.network||'ws');set('#ibSecurity',ib.security||'tls');set('#ibPort',ib.port||443);set('#ibExtPort',ib.external_port||443);set('#ibDomain',ib.domain||'');set('#ibExtDomain',ib.external_domain||'');set('#ibSni',ib.sni||'');set('#ibFp',ib.fingerprint||'chrome');set('#ibPath',(ib.ws_settings||{}).path||ib.path||'/ws/{uuid}');set('#ibGrpcService',(ib.grpc_settings||{}).serviceName||'pars-space');set('#ibXPath2',(ib.xhttp_settings||{}).path||'/xhttp');set('#ibXPath',(ib.xhttp_settings||{}).path||'/');set('#ibDest',(ib.reality_settings||{}).dest||'is1-ssl.mzstatic.com:443');set('#ibSid',(ib.reality_settings||{}).short_id||'');set('#ibAlpn',(ib.tls_settings||{}).alpn||'http/1.1');},0);$('#inboundModal').classList.add('open')}catch(e){toast(e.message)}}
 async function testInboundSSH(){try{const host=$('#ibSshHost').value.trim(),port=Number($('#ibSshPort').value||22);const d=await api('/api/tools/test-ssh',{method:'POST',body:JSON.stringify({host,port})});$('#ibTestMsg').textContent=d.ok?`✓ ${d.latency_ms} ms`:`✕ ${d.message}`;toast(d.ok?'پورت SSH قابل دسترسی است':'پورت SSH در دسترس نیست')}catch(e){toast(e.message)}}
 async function createInbound(){try{const body={name:$('#ibName').value.trim(),protocol:'vless',network:$('#ibNetwork').value,security:$('#ibSecurity').value,port:Number($('#ibPort').value||443),domain:$('#ibDomain').value.trim(),sni:$('#ibSni').value.trim(),fingerprint:$('#ibFp').value,tls_settings:{alpn:$('#ibAlpn').value||'http/1.1'},ws_settings:{path:$('#ibPath').value||'/ws/{uuid}'},grpc_settings:{serviceName:$('#ibGrpcService').value||'pars-space'},xhttp_settings:{path:$('#ibXPath2').value||'/xhttp',mode:'stream-up'}};const editId=$('#ibEditId').value.trim();const d=await api('/api/inbounds'+(editId?'/'+encodeURIComponent(editId):''),{method:editId?'PATCH':'POST',body:JSON.stringify(body)});closeInbound();toast(editId?'اینباند ویرایش شد':'اینباند ساخته شد');loadInbounds();loadOverview()}catch(e){toast(e.message)}}
-async function loadSubs(){try{const [ud,sd]=await Promise.all([api('/api/users'),api('/api/pars/v1/subscriptions')]);const users=ud.users||[];const groups=sd.subs||sd.subscriptions||[];let html='';for(const u of users){const used=Number(u.traffic_used_bytes||0),limit=Number(u.traffic_limit_bytes||0);const pct=limit?Math.min(100,used/limit*100):0;html+=`<div class="row subCard"><div style="min-width:0;flex:1"><b>${esc(u.username||u.user_id)}</b><div class="muted">VLESS · ${esc(u.subscription_url||'')}</div><div class="usageLine"><i style="width:${pct}%"></i></div><div class="muted">${esc(u.traffic_used_fmt||formatBytes(used))} / ${limit?esc(u.traffic_limit_fmt||formatBytes(limit)):'∞'}</div></div><div class="toolbar"><button class="btn small dark copyData" data-copy=${JSON.stringify(u.subscription_url||'')}>کپی ساب</button><button class="btn small dailyData" data-id=${JSON.stringify(u.user_id)} data-name=${JSON.stringify(u.username||'')}>مصرف ۳۱ روز</button></div></div>`}for(const g of groups){html+=`<div class="row subCard"><div style="min-width:0;flex:1"><b>${esc(g.name||'Subscription')}</b><div class="muted">${g.kind==='multi'?'Multi Config':'گروهی'} · ${g.links_count??0} لینک · ${g.total_used_fmt||'0 B'}</div><div class="output" style="margin-top:8px;min-height:0;padding:9px">${esc(g.sub_url||'')}</div></div><div class="toolbar"><button class="btn small dark copyData" data-copy=${JSON.stringify(g.sub_url||'')}>کپی لینک</button></div></div>`}$('#subList').innerHTML=html||`<div class="empty">${tr('noData')}</div>`;$$('#subList .copyData').forEach(b=>b.onclick=()=>copyText(b.getAttribute('data-copy')||''));$$('#subList .dailyData').forEach(b=>b.onclick=()=>loadUserDaily(b.dataset.id||'',b.dataset.name||''));}catch(e){toast(e.message)}}
+async function loadSubs(){
+ try{
+  const [ud,sd]=await Promise.all([api('/api/users'),api('/api/pars/v1/subscriptions')]);
+  const users=ud.users||[];
+  const groups=sd.subs||sd.subscriptions||[];
+  let html='';
+  for(const u of users){
+   const used=Number(u.traffic_used_bytes||0),limit=Number(u.traffic_limit_bytes||0);
+   const pct=limit?Math.min(100,Math.max(0,used/limit*100)):0;
+   const usedLabel=esc(u.traffic_used_fmt||formatBytes(used));
+   const limitLabel=limit?esc(u.traffic_limit_fmt||formatBytes(limit)):'∞';
+   const usageText=limit?`${usedLabel} / ${limitLabel}`:`${usedLabel} / ∞`;
+   const subUrl=String(u.subscription_url||'');
+   const userId=String(u.user_id||'');
+   const userName=String(u.username||'');
+   html+=`<div class="row subCard">
+    <div style="min-width:0;flex:1">
+      <b>${esc(userName||userId)}</b>
+      <div class="muted">VLESS · ${esc(subUrl)}</div>
+      <div class="subUsage ${limit?'':'is-unlimited'}" style="--usage-pct:${pct}%" aria-label="${esc(usageText)}">
+        <i class="subUsageFill"></i>
+        <div class="subUsageText"><span class="subUsageMain">${usageText}</span><span class="subUsagePct">${limit?Math.round(pct)+'%':'∞'}</span></div>
+      </div>
+    </div>
+    <div class="toolbar">
+      <button class="btn small dark copyData" data-copy="${esc(subUrl)}">کپی ساب</button>
+      <button class="btn small dailyData" data-id="${esc(userId)}" data-name="${esc(userName)}">مصرف ۳۱ روز</button>
+    </div>
+   </div>`;
+  }
+  for(const g of groups){
+   const subUrl=String(g.sub_url||'');
+   html+=`<div class="row subCard">
+    <div style="min-width:0;flex:1">
+      <b>${esc(g.name||'Subscription')}</b>
+      <div class="muted">${g.kind==='multi'?'Multi Config':'گروهی'} · ${g.links_count??0} لینک · ${esc(g.total_used_fmt||'0 B')}</div>
+      <div class="output" style="margin-top:8px;min-height:0;padding:9px" dir="ltr">${esc(subUrl)}</div>
+    </div>
+    <div class="toolbar"><button class="btn small dark copyData" data-copy="${esc(subUrl)}">کپی لینک</button></div>
+   </div>`;
+  }
+  $('#subList').innerHTML=html||`<div class="empty">${tr('noData')}</div>`;
+  $$('#subList .copyData').forEach(b=>b.onclick=()=>copyText(b.dataset.copy||''));
+  $$('#subList .dailyData').forEach(b=>b.onclick=()=>loadUserDaily(b.dataset.id||'',b.dataset.name||''));
+ }catch(e){toast(e.message)}
+}
 async function loadUserDaily(id,name){try{const d=await api('/api/users/'+encodeURIComponent(id)+'/traffic-history');const days=d.days||[];const total=days.reduce((a,x)=>a+Number(x.bytes||0),0);$('#subList').insertAdjacentHTML('afterbegin',`<div class="card cardPad" id="dailyTemp"><div class="head"><div><h2>${esc(name||'کاربر')} · ۳۱ روز اخیر</h2><p class="muted">مجموع این بازه: ${esc(formatBytes(total))}</p></div><button class="btn" onclick="$('#dailyTemp')?.remove()">×</button></div><div class="dailyBars">${days.map(x=>`<div class="dailyBar"><span title="${esc(x.date+' · '+x.fmt)}" style="height:${Math.max(4,Math.min(100,Number(x.bytes||0)/Math.max(1,...days.map(y=>Number(y.bytes||0)))*100))}%"></span><small>${esc(x.date.slice(5))}</small></div>`).join('')}</div></div>`)}catch(e){toast(e.message)}}
 async function createSubscription(){
  let name=prompt(lang==='fa'?'نام اشتراک:':'Subscription name:','Pars Subscription');if(name===null)return;
@@ -1088,7 +1464,7 @@ async function loadSniResults(){try{let d=await api('/api/scanner/sni-results');
 function renderSniResults(a){$('#sniResults').innerHTML=a.length?a.map((x,i)=>`<div class="row"><span dir="ltr"><b>#${i+1} ${esc(x.sni)}</b></span><span class="pill">${esc(x.latency_ms)} ms</span></div>`).join(''):'<div class="empty">No saved SNI results</div>'}
 async function runSniScan(){try{let d=await api('/api/scanner/sni-scan-list');let snis=(d.snis||[]);if(!snis.length)throw Error('SNI list is empty');$('#sniStatus').textContent='Scanning '+snis.length+' hosts…';let out=[];for(let i=0;i<snis.length;i+=16){let batch=snis.slice(i,i+10);let rs=await Promise.all(batch.map(async s=>{try{return await api('/api/scanner/sni-check?host='+encodeURIComponent(s)+'&port=443')}catch{return {ok:false,sni:s}}}));out.push(...rs);$('#sniStatus').textContent=`${Math.min(i+16,snis.length)}/${snis.length}`;}let good=out.filter(x=>x.ok).sort((a,b)=>a.latency_ms-b.latency_ms).slice(0,10).map(x=>({sni:x.sni,latency_ms:x.latency_ms}));renderSniResults(good);if(good.length)await api('/api/scanner/sni-save-results',{method:'POST',body:JSON.stringify({results:good,top:10})});$('#sniStatus').textContent=good.length+' reachable SNI saved';}catch(e){$('#sniStatus').textContent=e.message;toast(e.message)}}
 async function clearSniResults(){try{await api('/api/scanner/sni-clear-results',{method:'POST'});renderSniResults([]);toast('SNI results cleared')}catch(e){toast(e.message)}}
-async function loadMultiConfigs(){try{const d=await api('/api/multi-configs');const a=d.multi||[];$('#multiList').innerHTML=a.length?a.map(x=>`<div class="row"><div style="min-width:0;flex:1"><b>${esc(x.name)}</b><div class="muted">${x.count} کانفیگ · ${esc(x.status)} · ${esc(x.total_used_fmt)} · ${x.connections} اتصال</div><div class="output" style="margin-top:8px;min-height:0;padding:8px">${esc(x.sub_url)}</div></div><div class="toolbar"><button class="btn small dark copyData" data-copy=${JSON.stringify(x.sub_url||'')}>کپی ساب</button><button class="btn small detailData" data-id=${JSON.stringify(x.sub_id||'')}>مشاهده بیشتر</button></div></div>`).join(''):`<div class="empty">هنوز Multi Config ساخته نشده.</div>`;$$('#multiList .copyData').forEach(b=>b.onclick=()=>copyText(b.getAttribute('data-copy')||''));$$('#multiList .detailData').forEach(b=>b.onclick=()=>showMultiDetails(b.dataset.id||''));}catch(e){toast(e.message)}}
+async function loadMultiConfigs(){try{const d=await api('/api/multi-configs');const a=d.multi||[];$('#multiList').innerHTML=a.length?a.map(x=>`<div class="row"><div style="min-width:0;flex:1"><b>${esc(x.name)}</b><div class="muted">${x.count} کانفیگ · ${esc(x.status)} · ${esc(x.total_used_fmt)} · ${x.connections} اتصال</div><div class="output" style="margin-top:8px;min-height:0;padding:8px">${esc(x.sub_url)}</div></div><div class="toolbar"><button class="btn small dark copyData" data-copy="${esc(x.sub_url||'')}">کپی ساب</button><button class="btn small detailData" data-id=${JSON.stringify(x.sub_id||'')}>مشاهده بیشتر</button></div></div>`).join(''):`<div class="empty">هنوز Multi Config ساخته نشده.</div>`;$$('#multiList .copyData').forEach(b=>b.onclick=()=>copyText(b.getAttribute('data-copy')||''));$$('#multiList .detailData').forEach(b=>b.onclick=()=>showMultiDetails(b.dataset.id||''));}catch(e){toast(e.message)}}
 async function loadMultiInboundOptions(){try{const d=await api('/api/inbounds');const a=d.inbounds||[];const el=$('#multiInbound');if(el)el.innerHTML='<option value="">خودکار</option>'+a.filter(x=>x.protocol==='vless').map(x=>`<option value="${esc(x.inbound_id)}">${esc(x.name||x.inbound_id)} · ${esc(x.external_port||x.port||'')}</option>`).join('')}catch(e){}}
 async function createMultiConfig(){try{const body={name:$('#multiName').value.trim(),count:Number($('#multiCount').value||1),inbound_id:$('#multiInbound').value,traffic_limit_gb:Number($('#multiTraffic').value||0),expire_days:Number($('#multiExpire').value||0),support_channel_id:$('#multiSupport').value.trim()};const d=await api('/api/multi-configs',{method:'POST',body:JSON.stringify(body)});$('#multiMsg').textContent=d.sub_url||'';await copyText(d.sub_url||'');toast('Multi Config ساخته شد');loadMultiConfigs()}catch(e){toast(e.message)}}
 async function showMultiDetails(id){try{const d=await api('/api/multi-configs/'+encodeURIComponent(id));const rows=d.items||[];const box=rows.map(x=>`<div class="row"><div><b>${esc(x.name)}</b><div class="muted">مصرف ${esc(x.used_fmt)}</div></div><div class="toolbar"><span class="pill">لحظه‌ای ${x.connections}</span><span class="pill">میانگین ${x.average_connections}</span></div></div>`).join('');$('#multiList').insertAdjacentHTML('afterbegin',`<div class="card cardPad" id="multiDetail"><div class="head"><div><h2>${esc(d.name)} · جزئیات</h2><p class="muted">وضعیت: ${esc(d.status)} · ${esc(d.total_used_fmt)}</p></div><button class="btn" onclick="$('#multiDetail')?.remove()">×</button></div>${box||'<div class="empty">داده‌ای نیست</div>'}</div>`)}catch(e){toast(e.message)}}
