@@ -293,162 +293,83 @@ html,body{background:var(--bg)}
 
 
 /* =========================================================
-   PARS SPACE FINAL RESPONSIVE PATCH
-   One clean layout layer after the older visual layers.
+   PARS SPACE RESPONSIVE REPAIR v8.1
+   One layout system for desktop, tablet and mobile.
    ========================================================= */
-*{box-sizing:border-box}
-html,body{width:100%;max-width:100%;overflow-x:hidden}
-body{min-width:0}
-.app{width:min(1500px,100%);margin:0 auto;padding:18px}
-.top{width:100%;min-width:0}
-.brand,.nav,.tools{min-width:0}
-.nav{min-width:0}
-main{min-width:0}
-.view{min-width:0}
-.card,.hero,.cols,.split,.form,.glassGrid,.advancedGrid{min-width:0}
-.tableWrap{max-width:100%}
-
-/* Desktop modal: always centered, never pushed to the RTL side. */
-.modal{
-  position:fixed!important;inset:0!important;
-  width:100vw!important;height:100dvh!important;
-  display:none;align-items:center!important;justify-content:center!important;
-  padding:24px!important;margin:0!important;
-  z-index:1000!important;
-  overflow:hidden!important;
-}
-.modal.open{display:flex!important}
-.modalBox,
-#clientBuilderModal .modalBox,
-#inboundModal .modalBox{
-  position:relative!important;
-  inset:auto!important;float:none!important;
-  flex:0 1 auto!important;
-  width:min(960px,calc(100vw - 48px))!important;
-  max-width:960px!important;
-  max-height:min(88dvh,900px)!important;
-  margin:0 auto!important;
-  padding:24px!important;
-  overflow:auto!important;
-  overscroll-behavior:contain;
-  transform:none;
-}
-#configViewModal .modalBox,#userEditModal .modalBox,#userQrModal .modalBox,#nodeModal .modalBox{
-  margin:0 auto!important;float:none!important;flex:0 1 auto!important;
-}
-
-/* Keep forms readable on desktop instead of letting RTL shrink them. */
-#clientBuilderModal .form{grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
-#clientBuilderModal .field{min-width:0}
-#clientBuilderModal .advancedGrid{grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
-#clientBuilderModal .glassGrid{grid-template-columns:repeat(3,minmax(0,1fr));width:100%}
-#clientBuilderModal .toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-#clientBuilderModal .toolbar .spacer{flex:1 1 auto}
-#clientBuilderModal .configBox{width:100%;min-width:0}
-#clientBuilderModal .output{width:100%;min-width:0;overflow:auto}
-
-/* Cheap rendering on desktop too. */
-@media (min-width:721px){
-  .ambient,.orb{display:none!important}
-  .card,.top{backdrop-filter:blur(14px)!important;-webkit-backdrop-filter:blur(14px)!important}
-  .top:after,.card:after{display:none!important}
-}
-
-/* Phone shell. */
-@media (max-width:720px){
-  html,body{width:100%;overflow-x:hidden}
-  .app{width:100%;padding:6px;margin:0}
-  .top{
-    position:sticky!important;top:5px!important;z-index:2000!important;
-    display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;
-    gap:7px!important;padding:7px!important;border-radius:16px!important;
-    overflow:visible!important;
-  }
-  .brand{min-width:0;overflow:hidden}
-  .brand span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .tools{display:flex!important;align-items:center;gap:5px!important;margin:0!important}
-  .iconbtn{width:38px!important;height:38px!important;flex:0 0 38px}
+@media (max-width:980px){
+  html,body{width:100%;max-width:100%;overflow-x:hidden}
+  .app{max-width:none;padding:8px}
+  .top{position:sticky;top:6px;z-index:300;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;width:100%;padding:8px 9px;overflow:visible}
+  .brand{min-width:0}.brand span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tools{grid-column:2;grid-row:1;margin:0!important;display:flex;gap:5px}
   .mobileMenuBtn{display:grid!important}
   .nav{
-    grid-column:1/-1!important;grid-row:2!important;
-    display:grid!important;grid-template-columns:1fr 1fr!important;
-    gap:6px!important;width:100%!important;
-    max-height:0!important;opacity:0!important;overflow:hidden!important;
-    pointer-events:none!important;padding:0!important;margin:0!important;
-    border-top:1px solid transparent!important;
-    transform:translateY(-7px)!important;
-    transition:max-height .16s ease,opacity .12s ease,transform .16s ease,padding .16s ease,border-color .16s ease!important;
+    grid-column:1/-1;grid-row:2;order:3;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;width:100%;
+    max-height:0;opacity:0;overflow:hidden;pointer-events:none;padding:0;margin:0;border-top:1px solid transparent;
+    transform:translateY(-8px);transition:max-height .16s ease,opacity .12s ease,transform .16s ease,padding .16s ease,border-color .16s ease;
   }
-  .top.menu-open .nav{
-    max-height:55dvh!important;opacity:1!important;pointer-events:auto!important;
-    overflow-y:auto!important;padding:7px 0 2px!important;
-    border-top-color:rgba(255,255,255,.07)!important;
-    transform:translateY(0)!important;
-  }
-  .nav button{
-    width:100%!important;min-height:42px!important;padding:9px 8px!important;
-    border-radius:11px!important;text-align:center!important;
-    transform:none!important;
-  }
+  .top.menu-open .nav{max-height:min(72vh,540px);opacity:1;pointer-events:auto;transform:translateY(0);padding:7px 0 2px;border-top-color:var(--line);overflow-y:auto}
+  .nav button{width:100%;min-height:42px;padding:9px 8px;text-align:center!important;border-radius:12px;white-space:normal}
   .nav button:before{display:none!important}
-  .nav button:active{transform:scale(.985)!important}
-  main{padding:12px 0 34px!important}
-  .hero,.cols,.split,.grid4{grid-template-columns:1fr!important}
-  .heroMain{min-height:180px;padding:20px!important}
-  .heroSide{padding:16px!important}
-  .grid4{gap:8px!important}
-  .stat{padding:15px!important}
-  .big{font-size:36px!important}
-  .sectionHero h1{font-size:30px!important}
-  .cardPad{padding:14px!important}
-  .card{border-radius:20px!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  .nav button:active{transform:scale(.985)}
+  main{padding-top:14px}
+  .view{animation:compactViewIn .14s ease}
+  @keyframes compactViewIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
   .ambient,.orb,.dynamicMesh,.glassSheen{display:none!important}
-  .actions{grid-template-columns:1fr!important}
-  .tableWrap{width:100%;overflow-x:auto!important}
-  .table{min-width:620px!important}
-
-  /* Real phone bottom sheet, full width. */
-  .modal{
-    position:fixed!important;inset:0!important;
-    width:100vw!important;height:100dvh!important;
-    padding:0!important;margin:0!important;
-    align-items:flex-end!important;justify-content:center!important;
-    display:none!important;overflow:hidden!important;
-    background:rgba(0,0,0,.64)!important;
-    backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  .card,.top,.modalBox{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  .card{box-shadow:0 12px 34px rgba(0,0,0,.18),inset 0 1px rgba(255,255,255,.045)!important}
+  .card:before,.card:after,.top:after{display:none!important}
+  .card:hover,.action:hover,.row:hover,.btn:hover{transform:none!important}
+  .hero,.cols,.split{grid-template-columns:1fr!important}
+  .grid4{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .sectionHero h1{font-size:32px!important}
+  .heroMain{min-height:185px;padding:23px}
+  .heroSide{padding:18px}
+  .form{grid-template-columns:1fr!important;gap:9px!important}
+  .field.full{grid-column:auto!important}
+  input,select,textarea{min-height:44px;font-size:14px!important}
+  .btn{min-height:42px;padding:9px 11px}
+  .toolbar{gap:6px;flex-wrap:wrap}
+  /* User list becomes cards instead of a tiny desktop table. */
+  #clients .tableWrap{overflow:visible;border:0;background:transparent}
+  #clients .table{display:block;min-width:0!important;border-spacing:0}
+  #clients .table thead{display:none}
+  #clients .table tbody{display:grid;gap:8px}
+  #clients .table tbody tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px 10px;padding:13px;border:1px solid var(--line);border-radius:17px;background:var(--soft)}
+  #clients .table td{display:block;padding:0!important;background:transparent!important;border:0!important;border-radius:0!important;min-width:0}
+  #clients .table td:nth-child(1){grid-column:1;grid-row:1}
+  #clients .table td:nth-child(2){grid-column:1;grid-row:2}
+  #clients .table td:nth-child(3){grid-column:2;grid-row:1/3;align-self:start}
+  #clients .table td:nth-child(4){grid-column:1/-1;grid-row:3;padding-top:3px!important}
+  #clients .table td:nth-child(4) .toolbar{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  #clients .table td:nth-child(4) .btn{width:100%}
+  /* Other wide tables remain horizontally scrollable, but never force the page width. */
+  .tableWrap{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .output,.configBox{font-size:11px!important;line-height:1.7;overflow-wrap:anywhere}
+  .dailyBars{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .traffic-meta{grid-template-columns:1fr 1fr}
+  /* All dialogs are true bottom sheets, never side panels. */
+  .modal{position:fixed!important;inset:0!important;padding:0!important;align-items:flex-end!important;justify-content:center!important;background:rgba(0,0,0,.64)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  .modalBox,#clientBuilderModal .modalBox,#inboundModal .modalBox,#userEditModal .modalBox,#userQrModal .modalBox{
+    width:calc(100vw - 10px)!important;max-width:none!important;max-height:calc(100dvh - 14px)!important;margin:0 5px!important;
+    padding:16px!important;border-radius:24px 24px 14px 14px!important;overflow:auto!important;overscroll-behavior:contain;
+    background:#121316!important;border:1px solid rgba(255,255,255,.09)!important;animation:psSheetIn .16s cubic-bezier(.2,.8,.2,1)!important
   }
-  .modal.open{display:flex!important}
-  .modalBox,
-  #clientBuilderModal .modalBox,
-  #inboundModal .modalBox{
-    width:100vw!important;max-width:none!important;
-    max-height:calc(100dvh - 10px)!important;
-    height:auto!important;min-height:0!important;
-    margin:0!important;padding:15px 14px 18px!important;
-    border-radius:22px 22px 0 0!important;
-    overflow-x:hidden!important;overflow-y:auto!important;
-    transform:none!important;
-    animation:parsSheetIn .16s cubic-bezier(.2,.8,.2,1)!important;
-  }
-  @keyframes parsSheetIn{from{opacity:.7;transform:translateY(16px)}to{opacity:1;transform:none}}
-  #clientBuilderModal .form,
-  #clientBuilderModal .advancedGrid,
-  #clientBuilderModal .glassGrid{grid-template-columns:1fr!important;width:100%!important}
-  #clientBuilderModal .field.full{grid-column:auto!important}
-  #clientBuilderModal .toolbar{display:flex;align-items:stretch;gap:7px;flex-wrap:wrap}
-  #clientBuilderModal .toolbar .btn{flex:1 1 auto}
-  #clientBuilderModal .configActions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-  #clientBuilderModal .configActions .btn{width:100%}
-  .modalBox .head{gap:8px}
-  .modalBox .close{position:sticky!important;top:0!important;z-index:20!important;float:left!important}
-  input,select,textarea{min-height:44px!important;font-size:14px!important}
-  .switch{width:52px!important;height:30px!important;flex:0 0 52px!important}
-  .btn{min-height:42px!important}
+  @keyframes psSheetIn{from{opacity:.65;transform:translateY(16px)}to{opacity:1;transform:none}}
+  .modalBox .close{position:sticky;top:0;z-index:5;float:left}
+  #clientBuilderModal .advancedGrid,#clientBuilderModal .glassGrid{grid-template-columns:1fr!important}
+  #clientBuilderModal .toolbar,#inboundModal .toolbar,#userEditModal .toolbar{position:sticky;bottom:0;padding-top:9px;background:linear-gradient(180deg,transparent,#121316 32%);z-index:4}
+  .switch{width:54px!important;height:30px!important;min-width:54px!important;flex:0 0 54px!important;position:relative;direction:ltr}
+  .switch:after{inset-inline-start:2px;left:auto;transition:transform .14s ease!important}
+  .switch:checked:after{inset-inline-start:2px;left:auto;transform:translateX(24px)}
 }
-
-@media (prefers-reduced-motion:reduce){
-  .nav,.view,.modalBox{transition:none!important;animation:none!important}
+@media (max-width:620px){
+  .app{padding:6px}.top{top:5px;border-radius:17px}
+  .grid4{grid-template-columns:1fr 1fr!important}.actions{grid-template-columns:1fr!important}
+  h1{font-size:38px!important}.sectionHero h1{font-size:30px!important}.cardPad{padding:14px!important}
+  #clients .table td:nth-child(4) .toolbar{grid-template-columns:1fr 1fr}
 }
+@media (prefers-reduced-motion:reduce){.nav,.view,.modalBox{transition:none!important;animation:none!important}.nav button{transition:none!important}}
 
 </style>
 </head>
@@ -673,7 +594,15 @@ function setLang(x){lang=x;localStorage.setItem('ps_lang',x);applyI18n();toast(x
 function setTheme(x){theme=x;localStorage.setItem('ps_theme',x);applyTheme();toast('Theme updated')}
 $('#langBtn').onclick=()=>setLang(lang==='fa'?'en':'fa');$('#themeBtn').onclick=()=>setTheme(theme==='dark'?'light':'dark');$('#langSelect').onchange=e=>setLang(e.target.value);$('#themeSelect').onchange=e=>setTheme(e.target.value);
 $$('.nav button').forEach(b=>b.onclick=()=>go(b.dataset.view));
-function go(id){$$('.view').forEach(v=>v.classList.remove('active'));$('#'+id).classList.add('active');$$('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));window.scrollTo({top:0,behavior:'smooth'});if(id==='clients')loadClients();if(id==='inbounds')loadInbounds();if(id==='nodes')loadNodes();if(id==='subs')loadSubs();if(id==='multi'){loadMultiInboundOptions();loadMultiConfigs();}if(id==='scanner'){loadSniList();loadSniResults()}if(id==='terminal')loadTerminalInfo();if(id==='settings'){loadSettingsPanel();loadActivity()}}
+function go(id){
+  const view=$('#'+id);if(!view)return;
+  $$('.view').forEach(v=>v.classList.remove('active'));view.classList.add('active');
+  $$('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));
+  const compact=window.innerWidth<=980;
+  window.scrollTo({top:0,behavior:compact?'auto':'smooth'});
+  if(compact) closeMobileMenu();
+  if(id==='clients')loadClients();if(id==='inbounds')loadInbounds();if(id==='nodes')loadNodes();if(id==='subs')loadSubs();if(id==='multi'){loadMultiInboundOptions();loadMultiConfigs();}if(id==='scanner'){loadSniList();loadSniResults()}if(id==='terminal')loadTerminalInfo();if(id==='settings'){loadSettingsPanel();loadActivity()}
+}
 let timer;function toast(m){let e=$('#toast');e.textContent=m;e.classList.add('show');clearTimeout(timer);timer=setTimeout(()=>e.classList.remove('show'),1900)}
 async function api(url,opt={}){let r=await fetch(url,{credentials:'same-origin',...opt,headers:{'Content-Type':'application/json',...(opt.headers||{})}});if(r.status===401){location.href='/login';throw Error('AUTH')}let txt=await r.text();let data;try{data=JSON.parse(txt)}catch{data=txt}if(!r.ok)throw Error(data?.detail||data?.message||txt||('HTTP '+r.status));return data}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -730,7 +659,7 @@ function renderInboundProtocolFields(){const h=`<div class="field"><label>Networ
 async function editInbound(id){try{let d=await api('/api/inbounds');let ib=(d.inbounds||[]).find(x=>String(x.inbound_id)===String(id));if(!ib)throw Error('Inbound not found');$('#ibEditId').value=id;$('#ibModalTitle').textContent='ویرایش اینباند';$('#ibName').value=ib.name||'';$('#ibProtocol').value=(ib.protocol||'vless').toLowerCase();renderInboundProtocolFields();setTimeout(()=>{let set=(id,v)=>{let e=$(id);if(e&&v!==undefined)e.value=v};let ss=ib.ssh_settings||{};set('#ibSshHost',ss.host||ib.domain||'');set('#ibSshPort',ss.port||ib.port||22);set('#ibSshUser',ss.username||'');set('#ibSshPass',ss.password||'');set('#ibSshAuth','password');set('#ibNetwork',ib.network||'ws');set('#ibSecurity',ib.security||'tls');set('#ibPort',ib.port||443);set('#ibExtPort',ib.external_port||443);set('#ibDomain',ib.domain||'');set('#ibExtDomain',ib.external_domain||'');set('#ibSni',ib.sni||'');set('#ibFp',ib.fingerprint||'chrome');set('#ibPath',(ib.ws_settings||{}).path||ib.path||'/ws/{uuid}');set('#ibGrpcService',(ib.grpc_settings||{}).serviceName||'pars-space');set('#ibXPath2',(ib.xhttp_settings||{}).path||'/xhttp');set('#ibXPath',(ib.xhttp_settings||{}).path||'/');set('#ibDest',(ib.reality_settings||{}).dest||'is1-ssl.mzstatic.com:443');set('#ibSid',(ib.reality_settings||{}).short_id||'');set('#ibAlpn',(ib.tls_settings||{}).alpn||'http/1.1');},0);$('#inboundModal').classList.add('open')}catch(e){toast(e.message)}}
 async function testInboundSSH(){try{const host=$('#ibSshHost').value.trim(),port=Number($('#ibSshPort').value||22);const d=await api('/api/tools/test-ssh',{method:'POST',body:JSON.stringify({host,port})});$('#ibTestMsg').textContent=d.ok?`✓ ${d.latency_ms} ms`:`✕ ${d.message}`;toast(d.ok?'پورت SSH قابل دسترسی است':'پورت SSH در دسترس نیست')}catch(e){toast(e.message)}}
 async function createInbound(){try{const body={name:$('#ibName').value.trim(),protocol:'vless',network:$('#ibNetwork').value,security:$('#ibSecurity').value,port:Number($('#ibPort').value||443),domain:$('#ibDomain').value.trim(),sni:$('#ibSni').value.trim(),fingerprint:$('#ibFp').value,tls_settings:{alpn:$('#ibAlpn').value||'http/1.1'},ws_settings:{path:$('#ibPath').value||'/ws/{uuid}'},grpc_settings:{serviceName:$('#ibGrpcService').value||'pars-space'},xhttp_settings:{path:$('#ibXPath2').value||'/xhttp',mode:'stream-up'}};const editId=$('#ibEditId').value.trim();const d=await api('/api/inbounds'+(editId?'/'+encodeURIComponent(editId):''),{method:editId?'PATCH':'POST',body:JSON.stringify(body)});closeInbound();toast(editId?'اینباند ویرایش شد':'اینباند ساخته شد');loadInbounds();loadOverview()}catch(e){toast(e.message)}}
-async function loadSubs(){try{const [ud,sd]=await Promise.all([api('/api/users'),api('/api/pars/v1/subscriptions')]);const users=ud.users||[];const groups=sd.subs||sd.subscriptions||[];let html='';for(const u of users){const used=Number(u.traffic_used_bytes||0),limit=Number(u.traffic_limit_bytes||0);const pct=limit?Math.min(100,used/limit*100):0;html+=`<div class="row subCard"><div style="min-width:0;flex:1"><b>${esc(u.username||u.user_id)}</b><div class="muted">VLESS · ${esc(u.subscription_url||'')}</div><div class="usageLine"><i style="width:${pct}%"></i></div><div class="muted">${esc(u.traffic_used_fmt||formatBytes(used))} / ${limit?esc(u.traffic_limit_fmt||formatBytes(limit)):'∞'}</div></div><div class="toolbar"><button class="btn small dark" onclick="copyText('${esc(u.subscription_url||'')}')">کپی ساب</button><button class="btn small" onclick="loadUserDaily('${esc(u.user_id)}','${esc(u.username||'')}')">مصرف ۳۰ روز</button></div></div>`}for(const g of groups){html+=`<div class="row subCard"><div style="min-width:0;flex:1"><b>${esc(g.name||'Subscription')}</b><div class="muted">${g.kind==='multi'?'Multi Config':'گروهی'} · ${g.links_count??0} لینک · ${g.total_used_fmt||'0 B'}</div><div class="output" style="margin-top:8px;min-height:0;padding:9px">${esc(g.sub_url||'')}</div></div><div class="toolbar"><button class="btn small dark" onclick="copyText('${esc(g.sub_url||'')}')">کپی لینک</button></div></div>`}$('#subList').innerHTML=html||`<div class="empty">${tr('noData')}</div>`}catch(e){toast(e.message)}}
+async function loadSubs(){try{const [ud,sd]=await Promise.all([api('/api/users'),api('/api/pars/v1/subscriptions')]);const users=ud.users||[];const groups=sd.subs||sd.subscriptions||[];let html='';for(const u of users){const used=Number(u.traffic_used_bytes||0),limit=Number(u.traffic_limit_bytes||0);const pct=limit?Math.min(100,used/limit*100):0;html+=`<div class="row subCard"><div style="min-width:0;flex:1"><b>${esc(u.username||u.user_id)}</b><div class="muted">VLESS · ${esc(u.subscription_url||'')}</div><div class="usageLine"><i style="width:${pct}%"></i></div><div class="muted">${esc(u.traffic_used_fmt||formatBytes(used))} / ${limit?esc(u.traffic_limit_fmt||formatBytes(limit)):'∞'}</div></div><div class="toolbar"><button class="btn small dark copyData" data-copy=${JSON.stringify(u.subscription_url||'')}>کپی ساب</button><button class="btn small dailyData" data-id=${JSON.stringify(u.user_id)} data-name=${JSON.stringify(u.username||'')}>مصرف ۳۰ روز</button></div></div>`}for(const g of groups){html+=`<div class="row subCard"><div style="min-width:0;flex:1"><b>${esc(g.name||'Subscription')}</b><div class="muted">${g.kind==='multi'?'Multi Config':'گروهی'} · ${g.links_count??0} لینک · ${g.total_used_fmt||'0 B'}</div><div class="output" style="margin-top:8px;min-height:0;padding:9px">${esc(g.sub_url||'')}</div></div><div class="toolbar"><button class="btn small dark copyData" data-copy=${JSON.stringify(g.sub_url||'')}>کپی لینک</button></div></div>`}$('#subList').innerHTML=html||`<div class="empty">${tr('noData')}</div>`;$$('#subList .copyData').forEach(b=>b.onclick=()=>copyText(b.dataset.copy||''));$$('#subList .dailyData').forEach(b=>b.onclick=()=>loadUserDaily(b.dataset.id||'',b.dataset.name||''));}catch(e){toast(e.message)}}
 async function loadUserDaily(id,name){try{const d=await api('/api/users/'+encodeURIComponent(id)+'/traffic-history');const days=d.days||[];const total=days.reduce((a,x)=>a+Number(x.bytes||0),0);$('#subList').insertAdjacentHTML('afterbegin',`<div class="card cardPad" id="dailyTemp"><div class="head"><div><h2>${esc(name||'کاربر')} · ۳۰ روز اخیر</h2><p class="muted">مجموع این بازه: ${esc(formatBytes(total))}</p></div><button class="btn" onclick="$('#dailyTemp')?.remove()">×</button></div><div class="dailyBars">${days.map(x=>`<div class="dailyBar"><span title="${esc(x.date+' · '+x.fmt)}" style="height:${Math.max(4,Math.min(100,Number(x.bytes||0)/Math.max(1,...days.map(y=>Number(y.bytes||0)))*100))}%"></span><small>${esc(x.date.slice(5))}</small></div>`).join('')}</div></div>`)}catch(e){toast(e.message)}}
 async function createSubscription(){
  let name=prompt(lang==='fa'?'نام اشتراک:':'Subscription name:','Pars Subscription');if(name===null)return;
@@ -756,7 +685,7 @@ async function loadSniResults(){try{let d=await api('/api/scanner/sni-results');
 function renderSniResults(a){$('#sniResults').innerHTML=a.length?a.map((x,i)=>`<div class="row"><span dir="ltr"><b>#${i+1} ${esc(x.sni)}</b></span><span class="pill">${esc(x.latency_ms)} ms</span></div>`).join(''):'<div class="empty">No saved SNI results</div>'}
 async function runSniScan(){try{let d=await api('/api/scanner/sni-scan-list');let snis=(d.snis||[]);if(!snis.length)throw Error('SNI list is empty');$('#sniStatus').textContent='Scanning '+snis.length+' hosts…';let out=[];for(let i=0;i<snis.length;i+=16){let batch=snis.slice(i,i+10);let rs=await Promise.all(batch.map(async s=>{try{return await api('/api/scanner/sni-check?host='+encodeURIComponent(s)+'&port=443')}catch{return {ok:false,sni:s}}}));out.push(...rs);$('#sniStatus').textContent=`${Math.min(i+16,snis.length)}/${snis.length}`;}let good=out.filter(x=>x.ok).sort((a,b)=>a.latency_ms-b.latency_ms).slice(0,10).map(x=>({sni:x.sni,latency_ms:x.latency_ms}));renderSniResults(good);if(good.length)await api('/api/scanner/sni-save-results',{method:'POST',body:JSON.stringify({results:good,top:10})});$('#sniStatus').textContent=good.length+' reachable SNI saved';}catch(e){$('#sniStatus').textContent=e.message;toast(e.message)}}
 async function clearSniResults(){try{await api('/api/scanner/sni-clear-results',{method:'POST'});renderSniResults([]);toast('SNI results cleared')}catch(e){toast(e.message)}}
-async function loadMultiConfigs(){try{const d=await api('/api/multi-configs');const a=d.multi||[];$('#multiList').innerHTML=a.length?a.map(x=>`<div class="row"><div style="min-width:0;flex:1"><b>${esc(x.name)}</b><div class="muted">${x.count} کانفیگ · ${esc(x.status)} · ${esc(x.total_used_fmt)} · ${x.connections} اتصال</div><div class="output" style="margin-top:8px;min-height:0;padding:8px">${esc(x.sub_url)}</div></div><div class="toolbar"><button class="btn small dark" onclick="copyText('${esc(x.sub_url)}')">کپی ساب</button><button class="btn small" onclick="showMultiDetails('${esc(x.sub_id)}')">مشاهده بیشتر</button></div></div>`).join(''):`<div class="empty">هنوز Multi Config ساخته نشده.</div>`}catch(e){toast(e.message)}}
+async function loadMultiConfigs(){try{const d=await api('/api/multi-configs');const a=d.multi||[];$('#multiList').innerHTML=a.length?a.map(x=>`<div class="row"><div style="min-width:0;flex:1"><b>${esc(x.name)}</b><div class="muted">${x.count} کانفیگ · ${esc(x.status)} · ${esc(x.total_used_fmt)} · ${x.connections} اتصال</div><div class="output" style="margin-top:8px;min-height:0;padding:8px">${esc(x.sub_url)}</div></div><div class="toolbar"><button class="btn small dark copyData" data-copy=${JSON.stringify(x.sub_url||'')}>کپی ساب</button><button class="btn small detailData" data-id=${JSON.stringify(x.sub_id||'')}>مشاهده بیشتر</button></div></div>`).join(''):`<div class="empty">هنوز Multi Config ساخته نشده.</div>`;$$('#multiList .copyData').forEach(b=>b.onclick=()=>copyText(b.dataset.copy||''));$$('#multiList .detailData').forEach(b=>b.onclick=()=>showMultiDetails(b.dataset.id||''));}catch(e){toast(e.message)}}
 async function loadMultiInboundOptions(){try{const d=await api('/api/inbounds');const a=d.inbounds||[];const el=$('#multiInbound');if(el)el.innerHTML='<option value="">خودکار</option>'+a.filter(x=>x.protocol==='vless').map(x=>`<option value="${esc(x.inbound_id)}">${esc(x.name||x.inbound_id)} · ${esc(x.external_port||x.port||'')}</option>`).join('')}catch(e){}}
 async function createMultiConfig(){try{const body={name:$('#multiName').value.trim(),count:Number($('#multiCount').value||1),inbound_id:$('#multiInbound').value,traffic_limit_gb:Number($('#multiTraffic').value||0),expire_days:Number($('#multiExpire').value||0),support_channel_id:$('#multiSupport').value.trim()};const d=await api('/api/multi-configs',{method:'POST',body:JSON.stringify(body)});$('#multiMsg').textContent=d.sub_url||'';await copyText(d.sub_url||'');toast('Multi Config ساخته شد');loadMultiConfigs()}catch(e){toast(e.message)}}
 async function showMultiDetails(id){try{const d=await api('/api/multi-configs/'+encodeURIComponent(id));const rows=d.items||[];const box=rows.map(x=>`<div class="row"><div><b>${esc(x.name)}</b><div class="muted">مصرف ${esc(x.used_fmt)}</div></div><div class="toolbar"><span class="pill">لحظه‌ای ${x.connections}</span><span class="pill">میانگین ${x.average_connections}</span></div></div>`).join('');$('#multiList').insertAdjacentHTML('afterbegin',`<div class="card cardPad" id="multiDetail"><div class="head"><div><h2>${esc(d.name)} · جزئیات</h2><p class="muted">وضعیت: ${esc(d.status)} · ${esc(d.total_used_fmt)}</p></div><button class="btn" onclick="$('#multiDetail')?.remove()">×</button></div>${box||'<div class="empty">داده‌ای نیست</div>'}</div>`)}catch(e){toast(e.message)}}
@@ -857,29 +786,15 @@ async function saveProtocolDefaults(){return;}
 function toggleActivity(){const c=$('#activityCard'),b=$('#activityShow');const hidden=c.style.display==='none';c.style.display=hidden?'':'none';b.style.display=hidden?'none':'inline-flex'}
 renderServerAdvancedSettings();updateClientProtocolFields();
 const mobileMenuBtn=$('#mobileMenuBtn');
-if(mobileMenuBtn){mobileMenuBtn.onclick=()=>{const top=document.querySelector('.top');const open=top.classList.toggle('menu-open');mobileMenuBtn.textContent=open?'×':'☰';};}
-$$('.nav button').forEach(b=>b.addEventListener('click',()=>{if(window.matchMedia('(max-width:720px)').matches){document.querySelector('.top')?.classList.remove('menu-open');if(mobileMenuBtn)mobileMenuBtn.textContent='☰';}}));
-document.addEventListener('click',e=>{
-  const top=document.querySelector('.top');
-  if(!top||!top.classList.contains('menu-open'))return;
-  if(!top.contains(e.target)){
-    top.classList.remove('menu-open');
-    if(mobileMenuBtn)mobileMenuBtn.textContent='☰';
-  }
-});
-document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){
-    document.querySelector('.top')?.classList.remove('menu-open');
-    if(mobileMenuBtn)mobileMenuBtn.textContent='☰';
-  }
-});
+function closeMobileMenu(){const top=document.querySelector('.top');if(!top)return;top.classList.remove('menu-open');if(mobileMenuBtn)mobileMenuBtn.textContent='☰';}
+function openMobileMenu(){const top=document.querySelector('.top');if(!top)return;top.classList.add('menu-open');if(mobileMenuBtn)mobileMenuBtn.textContent='×';}
+if(mobileMenuBtn){mobileMenuBtn.onclick=()=>{const top=document.querySelector('.top');if(!top)return;top.classList.toggle('menu-open');mobileMenuBtn.textContent=top.classList.contains('menu-open')?'×':'☰';};}
+$$('.nav button').forEach(b=>b.addEventListener('click',()=>{if(window.innerWidth<=980)closeMobileMenu();}));
+document.addEventListener('click',e=>{const top=document.querySelector('.top');if(!top||!top.classList.contains('menu-open'))return;if(!top.contains(e.target))closeMobileMenu();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMobileMenu();});
+window.addEventListener('resize',()=>{if(window.innerWidth>980)closeMobileMenu();});
 
 boot();
-// Responsive modal hardening: prevent accidental horizontal overflow on touch devices.
-document.addEventListener('click',function(e){
-  const m=e.target.closest?.('.modal');
-  if(m && e.target===m){m.classList.remove('open');}
-});
 </script>
 
 <script>
