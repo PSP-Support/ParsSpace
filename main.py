@@ -1551,22 +1551,9 @@ async def _sync_tg_traffic(user_id: str, nbytes: int):
             u = USERS.get(user_id)
             if u:
                 u["traffic_used_bytes"] = u.get("traffic_used_bytes", 0) + nbytes
-                _record_user_daily_traffic(u, nbytes)
         asyncio.create_task(save_state())
     except Exception:
         pass
-
-
-def _record_user_daily_traffic(user: dict, nbytes: int) -> None:
-    """Accumulate per-day traffic without changing the current quota counter."""
-    if not user or nbytes <= 0:
-        return
-    day = datetime.now().strftime("%Y-%m-%d")
-    hist = user.setdefault("traffic_daily", {})
-    hist[day] = int(hist.get(day) or 0) + int(nbytes)
-    # Keep a bounded history. 31 days is exactly what the dashboard exposes.
-    for key in sorted(hist)[:-31]:
-        hist.pop(key, None)
 
 
 # Worker proxy source sync — hourly pull from the daily GitHub list and push to
@@ -2513,12 +2500,9 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
         logger.warning("Skipping config for user %s: invalid config UUID %r", user_id, config_uuid)
         return ""
     username = user.get("username", user_id)
-    support = str(user.get("support_channel_id") or "").strip()
-    rem = f"{support} - {username}" if support else f"Pars Space - {username}"
+    rem = f"Pars Space - {username}"
     if remark_tag:
         rem = f"{rem} {remark_tag}"
-    if support and not rem.endswith("PSP"):
-        rem = f"{rem} PSP"
     remark = quote(rem)
 
     # Never generate a client-facing config until a real public hostname is known.
@@ -3314,7 +3298,7 @@ async def healthz():
     """Provider-neutral health check endpoint; never blocks on public-domain discovery."""
     return {
         "ok": True,
-        "service": "Pars Space",
+        "service": "SpiderPanel",
         "port": CONFIG.get("port", 8080),
         "public_domain_ready": bool(get_host()),
     }
@@ -3626,9 +3610,6 @@ async def list_subs(_=Depends(require_auth)):
             **s,
             "password_hash": None,
             "has_password": s.get("password_hash") is not None,
-            "kind": s.get("kind", "group"),
-            "user_ids": s.get("user_ids", []),
-            "support_channel_id": s.get("support_channel_id", ""),
             "links_count": len(link_ids),
             "active_count": active_count,
             "total_used_bytes": total_used,
@@ -4952,8 +4933,6 @@ async def list_users(_=Depends(require_auth)):
             "qr_url": f"https://{host}/api/users/{uid}/qr",
             "subscription_url": f"https://{host}/link/{u.get('config_uuid')}",
             "subscription_type": "per-user",
-            "support_channel_id": u.get("support_channel_id", ""),
-            "duration_days": int(u.get("duration_days") or 0),
             "connections": sum(1 for c in connections.values() if c.get("uuid") == u.get("config_uuid")),
             "node_configs": dict(u.get("node_configs") or {}),
             "node_sync_state": dict(u.get("node_sync_state") or {}),
@@ -5103,10 +5082,8 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
     password = str(body.get("password") or secrets.token_urlsafe(12))
     traffic_limit_gb = float(body.get("traffic_limit_gb") or 0)
     expire_days = int(body.get("expire_days") or 0)
-    # Pars Space user configs are VLESS-only in this UI/build.
-    protocol = "vless"
-    trojan_password = ""
-    support_channel_id = str(body.get("support_channel_id") or "").strip()[:120]
+    protocol = str(body.get("protocol") or "vless").lower()
+    trojan_password = str(body.get("trojan_password") or (password if protocol == "trojan" else ""))
     _cc_raw = body.get("concurrent_connections")
     concurrent_connections = int(_cc_raw) if _cc_raw is not None else 0
     server = (body.get("server") or "IR-Tehran-01").strip()[:40]
@@ -5271,10 +5248,7 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
             "protocol": protocol,
             "traffic_limit_bytes": traffic_limit_bytes,
             "traffic_used_bytes": 0,
-            "traffic_daily": {},
             "expire_at": expire_at,
-            "duration_days": max(0, expire_days),
-            "support_channel_id": support_channel_id,
             "concurrent_connections": concurrent_connections,
             "created_at": datetime.now().isoformat(),
             "status": "active",
@@ -5420,64 +5394,25 @@ async def toggle_user(user_id: str, _=Depends(require_auth)):
     return {"ok": True, "user_id": user_id, "status": new_status}
 
 @app.patch("/api/users/{user_id}/reset")
-async def reset_user_traffic(user_id: str, request: Request, _=Depends(require_auth)):
-    """Reset current traffic and optionally restart the saved validity period."""
-    try:
-        body = await request.json()
-    except Exception:
-        body = {}
-    reset_time = bool(body.get("reset_time", True))
+async def reset_user_traffic(user_id: str, _=Depends(require_auth)):
+    """Reset a user's traffic usage to zero."""
     async with USERS_LOCK:
         u = USERS.get(user_id)
         if not u:
             raise HTTPException(status_code=404, detail="user not found")
         u["traffic_used_bytes"] = 0
         username = u.get("username", user_id)
-        if reset_time:
-            days = int(u.get("duration_days") or 0)
-            # Backfill the original duration for users created before this field existed.
-            if days <= 0 and u.get("expire_at") and u.get("created_at"):
-                try:
-                    original = datetime.fromisoformat(str(u["expire_at"])) - datetime.fromisoformat(str(u["created_at"]))
-                    days = max(0, int((original.total_seconds() + 86399) // 86400))
-                    u["duration_days"] = days
-                except Exception:
-                    days = 0
-            if days > 0:
-                u["expire_at"] = (datetime.now() + timedelta(days=days)).isoformat()
-            else:
-                u["expire_at"] = None
-        config_uuid = u.get("config_uuid")
-    if config_uuid:
-        async with LINKS_LOCK:
-            link = LINKS.get(config_uuid)
-            if link:
-                link["used_bytes"] = 0
-                link["expires_at"] = u.get("expire_at")
-                link["active"] = (str(u.get("status") or "active") == "active")
+    # Reset the worker-side usage too, so the quota reflects the reset immediately.
     if WORKER.get("connected") and _user_uses_worker_inbound(u):
         asyncio.create_task(_worker_sync_users())
+    for _tg_iid in [i for i in (u.get("inbound_ids") or []) if (INBOUNDS.get(i, {}).get("protocol") or "").lower() == "telegram"]:
+        asyncio.create_task(_restart_telegram_proxy(_tg_iid))
+    asyncio.create_task(save_state())
     if _selected_node_ids_for_user(u):
         asyncio.create_task(_sync_user_to_selected_nodes(user_id, dict(u), force_reset=True))
-    asyncio.create_task(save_state())
-    log_activity("user", f"مصرف کاربر «{username}» ریست شد" + (" و زمان از نو شروع شد" if reset_time else ""), "info")
-    return {"ok": True, "user_id": user_id, "traffic_used_bytes": 0, "expire_at": u.get("expire_at"), "reset_time": reset_time}
+    log_activity("user", f"مصرف کاربر «{username}» ریست شد", "info")
+    return {"ok": True, "user_id": user_id, "traffic_used_bytes": 0}
 
-@app.get("/api/users/{user_id}/traffic-history")
-async def user_traffic_history(user_id: str, _=Depends(require_auth)):
-    async with USERS_LOCK:
-        u = USERS.get(user_id)
-        if not u:
-            raise HTTPException(status_code=404, detail="user not found")
-        hist = dict(u.get("traffic_daily") or {})
-    today = datetime.now().date()
-    days = []
-    for offset in range(30, -1, -1):
-        day = today - timedelta(days=offset)
-        key = day.isoformat()
-        val = int(hist.get(key) or 0)
-        days.append({"date": key, "bytes": val, "fmt": fmt_bytes(val)})
-    return {"user_id": user_id, "days": days}
 @app.patch("/api/users/{user_id}")
 async def edit_user(user_id: str, request: Request, _=Depends(require_auth)):
     """Edit an existing user."""
@@ -5502,12 +5437,11 @@ async def edit_user(user_id: str, request: Request, _=Depends(require_auth)):
             u["traffic_limit_bytes"] = int(gb * 1024**3) if gb > 0 else 0
         if "expire_days" in body:
             days = int(body["expire_days"])
-            u["duration_days"] = max(0, days)
             u["expire_at"] = (datetime.now() + timedelta(days=days)).isoformat() if days > 0 else None
-        # User protocol is intentionally fixed to VLESS.
-        u["protocol"] = "vless"
-        if "support_channel_id" in body:
-            u["support_channel_id"] = str(body.get("support_channel_id") or "").strip()[:120]
+        if "protocol" in body:
+            p = str(body["protocol"]).lower()
+            if p in USER_PROTOCOLS:
+                u["protocol"] = p
         if "status" in body:
             u["status"] = str(body["status"])
         if "sni" in body:
@@ -5877,81 +5811,6 @@ async def test_config(request: Request, _=Depends(require_auth)):
     except Exception as exc:
         latency = round((time.perf_counter() - start) * 1000, 1)
         return {"ok": False, "host": host, "port": port, "latency_ms": latency, "message": f"TCP check failed: {str(exc)[:180]}"}
-
-@app.post("/api/tools/test-subscription")
-async def test_subscription(request: Request, _=Depends(require_auth)):
-    """Test every VLESS config exposed by a Pars Space subscription URL.
-
-    This is a TCP reachability/latency test, not a full Xray handshake test.
-    Results are sorted from lowest latency to highest and timed-out/unreachable
-    entries remain visible at the bottom.
-    """
-    from urllib.parse import urlparse
-    import base64 as _b64
-    body = await request.json()
-    raw = str(body.get("url") or "").strip()
-    if not raw:
-        raise HTTPException(status_code=400, detail="subscription URL is required")
-    configs = []
-    parsed = urlparse(raw)
-    key = parsed.path.rstrip("/").split("/")[-1] if parsed.path else raw
-    if "/sub/" in parsed.path or parsed.path.startswith("/sub/"):
-        async with SUBS_LOCK:
-            sub = next((dict(v) for v in SUBS.values() if str(v.get("uuid_key") or "") == key), None)
-        if sub:
-            async with LINKS_LOCK:
-                links = dict(LINKS)
-            async with USERS_LOCK:
-                users = dict(USERS)
-            for lid in sub.get("link_ids") or []:
-                link = links.get(lid)
-                if not link:
-                    continue
-                uid = link.get("user_id")
-                u = users.get(uid) if uid else None
-                cfg = generate_user_config(uid, u, u.get("inbound_id")) if uid and u else ""
-                if cfg:
-                    configs.append(cfg)
-    elif "/link/" in parsed.path or parsed.path.startswith("/link/"):
-        try:
-            data = await _build_subscription_data_by_uuid(key)
-            configs = list(data.get("configs") or [])
-        except Exception:
-            configs = []
-    else:
-        # Also accept a raw base64 subscription payload.
-        try:
-            decoded = _b64.b64decode(raw + "=" * (-len(raw) % 4)).decode("utf-8", errors="ignore")
-            configs = [x.strip() for x in decoded.splitlines() if x.strip().startswith("vless://")]
-        except Exception:
-            configs = []
-    if not configs:
-        raise HTTPException(status_code=404, detail="no VLESS configs found in subscription")
-
-    async def probe(cfg: str):
-        u = urlparse(cfg)
-        host = u.hostname
-        port = int(u.port or 443)
-        remark = u.fragment or host or "VLESS"
-        if not host:
-            return {"ok": False, "host": "", "port": port, "latency_ms": 999999, "remark": remark, "message": "invalid host"}
-        started = time.perf_counter()
-        try:
-            reader, writer = await asyncio.wait_for(asyncio.open_connection(host, port), timeout=5)
-            latency = round((time.perf_counter() - started) * 1000, 1)
-            writer.close()
-            try:
-                await writer.wait_closed()
-            except Exception:
-                pass
-            return {"ok": True, "host": host, "port": port, "latency_ms": latency, "remark": remark, "message": "TCP reachable"}
-        except Exception as exc:
-            latency = round((time.perf_counter() - started) * 1000, 1)
-            return {"ok": False, "host": host, "port": port, "latency_ms": latency, "remark": remark, "message": str(exc)[:160]}
-
-    results = await asyncio.gather(*(probe(c) for c in configs))
-    results.sort(key=lambda x: (not x["ok"], x["latency_ms"]))
-    return {"ok_count": sum(1 for x in results if x["ok"]), "total": len(results), "results": results}
 
 @app.get("/api/tools/speed-test")
 async def speed_test(bytes: int = 524288, _=Depends(require_auth)):
@@ -6482,8 +6341,6 @@ async def update_settings(request: Request, _=Depends(require_auth)):
                 elif k == "default_connection_mode" and isinstance(v, str):
                     if v in ("ws", "xhttp", "tcp"):
                         SETTINGS[k] = v
-                elif k == "panel_alias" and isinstance(v, str):
-                    SETTINGS[k] = v.strip()[:80] or "Pars Space"
                 elif k == "protocol_defaults" and isinstance(v, dict):
                     current = dict(SETTINGS.get("protocol_defaults") or {})
                     for proto, vals in v.items():
@@ -8122,7 +7979,6 @@ async def check_and_use(uid: str, n: int) -> bool:
             u = m.USERS.get(user_id)
             if u:
                 u["traffic_used_bytes"] = u.get("traffic_used_bytes", 0) + n
-                _record_user_daily_traffic(u, n)
 
     return True
 
@@ -8670,75 +8526,6 @@ async def sync_inbound_nodes(inbound_id: str, _=Depends(require_auth)):
         count = sum(1 for u in USERS.values() if inbound_id in [str(x) for x in (u.get("inbound_ids") or [])])
     return {"ok": True, "users": count, "results": [], "node_ids": ids}
 
-
-# ══════════════════════════════════════════════════════════════════════════════
-# PARS SPACE MULTI CONFIG
-# ══════════════════════════════════════════════════════════════════════════════
-
-@app.get("/api/multi-configs")
-async def list_multi_configs(_=Depends(require_auth)):
-    host = SETTINGS.get("domain") or get_host()
-    async with SUBS_LOCK:
-        subs = {sid: dict(v) for sid, v in SUBS.items() if v.get("kind") == "multi"}
-    async with USERS_LOCK:
-        users = dict(USERS)
-    rows = []
-    for sid, sub in subs.items():
-        ids = [str(x) for x in (sub.get("user_ids") or [])]
-        items = []
-        total_used = 0
-        total_conn = 0
-        for uid in ids:
-            u = users.get(uid)
-            if not u:
-                continue
-            conn = sum(1 for c in connections.values() if c.get("uuid") == u.get("config_uuid"))
-            used = int(u.get("traffic_used_bytes") or 0)
-            total_used += used
-            total_conn += conn
-            samples = list(u.get("connection_samples") or [])
-            if not samples or samples[-1].get("ts") != int(time.time() // 60):
-                samples.append({"ts": int(time.time() // 60), "value": conn})
-                u["connection_samples"] = samples[-60:]
-            avg = round(sum(float(x.get("value") or 0) for x in samples) / max(1, len(samples)), 2)
-            items.append({"user_id": uid, "name": u.get("username", uid), "connections": conn, "average_connections": avg, "used_bytes": used, "used_fmt": fmt_bytes(used), "status": u.get("status", "active")})
-        rows.append({"sub_id": sid, "name": sub.get("name"), "support_channel_id": sub.get("support_channel_id", ""), "count": len(items), "total_used_fmt": fmt_bytes(total_used), "connections": total_conn, "status": "active" if any(x["status"] == "active" for x in items) else "inactive", "sub_url": f"https://{host}/sub/{sub.get('uuid_key')}", "items": items})
-    asyncio.create_task(save_state())
-    return {"multi": rows}
-
-@app.post("/api/multi-configs")
-async def create_multi_config(request: Request, _=Depends(require_auth)):
-    body = await request.json()
-    name = str(body.get("name") or "Pars Multi").strip()[:60]
-    count = max(1, min(50, int(body.get("count") or 1)))
-    inbound_id = str(body.get("inbound_id") or "").strip()
-    support = str(body.get("support_channel_id") or "").strip()[:120]
-    traffic_gb = max(0.0, float(body.get("traffic_limit_gb") or 0))
-    expire_days = max(0, int(body.get("expire_days") or 0))
-    if inbound_id and inbound_id not in INBOUNDS:
-        raise HTTPException(status_code=404, detail="inbound not found")
-    user_ids = []
-    for i in range(count):
-        suffix = f"{i+1:02d}"
-        req_body = {"username": f"{name}-{suffix}", "password": secrets.token_urlsafe(10), "protocol": "vless", "traffic_limit_gb": traffic_gb, "expire_days": expire_days, "inbound_ids": [inbound_id] if inbound_id else [], "support_channel_id": support}
-        class _Req:
-            async def json(self, _body=req_body): return _body
-        created = await create_user(_Req(), {"kind": "session"})
-        user_ids.append(created["user_id"])
-    sub_id = generate_uuid()
-    uuid_key = secrets.token_urlsafe(16)
-    async with SUBS_LOCK:
-        SUBS[sub_id] = {"kind": "multi", "name": name, "desc": f"{count} کانفیگ VLESS", "password_hash": None, "uuid_key": uuid_key, "created_at": datetime.now().isoformat(), "link_ids": [USERS[uid].get("config_uuid") for uid in user_ids], "user_ids": user_ids, "support_channel_id": support}
-    await save_state()
-    return {"ok": True, "sub_id": sub_id, "name": name, "count": count, "user_ids": user_ids, "sub_url": f"https://{SETTINGS.get('domain') or get_host()}/sub/{uuid_key}"}
-
-@app.get("/api/multi-configs/{sub_id}")
-async def multi_config_details(sub_id: str, _=Depends(require_auth)):
-    data = await list_multi_configs(_=_)
-    row = next((x for x in data.get("multi", []) if x.get("sub_id") == sub_id), None)
-    if not row:
-        raise HTTPException(status_code=404, detail="multi config not found")
-    return row
 
 # ══════════════════════════════════════════════════════════════════════════════
 # GROUP MANAGEMENT SYSTEM
