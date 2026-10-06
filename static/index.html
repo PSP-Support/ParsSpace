@@ -293,100 +293,161 @@ html,body{background:var(--bg)}
 
 
 /* =========================================================
-   PARS SPACE MOBILE POLISH v8.1
-   Phone-first shell, no horizontal overflow, light animations.
+   PARS SPACE FINAL RESPONSIVE PATCH
+   One clean layout layer after the older visual layers.
    ========================================================= */
+*{box-sizing:border-box}
+html,body{width:100%;max-width:100%;overflow-x:hidden}
+body{min-width:0}
+.app{width:min(1500px,100%);margin:0 auto;padding:18px}
+.top{width:100%;min-width:0}
+.brand,.nav,.tools{min-width:0}
+.nav{min-width:0}
+main{min-width:0}
+.view{min-width:0}
+.card,.hero,.cols,.split,.form,.glassGrid,.advancedGrid{min-width:0}
+.tableWrap{max-width:100%}
+
+/* Desktop modal: always centered, never pushed to the RTL side. */
+.modal{
+  position:fixed!important;inset:0!important;
+  width:100vw!important;height:100dvh!important;
+  display:none;align-items:center!important;justify-content:center!important;
+  padding:24px!important;margin:0!important;
+  z-index:1000!important;
+  overflow:hidden!important;
+}
+.modal.open{display:flex!important}
+.modalBox,
+#clientBuilderModal .modalBox,
+#inboundModal .modalBox{
+  position:relative!important;
+  inset:auto!important;float:none!important;
+  flex:0 1 auto!important;
+  width:min(960px,calc(100vw - 48px))!important;
+  max-width:960px!important;
+  max-height:min(88dvh,900px)!important;
+  margin:0 auto!important;
+  padding:24px!important;
+  overflow:auto!important;
+  overscroll-behavior:contain;
+  transform:none;
+}
+#configViewModal .modalBox,#userEditModal .modalBox,#userQrModal .modalBox,#nodeModal .modalBox{
+  margin:0 auto!important;float:none!important;flex:0 1 auto!important;
+}
+
+/* Keep forms readable on desktop instead of letting RTL shrink them. */
+#clientBuilderModal .form{grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
+#clientBuilderModal .field{min-width:0}
+#clientBuilderModal .advancedGrid{grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
+#clientBuilderModal .glassGrid{grid-template-columns:repeat(3,minmax(0,1fr));width:100%}
+#clientBuilderModal .toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#clientBuilderModal .toolbar .spacer{flex:1 1 auto}
+#clientBuilderModal .configBox{width:100%;min-width:0}
+#clientBuilderModal .output{width:100%;min-width:0;overflow:auto}
+
+/* Cheap rendering on desktop too. */
+@media (min-width:721px){
+  .ambient,.orb{display:none!important}
+  .card,.top{backdrop-filter:blur(14px)!important;-webkit-backdrop-filter:blur(14px)!important}
+  .top:after,.card:after{display:none!important}
+}
+
+/* Phone shell. */
 @media (max-width:720px){
-  html,body{width:100%;min-width:0;max-width:100%;overflow-x:hidden}
-  body{overscroll-behavior-x:none}
-  .app,main,.view,.card,.cardPad,.hero,.cols,.split,.sectionHero,.form,.field,.toolbar,.row,.glassGrid,.advancedGrid{min-width:0;max-width:100%}
-
-  /* Header + top-down menu */
-  .top{position:sticky!important;top:5px!important;z-index:500!important;overflow:visible!important;isolation:isolate}
-  .top .brand{min-width:0;max-width:100%}
-  .top .tools{min-width:0;flex:0 0 auto}
-  .nav{position:absolute!important;top:calc(100% + 7px)!important;left:0!important;right:0!important;width:100%!important;
-       display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px!important;
-       max-height:0!important;height:auto!important;overflow:hidden!important;
-       margin:0!important;padding:0!important;opacity:0!important;pointer-events:none!important;
-       transform:translateY(-7px) scale(.985)!important;transform-origin:top center!important;
-       border:1px solid transparent!important;border-radius:18px!important;
-       background:rgba(17,18,21,.98)!important;box-shadow:0 18px 45px rgba(0,0,0,.36)!important;
-       transition:max-height .18s cubic-bezier(.2,.8,.2,1),opacity .12s ease,transform .18s cubic-bezier(.2,.8,.2,1),padding .18s ease,border-color .18s ease!important;
-       backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
-  .top.menu-open .nav{max-height:calc(100svh - 90px)!important;padding:7px!important;opacity:1!important;pointer-events:auto!important;
-       transform:translateY(0) scale(1)!important;border-color:rgba(255,255,255,.09)!important;overflow:auto!important}
-  .nav button{min-width:0!important;width:100%!important;min-height:42px!important;padding:10px 8px!important;border-radius:12px!important;
-       white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis;background:rgba(255,255,255,.035)!important}
-  .nav button.active{background:#f2f2f2!important;color:#111!important}
-  .nav button:active{transform:scale(.975)!important}
-  .mobileMenuBtn{transition:transform .16s ease,background .16s ease!important}
-  .top.menu-open .mobileMenuBtn{transform:rotate(90deg)!important}
-
-  /* Phone content: remove desktop density and expensive effects */
+  html,body{width:100%;overflow-x:hidden}
+  .app{width:100%;padding:6px;margin:0}
+  .top{
+    position:sticky!important;top:5px!important;z-index:2000!important;
+    display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;
+    gap:7px!important;padding:7px!important;border-radius:16px!important;
+    overflow:visible!important;
+  }
+  .brand{min-width:0;overflow:hidden}
+  .brand span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tools{display:flex!important;align-items:center;gap:5px!important;margin:0!important}
+  .iconbtn{width:38px!important;height:38px!important;flex:0 0 38px}
+  .mobileMenuBtn{display:grid!important}
+  .nav{
+    grid-column:1/-1!important;grid-row:2!important;
+    display:grid!important;grid-template-columns:1fr 1fr!important;
+    gap:6px!important;width:100%!important;
+    max-height:0!important;opacity:0!important;overflow:hidden!important;
+    pointer-events:none!important;padding:0!important;margin:0!important;
+    border-top:1px solid transparent!important;
+    transform:translateY(-7px)!important;
+    transition:max-height .16s ease,opacity .12s ease,transform .16s ease,padding .16s ease,border-color .16s ease!important;
+  }
+  .top.menu-open .nav{
+    max-height:55dvh!important;opacity:1!important;pointer-events:auto!important;
+    overflow-y:auto!important;padding:7px 0 2px!important;
+    border-top-color:rgba(255,255,255,.07)!important;
+    transform:translateY(0)!important;
+  }
+  .nav button{
+    width:100%!important;min-height:42px!important;padding:9px 8px!important;
+    border-radius:11px!important;text-align:center!important;
+    transform:none!important;
+  }
+  .nav button:before{display:none!important}
+  .nav button:active{transform:scale(.985)!important}
+  main{padding:12px 0 34px!important}
+  .hero,.cols,.split,.grid4{grid-template-columns:1fr!important}
+  .heroMain{min-height:180px;padding:20px!important}
+  .heroSide{padding:16px!important}
+  .grid4{gap:8px!important}
+  .stat{padding:15px!important}
+  .big{font-size:36px!important}
+  .sectionHero h1{font-size:30px!important}
+  .cardPad{padding:14px!important}
+  .card{border-radius:20px!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
   .ambient,.orb,.dynamicMesh,.glassSheen{display:none!important}
-  .card,.modalBox,.top{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
-  .card:after,.top:after{display:none!important}
-  .card{box-shadow:0 10px 28px rgba(0,0,0,.18),inset 0 1px rgba(255,255,255,.045)!important}
-  .card:hover,.action:hover,.btn:hover{transform:none!important;box-shadow:none!important}
-  .view{animation:psMobileViewIn .13s ease!important}
-  @keyframes psMobileViewIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
-
-  /* Every modal is a full-width bottom sheet, never a side panel */
-  body.ps-modal-open{overflow:hidden!important;touch-action:none}
-  .modal{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;
-       padding:0!important;display:none!important;align-items:flex-end!important;justify-content:center!important;
-       overflow:hidden!important;z-index:900!important;background:rgba(0,0,0,.62)!important;
-       backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
-  .modal.open{display:flex!important}
-  .modal .modalBox,
-  #clientBuilderModal .modalBox,
-  #inboundModal .modalBox,
-  #userEditModal .modalBox,
-  #nodeModal .modalBox,
-  #configViewModal .modalBox,
-  #userQrModal .modalBox{
-       position:absolute!important;left:0!important;right:0!important;bottom:0!important;top:auto!important;
-       width:100%!important;min-width:0!important;max-width:none!important;
-       max-height:calc(100svh - 8px)!important;height:auto!important;
-       margin:0!important;padding:16px!important;box-sizing:border-box!important;
-       overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain!important;
-       border-radius:24px 24px 0 0!important;background:#121316!important;
-       border:1px solid rgba(255,255,255,.09)!important;
-       box-shadow:0 -12px 40px rgba(0,0,0,.34)!important;
-       animation:psSheetIn .17s cubic-bezier(.2,.8,.2,1)!important}
-  @keyframes psSheetIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
-  .modalBox>*{min-width:0;max-width:100%}
-  .modalBox .form,.modalBox .advancedGrid,.modalBox .glassGrid{width:100%!important;min-width:0!important;grid-template-columns:1fr!important}
-  .modalBox .field,.modalBox .field.full{min-width:0!important;width:100%!important;grid-column:auto!important}
-  .modalBox input,.modalBox select,.modalBox textarea{width:100%!important;max-width:100%!important;min-width:0!important}
-  .modalBox .sectionHero{width:100%!important;min-width:0!important;overflow:hidden}
-  .modalBox .sectionHero h1,.modalBox .sectionHero h2,.modalBox .sectionHero p{max-width:100%;overflow-wrap:anywhere}
-  .modalBox .close{position:sticky!important;top:0!important;z-index:5;float:left!important;width:38px!important;height:38px!important}
-  .modalBox .toolbar{width:100%!important;min-width:0!important}
-  .modalBox .toolbar .spacer{display:none}
-  #clientBuilderModal .toolbar,#inboundModal .toolbar,#userEditModal .toolbar{position:sticky!important;bottom:-1px!important;
-       margin-left:-16px!important;margin-right:-16px!important;padding:10px 16px 4px!important;
-       width:calc(100% + 32px)!important;background:linear-gradient(180deg,rgba(18,19,22,0),#121316 35%)!important;z-index:4}
-  #clientBuilderModal .configActions{display:grid!important;grid-template-columns:1fr 1fr!important;width:100%!important}
-  #clientBuilderModal .configActions .btn{width:100%!important}
-
-  /* Touch sizing without the giant controls from the previous build */
-  input,select,textarea{font-size:14px!important;min-height:44px!important}
-  .btn{min-height:40px!important;padding:9px 11px!important}
-  .switch{width:52px!important;height:30px!important;flex:0 0 52px!important}
-  .tableWrap{max-width:100%!important;overflow-x:auto!important}
+  .actions{grid-template-columns:1fr!important}
+  .tableWrap{width:100%;overflow-x:auto!important}
   .table{min-width:620px!important}
-  .output,.configBox{max-width:100%!important;overflow-wrap:anywhere!important}
+
+  /* Real phone bottom sheet, full width. */
+  .modal{
+    position:fixed!important;inset:0!important;
+    width:100vw!important;height:100dvh!important;
+    padding:0!important;margin:0!important;
+    align-items:flex-end!important;justify-content:center!important;
+    display:none!important;overflow:hidden!important;
+    background:rgba(0,0,0,.64)!important;
+    backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  }
+  .modal.open{display:flex!important}
+  .modalBox,
+  #clientBuilderModal .modalBox,
+  #inboundModal .modalBox{
+    width:100vw!important;max-width:none!important;
+    max-height:calc(100dvh - 10px)!important;
+    height:auto!important;min-height:0!important;
+    margin:0!important;padding:15px 14px 18px!important;
+    border-radius:22px 22px 0 0!important;
+    overflow-x:hidden!important;overflow-y:auto!important;
+    transform:none!important;
+    animation:parsSheetIn .16s cubic-bezier(.2,.8,.2,1)!important;
+  }
+  @keyframes parsSheetIn{from{opacity:.7;transform:translateY(16px)}to{opacity:1;transform:none}}
+  #clientBuilderModal .form,
+  #clientBuilderModal .advancedGrid,
+  #clientBuilderModal .glassGrid{grid-template-columns:1fr!important;width:100%!important}
+  #clientBuilderModal .field.full{grid-column:auto!important}
+  #clientBuilderModal .toolbar{display:flex;align-items:stretch;gap:7px;flex-wrap:wrap}
+  #clientBuilderModal .toolbar .btn{flex:1 1 auto}
+  #clientBuilderModal .configActions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  #clientBuilderModal .configActions .btn{width:100%}
+  .modalBox .head{gap:8px}
+  .modalBox .close{position:sticky!important;top:0!important;z-index:20!important;float:left!important}
+  input,select,textarea{min-height:44px!important;font-size:14px!important}
+  .switch{width:52px!important;height:30px!important;flex:0 0 52px!important}
+  .btn{min-height:42px!important}
 }
-@media (max-width:380px){
-  .nav{grid-template-columns:1fr!important}
-  .nav button{min-height:40px!important}
-  .modal .modalBox{padding:14px!important;border-radius:22px 22px 0 0!important}
-  #clientBuilderModal .toolbar,#inboundModal .toolbar,#userEditModal .toolbar{margin-left:-14px!important;margin-right:-14px!important;width:calc(100% + 28px)!important;padding-left:14px!important;padding-right:14px!important}
-}
+
 @media (prefers-reduced-motion:reduce){
-  .nav,.view,.modalBox,.mobileMenuBtn{animation:none!important;transition:none!important}
+  .nav,.view,.modalBox{transition:none!important;animation:none!important}
 }
 
 </style>
@@ -796,22 +857,29 @@ async function saveProtocolDefaults(){return;}
 function toggleActivity(){const c=$('#activityCard'),b=$('#activityShow');const hidden=c.style.display==='none';c.style.display=hidden?'':'none';b.style.display=hidden?'none':'inline-flex'}
 renderServerAdvancedSettings();updateClientProtocolFields();
 const mobileMenuBtn=$('#mobileMenuBtn');
-function closeMobileMenu(){const top=document.querySelector('.top');top?.classList.remove('menu-open');if(mobileMenuBtn)mobileMenuBtn.textContent='☰';}
 if(mobileMenuBtn){mobileMenuBtn.onclick=()=>{const top=document.querySelector('.top');const open=top.classList.toggle('menu-open');mobileMenuBtn.textContent=open?'×':'☰';};}
-$$('.nav button').forEach(b=>b.addEventListener('click',()=>{if(window.matchMedia('(max-width:720px)').matches)closeMobileMenu();}));
+$$('.nav button').forEach(b=>b.addEventListener('click',()=>{if(window.matchMedia('(max-width:720px)').matches){document.querySelector('.top')?.classList.remove('menu-open');if(mobileMenuBtn)mobileMenuBtn.textContent='☰';}}));
 document.addEventListener('click',e=>{
   const top=document.querySelector('.top');
   if(!top||!top.classList.contains('menu-open'))return;
-  if(!top.contains(e.target))closeMobileMenu();
+  if(!top.contains(e.target)){
+    top.classList.remove('menu-open');
+    if(mobileMenuBtn)mobileMenuBtn.textContent='☰';
+  }
 });
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMobileMenu();});
-
-/* Keep the phone background locked while any sheet is open. */
-function syncMobileModalState(){document.body.classList.toggle('ps-modal-open',!!document.querySelector('.modal.open'));}
-new MutationObserver(syncMobileModalState).observe(document.body,{subtree:true,attributes:true,attributeFilter:['class']});
-syncMobileModalState();
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    document.querySelector('.top')?.classList.remove('menu-open');
+    if(mobileMenuBtn)mobileMenuBtn.textContent='☰';
+  }
+});
 
 boot();
+// Responsive modal hardening: prevent accidental horizontal overflow on touch devices.
+document.addEventListener('click',function(e){
+  const m=e.target.closest?.('.modal');
+  if(m && e.target===m){m.classList.remove('open');}
+});
 </script>
 
 <script>
