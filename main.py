@@ -2475,14 +2475,102 @@ def _generate_protocol_share_link(config_uuid: str, username: str, password: str
     # Fallback for protocols not covered above.
     return ""
 
-def _finalmask_query(inbound: dict | None) -> str:
-    fm = (inbound or {}).get("finalmask") or {}
-    if not isinstance(fm, dict) or not fm:
-        return ""
-    try:
-        return "&fm=" + quote(json.dumps(fm, separators=(",", ":"), ensure_ascii=False), safe="")
-    except Exception:
-        return ""
+# Client-side anti-DPI/compatibility presets. These are emitted as VLESS share-link
+# parameters; the selected client must support the corresponding Xray fields.
+ANTI_BAN_ECH = "cloudflare-ech.com+udp://1.1.1.1"
+ANTI_BAN_CIPHER_SUITES = "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384:TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384:TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256:TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256:TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256:TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256:TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA:TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA:TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256:TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256"
+ANTI_BAN_FAKE_SNI = "auth.vercel.com"
+ANTI_BAN_SPOOF_IP = "188.114.96.7"
+
+# A conservative, valid Xray FinalMask TCP fragment profile. The panel exposes
+# this as the "tlshello" anti-ban preset rather than pretending it is a native
+# Xray mask type named "tlshello-0-len".
+ANTI_BAN_FINALMASK = {
+    "tcp": [{
+        "type": "fragment",
+        "settings": {
+            "packets": "tlshello",
+            "lengths": ["3-5", "6-8", "10-20"],
+            "delays": ["10-20"],
+            "maxSplit": "3-6",
+        },
+    }]
+}
+
+def _client_transport_options(user: dict | None, inbound: dict | None) -> dict:
+    """Resolve client-side TLS/finalmask/ECH overrides for a generated share link.
+
+    Anti-Ban has two mutually exclusive profiles because ECH and the F&F-style
+    unsafe/finalmask profile are different TLS strategies.
+    """
+    user = user or {}
+    inbound = inbound or {}
+    anti = bool(user.get("anti_ban_enabled"))
+    mode = str(user.get("anti_ban_mode") or "ff").strip().lower()
+    if mode not in ("ff", "ech"):
+        mode = "ff"
+
+    fp = str(user.get("client_fingerprint") or inbound.get("fingerprint") or "chrome").strip() or "chrome"
+    fm = user.get("client_finalmask") if isinstance(user.get("client_finalmask"), dict) else (inbound.get("finalmask") or {})
+    ech = str(user.get("client_ech") or "").strip()
+    cs = str(user.get("client_cipher_suites") or "").strip()
+    sni_spoof = bool(user.get("sni_spoof_v2box"))
+    fake_sni = str(user.get("fake_sni") or "").strip()
+    spoof_ip = str(user.get("spoof_ip") or "").strip()
+
+    if anti:
+        sni_spoof = True
+        fake_sni = fake_sni or ANTI_BAN_FAKE_SNI
+        spoof_ip = spoof_ip or ANTI_BAN_SPOOF_IP
+        if mode == "ech":
+            fp = "chrome"
+            ech = ANTI_BAN_ECH
+            fm = {}
+            cs = ""
+        else:
+            fp = "unsafe"
+            ech = ""
+            fm = dict(ANTI_BAN_FINALMASK)
+            cs = ANTI_BAN_CIPHER_SUITES
+
+    return {
+        "fingerprint": fp,
+        "finalmask": fm if isinstance(fm, dict) else {},
+        "ech": ech,
+        "cipher_suites": cs,
+        "sni_spoof": sni_spoof,
+        "fake_sni": fake_sni,
+        "spoof_ip": spoof_ip,
+        "anti_ban": anti,
+        "anti_ban_mode": mode,
+    }
+
+def _client_extra_query(user: dict | None, inbound: dict | None, *, allow_ech: bool = True) -> str:
+    opts = _client_transport_options(user, inbound)
+    if str((inbound or {}).get("protocol") or "").lower() == "reality" or str((inbound or {}).get("security") or "").lower() == "reality":
+        if str(opts.get("fingerprint") or "").lower() == "unsafe":
+            opts["fingerprint"] = "chrome"
+    parts = [f"fp={quote(str(opts['fingerprint']), safe='')}"]
+    if opts.get("cipher_suites"):
+        parts.append(f"cs={quote(str(opts['cipher_suites']), safe='')}")
+    if allow_ech and opts.get("ech"):
+        # Xray/VLESS share links use the short `ech` parameter.
+        parts.append(f"ech={quote(str(opts['ech']), safe='')}")
+    fm = opts.get("finalmask") or {}
+    if isinstance(fm, dict) and fm:
+        try:
+            parts.append("fm=" + quote(json.dumps(fm, separators=(",", ":"), ensure_ascii=False), safe=""))
+        except Exception:
+            pass
+    if opts.get("sni_spoof") and (opts.get("fake_sni") or opts.get("spoof_ip")):
+        spoof = {
+            "active": True,
+            "fakeSni": str(opts.get("fake_sni") or ""),
+            "spoofIp": str(opts.get("spoof_ip") or ""),
+            "targetPort": 443,
+        }
+        parts.append("snispoofing=" + quote(json.dumps(spoof, separators=(",", ":"), ensure_ascii=False), safe=""))
+    return "&" + "&".join(parts) if parts else ""
 
 
 def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr: str = None, remark_tag: str = None) -> str:
@@ -2588,7 +2676,8 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
             logger.warning("Skipping Reality config for user %s: invalid short_id %r", user_id, sid)
             return ""
         spx = str(rs.get("spiderx") or gs.get("spiderx") or "/").strip() or "/"
-        fp = inbound.get("fingerprint") or rs.get("fingerprint") or gs.get("fingerprint") or "chrome"
+        opts = _client_transport_options(user, inbound)
+        fp = opts["fingerprint"]
         sni = inbound.get("sni") or rs.get("sni") or gs.get("sni") or "is1-ssl.mzstatic.com"
         xs = inbound.get("xhttp_settings") or {}
         # XHTTP path is a shared transport base path: the client and server
@@ -2606,7 +2695,7 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
         # xhttp (default for reality inbound) or tcp
         if (inbound.get("network") or "xhttp") == "tcp":
             params = (f"encryption=none&security=reality&type=tcp"
-                      f"&sni={quote(sni)}&fp={fp}&alpn={quote(alpn)}"
+                      f"&sni={quote(sni)}&alpn={quote(alpn)}"
                       f"&pbk={pbk}&sid={sid}&spx={spx}")
         else:
             xpb = xs.get("xPaddingBytes", "100-1000")
@@ -2633,12 +2722,12 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
         if proto in ("vmess", "trojan"):
             pw = str(user.get("trojan_password") or user.get("password") or config_uuid)
             if proto == "trojan":
-                q = (f"security=reality&type=tcp&sni={quote(sni)}&fp={quote(str(fp), safe='')}"
+                q = (f"security=reality&type=tcp&sni={quote(sni)}&fp={quote(str(fp if fp != 'unsafe' else 'chrome'), safe='')}"
                      f"&pbk={quote(pbk, safe='')}&sid={sid}&spx={quote(spx, safe='')}")
                 return f"trojan://{quote(pw, safe='')}@{host}:{port}?{q}#{remark}"
             obj = {"v":"2","ps":f"Pars Space - {username}","add":host,"port":int(port or 443),"id":config_uuid,"aid":0,"scy":"auto","net":"tcp","type":"none","tls":"reality","sni":sni,"fp":str(fp),"pbk":pbk,"sid":sid,"spx":spx}
             return "vmess://" + base64.b64encode(json.dumps(obj,separators=(",",":"),ensure_ascii=False).encode()).decode()
-        return f"vless://{config_uuid}@{host}:{port}?{params}{_finalmask_query(inbound)}#{remark}"
+        return f"vless://{config_uuid}@{host}:{port}?{params}{_client_extra_query(user, inbound, allow_ech=False)}#{remark}"
 
     # ── TLS (WS default / XHTTP selectable) — served by the FastAPI relay ──
     # address/host/sni always = the panel main domain; port 443 (Railway TLS).
@@ -2656,17 +2745,17 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
             rpath = f"/reverse/{config_uuid}"
             params = ("encryption=none&security=tls&type=ws"
                       f"&host={quote(wdom)}&path={quote(rpath, safe='')}&sni={quote(wdom)}"
-                      f"&fp=chrome&alpn={quote(alpn)}")
+                      f"&alpn={quote(alpn)}")
             rev_rem = quote(f"Pars Space - {username} Reverse".strip())
-            return f"vless://{config_uuid}@{wdom}:443?{params}{_finalmask_query(inbound)}#{rev_rem}"
+            return f"vless://{config_uuid}@{wdom}:443?{params}{_client_extra_query(user, inbound)}#{rev_rem}"
         # Plain tunnel: user → Railway → Worker → site (path /tunnel/{uuid},
         # addressed to the panel/Railway domain).
         tpath = f"/tunnel/{config_uuid}"
         params = ("encryption=none&security=tls&type=ws"
                   f"&host={quote(panel_domain)}&path={quote(tpath, safe='')}&sni={quote(panel_domain)}"
-                  f"&fp=chrome&alpn={quote(alpn)}")
+                  f"&alpn={quote(alpn)}")
         tun_rem = quote(f"Pars Space - {username} Tunnel".strip())
-        return f"vless://{config_uuid}@{panel_domain}:443?{params}{_finalmask_query(inbound)}#{tun_rem}"
+        return f"vless://{config_uuid}@{panel_domain}:443?{params}{_client_extra_query(user, inbound)}#{tun_rem}"
 
     # The exact default TLS+WS inbound is the only inbound served by the FastAPI
     # WebSocket relay. Other inbounds must use their own stored transport/domain/port.
@@ -2704,16 +2793,19 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
         xpath = f"/xhttp-siz10/{xmode}/{config_uuid}"
         params = (f"encryption=none&security={security}&type=xhttp"
                   f"&host={quote(host)}&path={quote(xpath, safe='')}&sni={quote(host)}"
-                  f"&fp=chrome&alpn={quote(alpn)}&mode={xmode}&extra={extra}")
+                  f"&alpn={quote(alpn)}&mode={xmode}&extra={extra}"
+                  f"{_client_extra_query(user, inbound)}")
     elif transport == "grpc":
         gs = (inbound.get("grpc_settings") or {}) if inbound else {}
         service = str(gs.get("serviceName") or gs.get("service_name") or "pars-space").strip() or "pars"
         params = (f"encryption=none&security={security}&type=grpc"
                   f"&serviceName={quote(service)}&sni={quote(host)}"
-                  f"&fp=chrome&alpn={quote(alpn)}")
+                  f"&alpn={quote(alpn)}"
+                  f"{_client_extra_query(user, inbound)}")
     elif transport == "tcp":
         params = (f"encryption=none&security={security}&type=tcp"
-                  f"&sni={quote(host)}&fp=chrome&alpn={quote(alpn)}")
+                  f"&sni={quote(host)}&alpn={quote(alpn)}"
+                  f"{_client_extra_query(user, inbound)}")
     else:  # ws
         # Only the exact default TLS+WS inbound may use /ws/{uuid}; other WS
         # inbounds keep their own configured path if present.
@@ -2724,7 +2816,8 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
             ws_path = configured_path if configured_path.startswith("/") else f"/{configured_path}"
         params = (f"encryption=none&security={security}&type=ws"
                   f"&host={quote(host)}&path={quote(ws_path, safe='')}&sni={quote(host)}"
-                  f"&fp=chrome&alpn={quote(alpn)}")
+                  f"&alpn={quote(alpn)}"
+                  f"{_client_extra_query(user, inbound)}")
     if proto in ("vmess", "trojan"):
         generated = _generate_protocol_share_link(
             config_uuid, username, str(user.get("password") or user.get("trojan_password") or ""),
@@ -2732,7 +2825,7 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
         )
         if generated:
             return generated
-    return f"vless://{config_uuid}@{host}:{port}?{params}{_finalmask_query(inbound)}#{remark}"
+    return f"vless://{config_uuid}@{host}:{port}?{params}#{remark}"
 
 
 def generate_custom_ip_configs(user_id: str, user: dict) -> dict:
@@ -2927,8 +3020,8 @@ def _worker_configs(user_id: str, user: dict, inbound: dict, stored_path: str, b
         f"&host={quote(wdomain, safe='')}"
         f"&path={quote(wpath, safe='')}"
         f"&sni={quote(wdomain, safe='')}"
-        "&fp=chrome"
         "&alpn=http%2F1.1"
+        f"{_client_extra_query(user, inbound)}"
     )
     return [f"vless://{cfg_uuid}@{address}:{port}?{params}#{remark}"]
 
@@ -4953,6 +5046,14 @@ async def list_users(_=Depends(require_auth)):
             "subscription_url": f"https://{host}/link/{u.get('config_uuid')}",
             "subscription_type": "per-user",
             "support_channel_id": u.get("support_channel_id", ""),
+            "anti_ban_enabled": bool(u.get("anti_ban_enabled")),
+            "anti_ban_mode": u.get("anti_ban_mode", "ff"),
+            "client_fingerprint": u.get("client_fingerprint", ""),
+            "client_ech": u.get("client_ech", ""),
+            "client_cipher_suites": u.get("client_cipher_suites", ""),
+            "sni_spoof_v2box": bool(u.get("sni_spoof_v2box")),
+            "fake_sni": u.get("fake_sni", ""),
+            "spoof_ip": u.get("spoof_ip", ""),
             "duration_days": int(u.get("duration_days") or 0),
             "connections": sum(1 for c in connections.values() if c.get("uuid") == u.get("config_uuid")),
             "node_configs": dict(u.get("node_configs") or {}),
@@ -5152,9 +5253,20 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
         }
     else:
         custom_ip_inbounds = {"cf": [], "railway": []}
-    # Sni spoof for v2box: when enabled, TLS WS and Worker configs include
-    # snispoofing JSON parameter. Does not apply to Reality/XHTTP Reality.
+    # Client-side anti-ban/transport presets. These are stored per user so the
+    # public subscription regenerates the same working share links on every request.
+    anti_ban_enabled = bool(body.get("anti_ban_enabled"))
+    anti_ban_mode = str(body.get("anti_ban_mode") or "ff").strip().lower()
+    if anti_ban_mode not in ("ff", "ech"):
+        anti_ban_mode = "ff"
     sni_spoof_v2box = bool(body.get("sni_spoof_v2box"))
+    fake_sni = str(body.get("fake_sni") or "").strip()
+    spoof_ip = str(body.get("spoof_ip") or "").strip()
+    client_fingerprint = str(body.get("client_fingerprint") or "").strip()
+    client_ech = str(body.get("client_ech") or "").strip()
+    client_cipher_suites = str(body.get("client_cipher_suites") or "").strip()
+    raw_client_finalmask = body.get("client_finalmask")
+    client_finalmask = raw_client_finalmask if isinstance(raw_client_finalmask, dict) else {}
 
     # If transport_type not given explicitly, derive it from the primary inbound
     # (so an xhttp inbound produces an xhttp user).
@@ -5289,6 +5401,14 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
             "custom_ip_type": custom_ip_type,
             "custom_ip_inbounds": custom_ip_inbounds,
             "sni_spoof_v2box": sni_spoof_v2box,
+            "fake_sni": fake_sni,
+            "spoof_ip": spoof_ip,
+            "anti_ban_enabled": anti_ban_enabled,
+            "anti_ban_mode": anti_ban_mode,
+            "client_fingerprint": client_fingerprint,
+            "client_ech": client_ech,
+            "client_cipher_suites": client_cipher_suites,
+            "client_finalmask": client_finalmask,
             "ssh_username": ssh_username,
             "ssh_password": ssh_password,
             "dark_tunnel_enabled": dark_tunnel_enabled,
@@ -5537,6 +5657,19 @@ async def edit_user(user_id: str, request: Request, _=Depends(require_auth)):
             u["fake_sni"] = str(body["fake_sni"] or "").strip()
         if "spoof_ip" in body:
             u["spoof_ip"] = str(body["spoof_ip"] or "").strip()
+        if "anti_ban_enabled" in body:
+            u["anti_ban_enabled"] = bool(body["anti_ban_enabled"])
+        if "anti_ban_mode" in body:
+            mode = str(body.get("anti_ban_mode") or "ff").strip().lower()
+            u["anti_ban_mode"] = mode if mode in ("ff", "ech") else "ff"
+        if "client_fingerprint" in body:
+            u["client_fingerprint"] = str(body.get("client_fingerprint") or "").strip()
+        if "client_ech" in body:
+            u["client_ech"] = str(body.get("client_ech") or "").strip()
+        if "client_cipher_suites" in body:
+            u["client_cipher_suites"] = str(body.get("client_cipher_suites") or "").strip()
+        if "client_finalmask" in body:
+            u["client_finalmask"] = body.get("client_finalmask") if isinstance(body.get("client_finalmask"), dict) else {}
         if "proxy_ip_enabled" in body:
             en = bool(body["proxy_ip_enabled"])
             u["proxy_ip_enabled"] = en and WORKER.get("connected")
@@ -8715,12 +8848,16 @@ async def create_multi_config(request: Request, _=Depends(require_auth)):
     support = str(body.get("support_channel_id") or "").strip()[:120]
     traffic_gb = max(0.0, float(body.get("traffic_limit_gb") or 0))
     expire_days = max(0, int(body.get("expire_days") or 0))
+    anti_ban_enabled = bool(body.get("anti_ban_enabled"))
+    anti_ban_mode = str(body.get("anti_ban_mode") or "ff").strip().lower()
+    if anti_ban_mode not in ("ff", "ech"):
+        anti_ban_mode = "ff"
     if inbound_id and inbound_id not in INBOUNDS:
         raise HTTPException(status_code=404, detail="inbound not found")
     user_ids = []
     for i in range(count):
         suffix = f"{i+1:02d}"
-        req_body = {"username": f"{name}-{suffix}", "password": secrets.token_urlsafe(10), "protocol": "vless", "traffic_limit_gb": traffic_gb, "expire_days": expire_days, "inbound_ids": [inbound_id] if inbound_id else [], "support_channel_id": support}
+        req_body = {"username": f"{name}-{suffix}", "password": secrets.token_urlsafe(10), "protocol": "vless", "traffic_limit_gb": traffic_gb, "expire_days": expire_days, "inbound_ids": [inbound_id] if inbound_id else [], "support_channel_id": support, "anti_ban_enabled": anti_ban_enabled, "anti_ban_mode": anti_ban_mode, "sni_spoof_v2box": anti_ban_enabled, "fake_sni": ANTI_BAN_FAKE_SNI if anti_ban_enabled else "", "spoof_ip": ANTI_BAN_SPOOF_IP if anti_ban_enabled else ""}
         class _Req:
             async def json(self, _body=req_body): return _body
         created = await create_user(_Req(), {"kind": "session"})
