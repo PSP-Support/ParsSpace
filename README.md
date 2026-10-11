@@ -56,16 +56,6 @@
 - Multi Config شامل نام کلی، تعداد کانفیگ، اینباند، حجم، اعتبار، Support ID و لینک اشتراک است.
 - جزئیات Multi Config مصرف، اتصال لحظه‌ای و میانگین اتصال ثبت‌شده هر کانفیگ را نمایش می‌دهد.
 
-## ساختار
-
-- `main.py`، Backend و API
-- `static/index.html`، داشبورد Pars Space
-- `static/login.html`، صفحه ورود
-- `static/sub.html`، صفحه اشتراک
-- `preview/dashboard-review.html`، Preview تعاملی نمایشی
-- `preview/assets/`، SVGهای اختصاصی Preview
-- `worker/worker.js`، Cloudflare Worker
-
 ## اجرا
 
 متغیرهای Railway:
