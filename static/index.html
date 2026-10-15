@@ -1,0 +1,1654 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pars Space</title>
+<style>
+:root{
+ --bg:#f3f4f6;--surface:rgba(255,255,255,.78);--surface2:#fff;--text:#141517;--muted:#74777d;
+ --line:rgba(0,0,0,.08);--soft:#eceef1;--accent:#111;--accentText:#fff;--danger:#b42318;
+ --shadow:0 20px 70px rgba(0,0,0,.07);--radius:24px;
+}
+[data-theme=dark]{--bg:#0d0e10;--surface:rgba(25,26,29,.78);--surface2:#18191c;--text:#f5f5f5;--muted:#9a9da4;--line:rgba(255,255,255,.09);--soft:#24262a;--accent:#f5f5f5;--accentText:#111;--shadow:0 25px 80px rgba(0,0,0,.28)}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif}
+body{overflow-x:hidden}.ambient{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0;background:radial-gradient(circle at 15% 20%,color-mix(in srgb,var(--accent) 5%,transparent),transparent 32%),radial-gradient(circle at 85% 75%,color-mix(in srgb,var(--accent) 6%,transparent),transparent 30%)}
+.orb{position:absolute;width:430px;height:430px;background:color-mix(in srgb,var(--surface) 34%,transparent);box-shadow:inset 0 0 80px color-mix(in srgb,var(--text) 4%,transparent),0 0 120px color-mix(in srgb,var(--text) 5%,transparent);border:1px solid var(--line);border-radius:50%;filter:blur(.2px);animation:orb 15s ease-in-out infinite}
+.orb.a{top:-190px;right:-120px}.orb.b{bottom:-220px;left:-130px;width:520px;height:520px;animation-delay:-6s}
+@keyframes orb{50%{transform:translate3d(20px,-25px,0) scale(1.05)}}
+.app{position:relative;z-index:1;max-width:1500px;margin:auto;padding:18px}
+.top{position:sticky;overflow:hidden;top:12px;z-index:30;display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);background:var(--surface);backdrop-filter:blur(26px);border-radius:20px;box-shadow:var(--shadow)}
+.top:after{content:"";position:absolute;inset:-120% -20%;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.07) 48%,transparent 60%);transform:translateX(-45%);animation:glassSweep 9s ease-in-out infinite;pointer-events:none}@keyframes glassSweep{55%,100%{transform:translateX(45%)}}
+.brand{display:flex;align-items:center;gap:10px;font-weight:900;letter-spacing:-.05em;white-space:nowrap}.logo{width:40px;height:40px;border-radius:13px;background:var(--accent);color:var(--accentText);display:grid;place-items:center;box-shadow:0 10px 25px rgba(0,0,0,.14)}
+.nav{display:flex;gap:5px;flex:1;overflow:auto;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}
+.nav button,.iconbtn{border:0;background:transparent;color:var(--muted);font:inherit;cursor:pointer;border-radius:13px;transition:.22s}
+.nav button{padding:10px 12px;white-space:nowrap}.nav button:hover,.iconbtn:hover{background:var(--soft);color:var(--text)}.nav button.active{background:var(--accent);color:var(--accentText)}
+.tools{display:flex;gap:6px}.iconbtn{width:40px;height:40px;border:1px solid var(--line);display:grid;place-items:center}
+main{padding:26px 0 60px}.view{display:none;animation:enter .38s cubic-bezier(.2,.8,.2,1)}.view.active{display:block}@keyframes enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.hero{display:grid;grid-template-columns:1.35fr .65fr;gap:16px}.card{background:linear-gradient(145deg,color-mix(in srgb,var(--surface) 94%,transparent),color-mix(in srgb,var(--surface) 72%,transparent));border:1px solid color-mix(in srgb,var(--line) 80%,transparent);border-radius:var(--radius);box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.08);backdrop-filter:blur(24px) saturate(145%);-webkit-backdrop-filter:blur(24px) saturate(145%)}
+.heroMain{padding:38px;min-height:250px;position:relative;overflow:hidden}.heroMain:after{content:"";position:absolute;width:250px;height:250px;border:34px solid var(--line);border-radius:50%;left:-60px;bottom:-110px;animation:spin 18s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+.eyebrow{font-size:11px;letter-spacing:.18em;color:var(--muted)}h1{font-size:clamp(40px,6vw,76px);line-height:.92;letter-spacing:-.075em;margin:12px 0 20px}.heroSide{padding:25px;display:flex;flex-direction:column;justify-content:space-between}.big{font-size:48px;font-weight:900;letter-spacing:-.06em}.muted{font-size:12px;color:var(--muted)}
+.status{display:inline-flex;align-items:center;gap:8px;padding:8px 11px;border-radius:999px;background:var(--soft);font-size:12px}.dot{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 0 5px color-mix(in srgb,currentColor 10%,transparent)}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin:14px 0}.stat{padding:20px}.stat b{display:block;font-size:30px;letter-spacing:-.05em}.stat span{color:var(--muted);font-size:12px}
+.cols{display:grid;grid-template-columns:1.35fr .65fr;gap:14px}.cardPad{padding:22px}.head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:17px}.head h2{font-size:18px;margin:0 0 3px}.head p{margin:0;color:var(--muted);font-size:12px}
+.chart{height:225px;border-radius:18px;background:linear-gradient(to bottom,var(--soft),transparent);overflow:hidden}.chart svg{width:100%;height:100%}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.action,.btn{border:1px solid var(--line);background:var(--surface2);color:var(--text);border-radius:14px;padding:12px;font:inherit;cursor:pointer;transition:.2s}.action{text-align:right}.action:hover,.btn:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.08)}.btn.dark{background:var(--accent);color:var(--accentText);border-color:var(--accent)}.btn.danger{color:#fff;background:var(--danger);border-color:var(--danger)}.btn.small{padding:8px 10px;font-size:12px}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.toolbar .spacer{flex:1}
+.tableWrap{overflow:auto}.table{width:100%;border-collapse:separate;border-spacing:0 7px;min-width:720px}.table th{font-size:11px;color:var(--muted);text-align:right;padding:0 12px}.table td{background:var(--soft);padding:12px;font-size:13px}.table td:first-child{border-radius:0 13px 13px 0}.table td:last-child{border-radius:13px 0 0 13px}.pill{font-size:10px;padding:5px 8px;border-radius:999px;background:var(--soft);border:1px solid var(--line)}
+.form{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}.field{display:grid;gap:7px}.field.full{grid-column:1/-1}.field label{font-size:11px;color:var(--muted)}input,select,textarea{width:100%;border:1px solid var(--line);background:var(--surface2);color:var(--text);border-radius:13px;padding:12px;font:inherit;outline:none}input:focus,select:focus,textarea:focus{border-color:var(--text);box-shadow:0 0 0 4px color-mix(in srgb,var(--text) 7%,transparent)}
+.output{margin-top:14px;background:#101114;color:#eee;border-radius:15px;padding:14px;direction:ltr;text-align:left;font:12px ui-monospace,SFMono-Regular,Consolas,monospace;word-break:break-all;min-height:54px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:14px}.empty{padding:35px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:18px}
+.toast{position:fixed;z-index:100;left:50%;bottom:25px;transform:translate(-50%,25px);opacity:0;background:var(--accent);color:var(--accentText);padding:12px 17px;border-radius:13px;transition:.25s;pointer-events:none;font-size:12px}.toast.show{opacity:1;transform:translate(-50%,0)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:18px;z-index:90}.modal.open{display:flex}.modalBox{width:min(720px,100%);max-height:90vh;overflow:auto;padding:22px;border-radius:25px;background:var(--surface2);border:1px solid var(--line);box-shadow:0 30px 100px rgba(0,0,0,.22);animation:pop .28s ease}@keyframes pop{from{opacity:0;transform:scale(.97) translateY(10px)}to{opacity:1;transform:none}}
+.close{float:left;border:0;background:var(--soft);color:var(--text);width:34px;height:34px;border-radius:10px;cursor:pointer}
+@media(max-width:1000px){.hero,.cols,.split{grid-template-columns:1fr}.grid4{grid-template-columns:1fr 1fr}.nav{order:3;flex-basis:100%}.top{flex-wrap:wrap}.tools{margin-right:auto}}
+@media(max-width:600px){.app{padding:9px}.top{top:6px;border-radius:17px}.userHide{display:none}.heroMain{padding:26px}h1{font-size:43px}.grid4{grid-template-columns:1fr 1fr}.form{grid-template-columns:1fr}.field.full{grid-column:auto}.actions{grid-template-columns:1fr}.cardPad{padding:17px}}
+
+/* Pars Space direction-safe layout + compact mobile */
+html[dir="ltr"] .table th{text-align:left}html[dir="rtl"] .table th{text-align:right}
+html[dir="ltr"] .action{text-align:left}html[dir="rtl"] .action{text-align:right}
+html[dir="ltr"] .close{float:right}html[dir="rtl"] .close{float:left}
+.foldToggle{width:100%;display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);background:var(--soft);color:var(--text);padding:12px 14px;border-radius:14px;cursor:pointer;font:inherit;font-weight:800}.foldToggle .chev{transition:transform .22s}.foldToggle.open .chev{transform:rotate(180deg)}.foldBody{display:none;padding-top:12px}.foldBody.open{display:block}.hint{font-size:10px;color:var(--muted);line-height:1.7;margin-top:5px}.finalmask{min-height:130px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;direction:ltr;text-align:left;font-size:11px}.antiSwitch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px;border:1px solid var(--line);background:var(--soft);border-radius:16px;cursor:pointer;user-select:none}.antiSwitch .copy{min-width:0}.antiSwitch .copy b{display:block;font-size:13px}.antiSwitch .copy small{display:block;color:var(--muted);font-size:10px;line-height:1.6;margin-top:3px}.iosToggle{position:relative;width:50px;height:30px;flex:0 0 50px;border-radius:999px;background:rgba(128,128,128,.35);border:1px solid var(--line);transition:.22s}.iosToggle:after{content:"";position:absolute;top:2px;right:22px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.25);transition:.22s}.antiSwitch.on .iosToggle{background:#22c55e;border-color:#22c55e}.antiSwitch.on .iosToggle:after{right:2px}.presetBox{display:grid;gap:8px;margin-top:10px;padding:12px;border:1px solid var(--line);background:color-mix(in srgb,var(--soft) 80%,transparent);border-radius:15px}.presetBox[hidden]{display:none!important}.presetBox .miniLabel{font-size:10px;color:var(--muted)}
+@media(max-width:600px){.table{min-width:620px}.modalBox{padding:16px;border-radius:20px}.nav button{padding:9px 10px}.form{gap:10px}}
+
+/* v7 visual system: readable liquid glass without washing out light mode */
+:root{--bg:#e8ebf0;--surface:rgba(255,255,255,.72);--surface2:rgba(255,255,255,.9);--text:#17191d;--muted:#5f6670;--line:rgba(20,24,32,.13);--soft:rgba(232,235,240,.82);--accent:#15171b;--accentText:#fff;--shadow:0 20px 60px rgba(20,24,32,.11)}
+[data-theme=dark]{--bg:#090b0f;--surface:rgba(24,27,33,.72);--surface2:rgba(22,25,30,.88);--text:#f7f8fa;--muted:#b0b6c0;--line:rgba(255,255,255,.12);--soft:rgba(35,39,47,.78);--accent:#f3f5f7;--accentText:#0b0d10;--shadow:0 25px 85px rgba(0,0,0,.38)}
+.card,.top,.modalBox{box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.13);transition:transform .24s ease,box-shadow .24s ease,border-color .24s ease}
+.card:hover{box-shadow:0 25px 75px rgba(0,0,0,.12),inset 0 1px 0 rgba(255,255,255,.16)}
+.btn,.action,.iconbtn,.nav button{transition:transform .22s ease,box-shadow .22s ease,background .22s ease,color .22s ease}
+.btn:hover,.action:hover{transform:translateY(-2px) scale(1.01)}
+.btn:active,.action:active{transform:translateY(0) scale(.985)}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+.usageLine{height:6px;border-radius:999px;background:var(--soft);overflow:hidden;margin:10px 0 6px}.usageLine i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:inherit}.dailyBars{height:160px;display:flex;align-items:flex-end;gap:3px;padding:12px 4px 4px;overflow-x:auto;border:1px solid var(--line);border-radius:18px;background:var(--soft)}.dailyBar{height:100%;min-width:12px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:5px}.dailyBar span{display:block;width:10px;min-height:4px;border-radius:7px 7px 3px 3px;background:linear-gradient(180deg,var(--gold2),var(--gold))}.dailyBar small{font-size:8px;color:var(--muted);writing-mode:vertical-rl;transform:rotate(180deg)}.subCard{align-items:center;margin-bottom:8px;transition:transform .16s ease}.subCard:hover{transform:translateY(-2px)}
+.traffic-toolbar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.traffic-toolbar select{width:auto;min-width:130px}.traffic-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:10px}.miniStat{padding:12px;border:1px solid var(--line);border-radius:15px;background:var(--soft)}.miniStat b{display:block;font-size:18px;margin-top:3px}.speedMeter{height:18px;border-radius:999px;background:var(--soft);border:1px solid var(--line);overflow:hidden;margin-top:10px}.speedFill{height:100%;width:0;background:linear-gradient(90deg,#7c3aed,#2563eb,#22c55e);transition:width .7s cubic-bezier(.2,.8,.2,1)}.speedValue{font-size:38px;font-weight:900;letter-spacing:-.06em}.configBox{position:relative}.configBox .output{max-height:230px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}.configActions{display:flex;gap:7px;justify-content:flex-end;margin-top:8px}.loadingScreen{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:var(--bg);transition:opacity .5s ease,visibility .5s ease}.loadingScreen.hide{opacity:0;visibility:hidden;pointer-events:none}.loaderCard{width:min(360px,86vw);padding:28px;border:1px solid var(--line);background:var(--surface);backdrop-filter:blur(28px);border-radius:26px;text-align:center;box-shadow:var(--shadow)}.loaderRing{width:48px;height:48px;border:3px solid var(--line);border-top-color:var(--text);border-radius:50%;margin:0 auto 14px;animation:spinLoader .8s linear infinite}@keyframes spinLoader{to{transform:rotate(360deg)}}.loaderBar{height:5px;background:var(--soft);border-radius:99px;overflow:hidden;margin-top:16px}.loaderBar i{display:block;height:100%;width:45%;background:var(--accent);border-radius:99px;animation:loadBar 1.25s ease-in-out infinite}@keyframes loadBar{0%{transform:translateX(-120%)}100%{transform:translateX(280%)}}
+@media(max-width:600px){.traffic-meta{grid-template-columns:1fr 1fr}.traffic-toolbar select{width:100%}.speedValue{font-size:32px}.card:hover{transform:none}.btn:hover,.action:hover{transform:none}.output{font-size:11px}}
+
+/* Pars Space mobile performance layer */
+.mobileMenuBtn{display:none}
+.heroIcon{display:none!important}
+@media(max-width:720px){
+  .app{padding:7px}.top{position:sticky;top:5px;display:grid;grid-template-columns:1fr auto;gap:8px;padding:8px 9px;overflow:visible}
+  .brand{min-width:0}.brand span{overflow:hidden;text-overflow:ellipsis}.mobileMenuBtn{display:grid!important;order:0}.tools{order:2;gap:5px}.tools .mobileMenuBtn{order:-1}.nav{grid-column:1/-1;order:3;display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:0;opacity:0;overflow:hidden;transform:translateY(-8px);pointer-events:none;transition:max-height .18s ease,opacity .14s ease,transform .18s ease;padding:0}
+  .top.menu-open .nav{max-height:430px;opacity:1;transform:none;pointer-events:auto;padding-top:3px}
+  .nav button{width:100%;padding:10px 9px;border-radius:13px;text-align:center;min-height:42px}
+  main{padding-top:15px}.sectionHero{padding:4px 0 10px}.sectionHero h1{font-size:32px}.card{backdrop-filter:blur(12px)!important;-webkit-backdrop-filter:blur(12px)!important}.ambient,.orb{display:none!important}
+  .top:after{display:none}.card:hover{transform:none!important}.btn:hover,.action:hover{transform:none!important}.view{animation:mobileEnter .16s ease}@keyframes mobileEnter{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+  .modal{align-items:flex-end;padding:0}.modalBox{width:100%;max-height:88vh;border-radius:24px 24px 0 0;animation:sheetIn .16s ease}.modal.open .modalBox{animation:sheetIn .16s ease}@keyframes sheetIn{from{opacity:.5;transform:translateY(18px)}to{opacity:1;transform:none}}
+  .tableWrap{margin:0 -4px}.table{min-width:650px}.row{gap:8px!important}.toolbar{gap:6px}.btn.small{padding:7px 9px}.output{font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){.nav,.view,.modalBox{transition:none!important;animation:none!important}}
+
+/* PARS SPACE // BLACK-GOLD GLASS SYSTEM */
+:root{
+ --bg:#050505;--surface:rgba(22,22,22,.60);--surface2:rgba(12,12,12,.82);--text:#fff;--muted:#a6a6a6;
+ --line:rgba(255,255,255,.10);--soft:rgba(255,255,255,.055);--accent:#d9b45a;--accent2:#fff;--accentText:#090909;
+ --gold:#e0bb62;--gold2:#fff2b2;--shadow:0 28px 100px rgba(0,0,0,.48);--radius:28px;
+}
+[data-theme=light]{--bg:#f4f4f2;--surface:rgba(255,255,255,.66);--surface2:rgba(255,255,255,.88);--text:#0b0b0b;--muted:#666;--line:rgba(0,0,0,.10);--soft:rgba(0,0,0,.045);--accent:#b98b28;--accent2:#111;--accentText:#fff;--shadow:0 25px 70px rgba(0,0,0,.12)}
+html,body{background:radial-gradient(circle at 85% 8%,rgba(224,187,98,.11),transparent 28%),radial-gradient(circle at 5% 85%,rgba(255,255,255,.055),transparent 30%),var(--bg)}
+body{font-feature-settings:"ss01" 1;}
+.ambient{background:radial-gradient(circle at 80% 15%,rgba(224,187,98,.10),transparent 30%),radial-gradient(circle at 12% 85%,rgba(255,255,255,.045),transparent 32%);}
+.orb{background:linear-gradient(145deg,rgba(255,255,255,.12),rgba(224,187,98,.045) 42%,rgba(255,255,255,.01));border-color:rgba(224,187,98,.16);box-shadow:inset -30px -30px 80px rgba(0,0,0,.28),inset 20px 20px 60px rgba(255,255,255,.05),0 0 110px rgba(224,187,98,.08);}
+.top{background:linear-gradient(135deg,rgba(20,20,20,.80),rgba(10,10,10,.55));border:1px solid rgba(255,255,255,.10);box-shadow:0 18px 70px rgba(0,0,0,.35),inset 0 1px rgba(255,255,255,.10);backdrop-filter:blur(26px) saturate(140%);-webkit-backdrop-filter:blur(26px) saturate(140%);}
+.logo{color:var(--gold);text-shadow:0 0 22px rgba(224,187,98,.25)}
+.nav button{border:1px solid transparent;color:var(--muted);border-radius:15px;transition:.22s ease;}
+.nav button:hover{color:var(--text);background:rgba(255,255,255,.055);transform:translateY(-1px)}
+.nav button.active{color:#080808;background:linear-gradient(135deg,var(--gold2),var(--gold));box-shadow:0 8px 25px rgba(224,187,98,.20),inset 0 1px rgba(255,255,255,.75);}
+.card{position:relative;overflow:hidden;background:linear-gradient(145deg,rgba(255,255,255,.075),rgba(255,255,255,.025) 48%,rgba(224,187,98,.035));border:1px solid rgba(255,255,255,.105);box-shadow:var(--shadow),inset 0 1px rgba(255,255,255,.12),inset 0 -1px rgba(0,0,0,.32);backdrop-filter:blur(28px) saturate(150%);-webkit-backdrop-filter:blur(28px) saturate(150%);transform:translateZ(0);}
+.card:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(120deg,rgba(255,255,255,.10),transparent 24%,transparent 68%,rgba(224,187,98,.05));opacity:.75}
+.cardPad,.heroMain,.heroSide,.stat{border-radius:30px}
+.stat{transition:transform .25s ease,box-shadow .25s ease;border-color:rgba(224,187,98,.10)}
+.stat:hover,.action:hover,.row:hover{transform:translateY(-3px);box-shadow:0 22px 60px rgba(0,0,0,.34),inset 0 1px rgba(255,255,255,.12)}
+.heroMain{background:radial-gradient(circle at 80% 15%,rgba(224,187,98,.16),transparent 35%),linear-gradient(145deg,rgba(255,255,255,.09),rgba(255,255,255,.025));}
+.heroMain h1{letter-spacing:-.055em;text-shadow:0 10px 40px rgba(0,0,0,.45)}
+.big{color:var(--gold2);text-shadow:0 0 35px rgba(224,187,98,.20)}
+.btn{border-color:rgba(255,255,255,.12);background:rgba(255,255,255,.055);color:var(--text);box-shadow:inset 0 1px rgba(255,255,255,.10),0 10px 30px rgba(0,0,0,.18);transition:.2s ease}
+.btn:hover{border-color:rgba(224,187,98,.35);transform:translateY(-1px);box-shadow:0 15px 38px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.16)}
+.btn.dark{color:#080808;background:linear-gradient(135deg,var(--gold2),var(--gold));border-color:rgba(255,242,178,.65);box-shadow:0 12px 35px rgba(224,187,98,.20),inset 0 1px #fff}
+input,select,textarea{background:rgba(0,0,0,.24)!important;border:1px solid rgba(255,255,255,.105)!important;color:var(--text)!important;border-radius:16px!important;box-shadow:inset 0 1px rgba(255,255,255,.055),0 8px 24px rgba(0,0,0,.12);outline:none;transition:.18s ease}
+[data-theme=light] input,[data-theme=light] select,[data-theme=light] textarea{background:rgba(255,255,255,.62)!important}
+input:focus,select:focus,textarea:focus{border-color:rgba(224,187,98,.72)!important;box-shadow:0 0 0 3px rgba(224,187,98,.10),inset 0 1px rgba(255,255,255,.10)}
+.pill{border-color:rgba(224,187,98,.20);background:rgba(224,187,98,.08);color:var(--gold2)}
+.tableWrap{border-radius:24px;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.14);overflow:auto}
+.table th{color:var(--gold2);font-weight:650}.table td{border-color:rgba(255,255,255,.065)!important}
+.action{border:1px solid rgba(255,255,255,.09)!important;background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(255,255,255,.025))!important;box-shadow:inset 0 1px rgba(255,255,255,.10),0 16px 45px rgba(0,0,0,.18);border-radius:22px!important;transition:.22s ease}
+.modal{background:rgba(0,0,0,.62);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.modalBox{background:linear-gradient(145deg,rgba(24,24,24,.92),rgba(10,10,10,.88));border:1px solid rgba(255,255,255,.12);box-shadow:0 40px 120px rgba(0,0,0,.62),inset 0 1px rgba(255,255,255,.12),0 0 80px rgba(224,187,98,.05);border-radius:32px;backdrop-filter:blur(35px) saturate(150%);-webkit-backdrop-filter:blur(35px) saturate(150%)}
+.close{background:rgba(255,255,255,.07)!important;border:1px solid rgba(255,255,255,.10)!important;color:var(--text)!important;border-radius:13px!important;transition:.2s}.close:hover{background:rgba(224,187,98,.18)!important;color:var(--gold2)!important}
+.foldToggle{background:linear-gradient(145deg,rgba(255,255,255,.075),rgba(255,255,255,.025));border:1px solid rgba(255,255,255,.10);border-radius:18px;color:var(--text);box-shadow:inset 0 1px rgba(255,255,255,.08)}
+.output,.configBox{background:rgba(0,0,0,.30)!important;border:1px solid rgba(224,187,98,.10)!important;border-radius:20px!important}
+#clientBuilderModal .modalBox,#inboundModal .modalBox{max-width:980px}
+.sectionHero{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:6px 2px 18px}.sectionHero .heroIcon{width:58px;height:58px;border-radius:19px;display:grid;place-items:center;color:#080808;background:linear-gradient(145deg,var(--gold2),var(--gold));box-shadow:0 18px 40px rgba(224,187,98,.20),inset 0 1px #fff;font-size:24px;font-weight:900}
+.glassGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.glassChoice{cursor:pointer;border:1px solid rgba(255,255,255,.10);border-radius:24px;padding:18px;background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(255,255,255,.025));box-shadow:inset 0 1px rgba(255,255,255,.08),0 16px 45px rgba(0,0,0,.18);transition:.2s ease}.glassChoice:hover{transform:translateY(-3px);border-color:rgba(224,187,98,.35)}.glassChoice.active{border-color:rgba(224,187,98,.75);box-shadow:0 0 0 2px rgba(224,187,98,.10),0 22px 55px rgba(224,187,98,.10),inset 0 1px #fff2b2}.glassChoice b{display:block;margin-bottom:5px}.glassChoice span{color:var(--muted);font-size:12px}
+.switch{appearance:none!important;width:54px!important;height:30px!important;border-radius:999px!important;padding:0!important;cursor:pointer;background:rgba(255,255,255,.13)!important;position:relative;border:1px solid rgba(255,255,255,.14)!important}.switch:after{content:"";position:absolute;width:24px;height:24px;top:2px;left:2px;border-radius:50%;background:#fff;box-shadow:0 3px 10px rgba(0,0,0,.35);transition:.2s}.switch:checked{background:linear-gradient(135deg,var(--gold2),var(--gold))!important}.switch:checked:after{left:26px;background:#090909}
+.advancedGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.advancedBox{padding:15px;border-radius:22px;background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.07)}
+@media(max-width:900px){.glassGrid{grid-template-columns:1fr 1fr}.advancedGrid{grid-template-columns:1fr}.app{padding:10px}.top{top:7px}.nav{overflow-x:auto;scrollbar-width:none}.nav button{white-space:nowrap}.hero{grid-template-columns:1fr!important}.cols,.split{grid-template-columns:1fr!important}}
+@media(max-width:620px){.glassGrid{grid-template-columns:1fr}.modalBox{width:calc(100vw - 16px)!important;max-height:92vh!important;padding:17px!important;border-radius:25px}.form{grid-template-columns:1fr!important}.field.full{grid-column:auto!important}.sectionHero{align-items:flex-start}.table{min-width:680px}.btn{min-height:42px}.cardPad{padding:16px!important}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.card:hover,.action:hover,.row:hover{transform:none!important}}
+
+/* Pars Space dynamic gold glass layer */
+.dynamicMesh{position:fixed;inset:0;pointer-events:none;z-index:-1;overflow:hidden;opacity:.95}
+.dynamicMesh:before,.dynamicMesh:after{content:"";position:absolute;border-radius:50%;filter:blur(42px);will-change:transform}
+.dynamicMesh:before{width:34vw;height:34vw;min-width:240px;min-height:240px;left:-8vw;top:8vh;background:radial-gradient(circle,rgba(224,187,98,.13),rgba(224,187,98,0) 68%);animation:meshFloat 18s ease-in-out infinite alternate}
+.dynamicMesh:after{width:30vw;height:30vw;min-width:220px;min-height:220px;right:-6vw;bottom:3vh;background:radial-gradient(circle,rgba(255,242,178,.09),rgba(255,242,178,0) 68%);animation:meshFloat2 22s ease-in-out infinite alternate}
+@keyframes meshFloat{to{transform:translate3d(12vw,8vh,0) scale(1.12)}}
+@keyframes meshFloat2{to{transform:translate3d(-10vw,-7vh,0) scale(1.08)}}
+.glassSheen{position:absolute;inset:-30%;pointer-events:none;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.055) 48%,rgba(224,187,98,.055) 50%,transparent 58%);transform:translateX(-35%) rotate(8deg);animation:sheen 13s ease-in-out infinite}
+@keyframes sheen{50%{transform:translateX(35%) rotate(8deg)}100%{transform:translateX(-35%) rotate(8deg)}}
+.card,.top,.modalBox{isolation:isolate}
+.card:after,.top:after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:linear-gradient(120deg,rgba(255,255,255,.055),transparent 28%,transparent 70%,rgba(224,187,98,.035));opacity:.7}
+.cardPad,.heroMain,.heroSide,.stat,.action,.row{position:relative;overflow:hidden}
+.nav button{position:relative;overflow:hidden}
+.nav button:before{content:"";position:absolute;inset:1px;border-radius:inherit;background:linear-gradient(110deg,transparent 20%,rgba(255,255,255,.12),transparent 65%);transform:translateX(-130%);transition:transform .45s ease}
+.nav button:hover:before{transform:translateX(130%)}
+@media (max-width:720px){.dynamicMesh:before{width:70vw;height:70vw;filter:blur(34px)}.dynamicMesh:after{width:62vw;height:62vw;filter:blur(34px)}.glassSheen{animation-duration:18s}.card:hover{transform:none!important}}
+@media (prefers-reduced-motion:reduce){.dynamicMesh:before,.dynamicMesh:after,.glassSheen{animation:none}.nav button:before{transition:none}}
+
+/* PARS SPACE LITE RESTORE: previous clean glass visual */
+:root{--bg:#e8ebf0;--surface:rgba(255,255,255,.72);--surface2:rgba(255,255,255,.90);--text:#17191d;--muted:#5f6670;--line:rgba(20,24,32,.13);--soft:rgba(232,235,240,.82);--accent:#15171b;--accentText:#fff;--shadow:0 20px 60px rgba(20,24,32,.11);--radius:24px}
+[data-theme=dark]{--bg:#0d0e10;--surface:rgba(25,26,29,.78);--surface2:#18191c;--text:#f5f5f5;--muted:#9a9da4;--line:rgba(255,255,255,.09);--soft:#24262a;--accent:#f5f5f5;--accentText:#111;--shadow:0 25px 80px rgba(0,0,0,.28)}
+html,body{background:var(--bg)}
+.ambient{background:radial-gradient(circle at 15% 20%,color-mix(in srgb,var(--accent) 5%,transparent),transparent 32%),radial-gradient(circle at 85% 75%,color-mix(in srgb,var(--accent) 6%,transparent),transparent 30%)}
+.orb{background:color-mix(in srgb,var(--surface) 34%,transparent);border-color:var(--line);box-shadow:inset 0 0 80px color-mix(in srgb,var(--text) 4%,transparent),0 0 120px color-mix(in srgb,var(--text) 5%,transparent)}
+.top{background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow),inset 0 1px rgba(255,255,255,.10);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+.card{background:linear-gradient(145deg,color-mix(in srgb,var(--surface) 94%,transparent),color-mix(in srgb,var(--surface) 72%,transparent));box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.08);backdrop-filter:blur(18px) saturate(125%);-webkit-backdrop-filter:blur(18px) saturate(125%)}
+.logo{color:var(--accent);text-shadow:none}
+.nav button{border:1px solid transparent;color:var(--muted)}
+.nav button:hover{color:var(--text);background:var(--soft);transform:none}
+.nav button.active{background:var(--accent);color:var(--accentText);box-shadow:none}
+.card:hover{box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.10);transform:none}
+.btn:hover,.action:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(0,0,0,.07)}
+.mobileMenuBtn{display:none}
+.dynamicMesh,.glassSheen{display:none!important}
+@media(max-width:720px){
+ .app{padding:8px}.top{top:6px;display:grid;grid-template-columns:1fr auto;gap:8px;padding:8px;border-radius:18px;overflow:visible}
+ .brand{min-width:0}.tools{grid-column:2;grid-row:1;margin:0;gap:5px}.mobileMenuBtn{display:grid!important}
+ .nav{grid-column:1/-1;grid-row:2;display:none;flex-direction:column;gap:5px;width:100%;padding:8px;margin:0;border-top:1px solid var(--line);background:color-mix(in srgb,var(--surface) 92%,transparent);border-radius:0 0 15px 15px;max-height:65vh;overflow:auto;animation:mobileNavDown .22s ease}
+ .top.menu-open .nav{display:flex}
+ .nav button{width:100%;padding:12px 14px;text-align:right;border-radius:12px}
+ html[dir=ltr] .nav button{text-align:left}
+ .top.menu-open{padding-bottom:9px}
+}
+@keyframes mobileNavDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+
+/* =========================================================
+   PARS SPACE MOBILE SHELL v8
+   Compact, touch-first, low-cost rendering.
+   ========================================================= */
+@media (max-width:720px){
+  html,body{width:100%;max-width:100%;overflow-x:hidden}
+  body{background:#090a0c}
+  .app{width:100%;max-width:none;margin:0;padding:6px}
+  .top{
+    position:sticky;top:5px;z-index:200;
+    width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;
+    gap:7px;padding:7px;border-radius:17px;
+    background:rgba(18,19,22,.96)!important;
+    border-color:rgba(255,255,255,.08)!important;
+    box-shadow:0 10px 28px rgba(0,0,0,.28)!important;
+    backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  }
+  .brand{min-width:0;gap:8px;font-size:13px}
+  .logo{width:36px;height:36px;border-radius:11px}
+  .tools{display:flex;gap:5px;margin:0!important}
+  .iconbtn{width:38px;height:38px;border-radius:11px}
+  .mobileMenuBtn{display:grid!important}
+  .nav{
+    grid-column:1/-1;grid-row:2;order:3;
+    display:grid!important;grid-template-columns:1fr 1fr;
+    gap:5px;width:100%;max-height:0;opacity:0;
+    overflow:hidden;pointer-events:none;padding:0;margin:0;
+    border-top:1px solid transparent;
+    transform:translateY(-10px);
+    transition:max-height .20s ease,opacity .14s ease,transform .20s ease,padding .20s ease,border-color .20s ease;
+  }
+  .top.menu-open .nav{
+    max-height:460px;opacity:1;pointer-events:auto;
+    transform:translateY(0);padding:7px 0 2px;
+    border-top-color:rgba(255,255,255,.07);
+  }
+  .nav button{
+    width:100%;min-height:42px;padding:9px 8px;
+    border-radius:12px;text-align:center!important;
+    background:rgba(255,255,255,.035);
+    border:1px solid rgba(255,255,255,.055);
+    transition:background .12s ease,transform .12s ease;
+  }
+  .nav button.active{background:#f2f2f2;color:#111}
+  .nav button:before{display:none!important}
+  .nav button:active{transform:scale(.985)}
+  main{padding:13px 0 36px}
+  .view{animation:mobileViewIn .14s ease!important}
+  @keyframes mobileViewIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .hero,.cols,.split,.grid4{grid-template-columns:1fr!important}
+  .heroMain{min-height:190px;padding:23px;border-radius:21px}
+  .heroSide{padding:18px;border-radius:21px}
+  h1{font-size:38px!important;line-height:.98}
+  .card,.top,.modalBox{
+    box-shadow:0 12px 35px rgba(0,0,0,.20),inset 0 1px rgba(255,255,255,.05)!important;
+  }
+  .card{
+    backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+    background:rgba(22,23,26,.94)!important;
+  }
+  .card:after,.top:after{display:none!important}
+  .ambient,.orb,.dynamicMesh,.glassSheen{display:none!important}
+  .heroIcon{display:none!important}
+  .sectionHero{padding:3px 2px 10px}
+  .sectionHero h1{font-size:30px!important}
+  .cardPad{padding:14px!important}
+  .actions{grid-template-columns:1fr!important}
+  .form{grid-template-columns:1fr!important;gap:9px!important}
+  .field.full{grid-column:auto!important}
+  input,select,textarea{min-height:44px;font-size:14px!important}
+  .btn{min-height:42px;padding:9px 11px}
+  .toolbar{gap:6px;flex-wrap:wrap}
+  .tableWrap{margin:0;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .table{min-width:620px!important}
+  .row{padding:11px!important}
+  .output,.configBox{font-size:11px!important;line-height:1.7}
+  .dailyBars{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  /* Every modal becomes a real phone sheet, never a narrow side panel. */
+  .modal{
+    position:fixed!important;inset:0!important;
+    padding:0!important;align-items:flex-end!important;justify-content:center!important;
+    background:rgba(0,0,0,.62)!important;
+    backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  }
+  .modalBox,
+  #clientBuilderModal .modalBox,
+  #inboundModal .modalBox{
+    width:calc(100vw - 10px)!important;
+    max-width:none!important;
+    max-height:calc(100dvh - 18px)!important;
+    margin:0 5px!important;
+    padding:16px!important;
+    border-radius:24px 24px 15px 15px!important;
+    overflow:auto!important;
+    overscroll-behavior:contain;
+    background:#121316!important;
+    border:1px solid rgba(255,255,255,.09)!important;
+    animation:phoneSheetIn .18s cubic-bezier(.2,.8,.2,1)!important;
+  }
+  @keyframes phoneSheetIn{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+  .modalBox .head{gap:8px}
+  .modalBox .close{position:sticky;top:0;z-index:3;float:left}
+  #clientBuilderModal .advancedGrid{grid-template-columns:1fr!important}
+  #clientBuilderModal .glassGrid{grid-template-columns:1fr!important}
+  #clientBuilderModal .sectionHero{padding-top:0}
+  #clientBuilderModal .toolbar,
+  #inboundModal .toolbar,
+  #userEditModal .toolbar{position:sticky;bottom:0;padding-top:9px;background:linear-gradient(180deg,transparent,#121316 30%);z-index:2}
+  .switch{width:52px!important;height:30px!important;flex:0 0 auto}
+  .switch:after{transition:.14s ease!important}
+  .action:hover,.card:hover,.btn:hover{transform:none!important}
+}
+@media (min-width:721px){
+  .heroIcon{display:none!important}
+}
+@media (prefers-reduced-motion:reduce){
+  .nav,.view,.modalBox{transition:none!important;animation:none!important}
+}
+
+
+/* =========================================================
+   PARS SPACE RESPONSIVE REPAIR v8.1
+   One layout system for desktop, tablet and mobile.
+   ========================================================= */
+@media (max-width:980px){
+  html,body{width:100%;max-width:100%;overflow-x:hidden}
+  .app{max-width:none;padding:8px}
+  .top{position:sticky;top:6px;z-index:300;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;width:100%;padding:8px 9px;overflow:visible}
+  .brand{min-width:0}.brand span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tools{grid-column:2;grid-row:1;margin:0!important;display:flex;gap:5px}
+  .mobileMenuBtn{display:grid!important}
+  .nav{
+    grid-column:1/-1;grid-row:2;order:3;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;width:100%;
+    max-height:0;opacity:0;overflow:hidden;pointer-events:none;padding:0;margin:0;border-top:1px solid transparent;
+    transform:translateY(-8px);transition:max-height .16s ease,opacity .12s ease,transform .16s ease,padding .16s ease,border-color .16s ease;
+  }
+  .top.menu-open .nav{max-height:min(72vh,540px);opacity:1;pointer-events:auto;transform:translateY(0);padding:7px 0 2px;border-top-color:var(--line);overflow-y:auto}
+  .nav button{width:100%;min-height:42px;padding:9px 8px;text-align:center!important;border-radius:12px;white-space:normal}
+  .nav button:before{display:none!important}
+  .nav button:active{transform:scale(.985)}
+  main{padding-top:14px}
+  .view{animation:compactViewIn .14s ease}
+  @keyframes compactViewIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .ambient,.orb,.dynamicMesh,.glassSheen{display:none!important}
+  .card,.top,.modalBox{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  .card{box-shadow:0 12px 34px rgba(0,0,0,.18),inset 0 1px rgba(255,255,255,.045)!important}
+  .card:before,.card:after,.top:after{display:none!important}
+  .card:hover,.action:hover,.row:hover,.btn:hover{transform:none!important}
+  .hero,.cols,.split{grid-template-columns:1fr!important}
+  .grid4{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .sectionHero h1{font-size:32px!important}
+  .heroMain{min-height:185px;padding:23px}
+  .heroSide{padding:18px}
+  .form{grid-template-columns:1fr!important;gap:9px!important}
+  .field.full{grid-column:auto!important}
+  input,select,textarea{min-height:44px;font-size:14px!important}
+  .btn{min-height:42px;padding:9px 11px}
+  .toolbar{gap:6px;flex-wrap:wrap}
+  /* User list becomes cards instead of a tiny desktop table. */
+  #clients .tableWrap{overflow:visible;border:0;background:transparent}
+  #clients .table{display:block;min-width:0!important;border-spacing:0}
+  #clients .table thead{display:none}
+  #clients .table tbody{display:grid;gap:8px}
+  #clients .table tbody tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px 10px;padding:13px;border:1px solid var(--line);border-radius:17px;background:var(--soft)}
+  #clients .table td{display:block;padding:0!important;background:transparent!important;border:0!important;border-radius:0!important;min-width:0}
+  #clients .table td:nth-child(1){grid-column:1;grid-row:1}
+  #clients .table td:nth-child(2){grid-column:1;grid-row:2}
+  #clients .table td:nth-child(3){grid-column:2;grid-row:1/3;align-self:start}
+  #clients .table td:nth-child(4){grid-column:1/-1;grid-row:3;padding-top:3px!important}
+  #clients .table td:nth-child(4) .toolbar{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  #clients .table td:nth-child(4) .btn{width:100%}
+  /* Other wide tables remain horizontally scrollable, but never force the page width. */
+  .tableWrap{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .output,.configBox{font-size:11px!important;line-height:1.7;overflow-wrap:anywhere}
+  .dailyBars{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .traffic-meta{grid-template-columns:1fr 1fr}
+  /* All dialogs are true bottom sheets, never side panels. */
+  .modal{position:fixed!important;inset:0!important;padding:0!important;align-items:flex-end!important;justify-content:center!important;background:rgba(0,0,0,.64)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  .modalBox,#clientBuilderModal .modalBox,#inboundModal .modalBox,#userEditModal .modalBox,#userQrModal .modalBox{
+    width:calc(100vw - 10px)!important;max-width:none!important;max-height:calc(100dvh - 14px)!important;margin:0 5px!important;
+    padding:16px!important;border-radius:24px 24px 14px 14px!important;overflow:auto!important;overscroll-behavior:contain;
+    background:#121316!important;border:1px solid rgba(255,255,255,.09)!important;animation:psSheetIn .16s cubic-bezier(.2,.8,.2,1)!important
+  }
+  @keyframes psSheetIn{from{opacity:.65;transform:translateY(16px)}to{opacity:1;transform:none}}
+  .modalBox .close{position:sticky;top:0;z-index:5;float:left}
+  #clientBuilderModal .advancedGrid,#clientBuilderModal .glassGrid{grid-template-columns:1fr!important}
+  #clientBuilderModal .toolbar,#inboundModal .toolbar,#userEditModal .toolbar{position:sticky;bottom:0;padding-top:9px;background:linear-gradient(180deg,transparent,#121316 32%);z-index:4}
+  .switch{width:54px!important;height:30px!important;min-width:54px!important;flex:0 0 54px!important;position:relative;direction:ltr}
+  .switch:after{inset-inline-start:2px;left:auto;transition:transform .14s ease!important}
+  .switch:checked:after{inset-inline-start:2px;left:auto;transform:translateX(24px)}
+}
+@media (max-width:620px){
+  .app{padding:6px}.top{top:5px;border-radius:17px}
+  .grid4{grid-template-columns:1fr 1fr!important}.actions{grid-template-columns:1fr!important}
+  h1{font-size:38px!important}.sectionHero h1{font-size:30px!important}.cardPad{padding:14px!important}
+  #clients .table td:nth-child(4) .toolbar{grid-template-columns:1fr 1fr}
+}
+/* PARS SPACE MOBILE UX FINAL REPAIR */
+@media (max-width:980px){
+html,body{width:100%;overflow-x:hidden}body{overscroll-behavior-x:none}.app{width:100%;max-width:100%;padding:7px}
+.top{position:sticky!important;top:5px!important;z-index:500!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:7px!important;width:100%!important;padding:7px!important;overflow:visible!important}
+.brand{min-width:0!important}.brand span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tools{grid-column:2!important;grid-row:1!important;margin:0!important;display:flex!important;gap:5px!important}.iconbtn{width:38px!important;height:38px!important}.mobileMenuBtn{display:grid!important}
+.top .nav{position:absolute!important;top:calc(100% + 6px)!important;right:0!important;left:0!important;z-index:600!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;width:100%!important;max-height:0!important;opacity:0!important;overflow:hidden!important;pointer-events:none!important;padding:0!important;margin:0!important;border:1px solid transparent!important;border-radius:18px!important;background:rgba(17,18,21,.985)!important;box-shadow:0 18px 45px rgba(0,0,0,.34)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;transform:translateY(-7px) scale(.985)!important;transform-origin:top center!important;transition:max-height .16s ease,opacity .12s ease,transform .16s ease,padding .16s ease,border-color .16s ease!important}
+.top.menu-open .nav{max-height:min(72vh,540px)!important;opacity:1!important;pointer-events:auto!important;transform:translateY(0) scale(1)!important;padding:8px!important;border-color:rgba(255,255,255,.09)!important;overflow-y:auto!important}
+.nav button{width:100%!important;min-height:42px!important;padding:9px 8px!important;border-radius:12px!important;text-align:center!important;background:rgba(255,255,255,.035)!important;border:1px solid rgba(255,255,255,.055)!important;transition:transform .10s ease,background .10s ease,color .10s ease!important}.nav button:active{transform:scale(.985)!important}.nav button.active{background:#f2f2f2!important;color:#111!important}
+main{padding:13px 0 36px!important}.view{animation:psViewIn .13s ease!important}@keyframes psViewIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.ambient,.orb,.dynamicMesh,.glassSheen,.heroIcon{display:none!important}.card,.top{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}.card{background:rgba(22,23,26,.96)!important;box-shadow:0 10px 28px rgba(0,0,0,.18),inset 0 1px rgba(255,255,255,.045)!important}.card:before,.card:after,.top:after{display:none!important}
+.hero,.cols,.split{grid-template-columns:1fr!important}.grid4{grid-template-columns:repeat(2,minmax(0,1fr))!important}.heroMain{min-height:180px!important;padding:22px!important}.heroSide{padding:17px!important}h1{font-size:36px!important;line-height:.98!important}.sectionHero h1{font-size:29px!important}
+.form{grid-template-columns:1fr!important;gap:9px!important}.field.full{grid-column:auto!important}input,select,textarea{min-height:44px!important;font-size:14px!important}.btn{min-height:42px!important;padding:9px 11px!important}.btn:hover,.action:hover,.card:hover,.row:hover{transform:none!important;box-shadow:none!important}.toolbar{gap:6px!important;flex-wrap:wrap!important}
+#clients .tableWrap{overflow:visible!important}#clients .table{display:block!important;min-width:0!important;border-spacing:0!important}#clients .table thead{display:none!important}#clients .table tbody{display:grid!important;gap:8px!important}
+#clients .table tbody tr{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:8px 10px!important;padding:13px!important;border:1px solid var(--line)!important;border-radius:17px!important;background:var(--soft)!important}#clients .table td{display:block!important;padding:0!important;background:transparent!important;border:0!important;border-radius:0!important;min-width:0!important}
+#clients .table td:nth-child(1){grid-column:1;grid-row:1}#clients .table td:nth-child(2){grid-column:1;grid-row:2}#clients .table td:nth-child(3){grid-column:2;grid-row:1/3;align-self:start}#clients .table td:nth-child(4){grid-column:1/-1;grid-row:3;padding-top:3px!important}#clients .table td:nth-child(4) .toolbar{width:100%!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}#clients .table td:nth-child(4) .btn{width:100%!important}
+.tableWrap{max-width:100%!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch}.dailyBars{overflow-x:auto!important;-webkit-overflow-scrolling:touch}.subCard{display:flex!important;align-items:stretch!important;flex-direction:column!important;gap:10px!important}.subCard .toolbar{width:100%!important}.subCard .toolbar .btn{flex:1 1 140px!important}.usageLine{height:7px!important;margin:9px 0 5px!important}.output,.configBox{font-size:11px!important;line-height:1.7!important;overflow-wrap:anywhere!important}
+.modal{position:fixed!important;inset:0!important;display:none!important;align-items:flex-end!important;justify-content:center!important;padding:0!important;background:rgba(0,0,0,.66)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}.modal.open{display:flex!important}.modalBox,.modalBox[style]{position:relative!important;width:100vw!important;max-width:none!important;height:auto!important;max-height:calc(100dvh - 10px)!important;margin:0!important;padding:16px!important;border-radius:24px 24px 0 0!important;overflow:auto!important;overscroll-behavior:contain!important;background:#121316!important;border:1px solid rgba(255,255,255,.10)!important;box-shadow:0 -16px 50px rgba(0,0,0,.38)!important;animation:psSheetIn .16s cubic-bezier(.2,.8,.2,1)!important}
+@keyframes psSheetIn{from{opacity:.65;transform:translateY(18px)}to{opacity:1;transform:none}}.modalBox .close{position:sticky!important;top:0!important;z-index:10!important;float:left!important}#clientBuilderModal .modalBox,#inboundModal .modalBox,#userEditModal .modalBox,#userQrModal .modalBox,#nodeModal .modalBox,#configViewModal .modalBox{width:100vw!important;max-width:none!important;margin:0!important}
+#clientBuilderModal .advancedGrid,#clientBuilderModal .glassGrid{grid-template-columns:1fr!important}#clientBuilderModal .toolbar,#inboundModal .toolbar,#userEditModal .toolbar{position:sticky!important;bottom:0!important;padding-top:10px!important;background:linear-gradient(180deg,transparent,#121316 30%)!important;z-index:4!important}.switch{width:52px!important;height:30px!important;min-width:52px!important;flex:0 0 52px!important;direction:ltr!important}.switch:after{transition:transform .12s ease!important}
+}
+@media(max-width:420px){.app{padding:5px}.top{border-radius:15px!important}.brand{font-size:12px!important}.logo{width:34px!important;height:34px!important}.iconbtn{width:36px!important;height:36px!important}.grid4{grid-template-columns:1fr 1fr!important}.heroMain{padding:19px!important}.heroSide{padding:15px!important}.cardPad{padding:13px!important}.head{align-items:flex-start!important}.head .toolbar{width:100%}.head .toolbar .btn{flex:1 1 120px!important}}
+
+@media (prefers-reduced-motion:reduce){.nav,.view,.modalBox{transition:none!important;animation:none!important}.nav button{transition:none!important}}
+
+
+/* =========================================================
+   PARS SPACE v8.2 — FINAL RESPONSIVE + THEME REPAIR
+   Single source of truth appended after legacy visual layers.
+   ========================================================= */
+
+/* Theme tokens */
+:root{
+  color-scheme: light;
+  --ps-bg:#eef1f5;
+  --ps-bg2:#e5e9ef;
+  --ps-surface:rgba(255,255,255,.82);
+  --ps-surface-solid:#ffffff;
+  --ps-surface-soft:rgba(238,241,245,.88);
+  --ps-text:#171a1f;
+  --ps-muted:#68707c;
+  --ps-line:rgba(20,25,32,.12);
+  --ps-soft:rgba(20,25,32,.055);
+  --ps-accent:#171a1f;
+  --ps-accent-text:#ffffff;
+  --ps-shadow:0 18px 55px rgba(20,25,32,.10);
+  --ps-overlay:rgba(10,12,15,.28);
+  --ps-input:#ffffff;
+}
+html[data-theme="dark"]{
+  color-scheme:dark;
+  --ps-bg:#0b0d10;
+  --ps-bg2:#101318;
+  --ps-surface:rgba(24,27,32,.84);
+  --ps-surface-solid:#181b20;
+  --ps-surface-soft:rgba(255,255,255,.055);
+  --ps-text:#f4f6f8;
+  --ps-muted:#a2a9b3;
+  --ps-line:rgba(255,255,255,.105);
+  --ps-soft:rgba(255,255,255,.055);
+  --ps-accent:#f4f6f8;
+  --ps-accent-text:#0c0e11;
+  --ps-shadow:0 22px 65px rgba(0,0,0,.34);
+  --ps-overlay:rgba(0,0,0,.66);
+  --ps-input:#15181d;
+}
+
+/* Map existing variables to one stable theme system */
+:root{
+  --bg:var(--ps-bg);
+  --surface:var(--ps-surface);
+  --surface2:var(--ps-surface-solid);
+  --text:var(--ps-text);
+  --muted:var(--ps-muted);
+  --line:var(--ps-line);
+  --soft:var(--ps-soft);
+  --accent:var(--ps-accent);
+  --accentText:var(--ps-accent-text);
+  --shadow:var(--ps-shadow);
+}
+html,body{
+  width:100%;
+  max-width:100%;
+  min-height:100%;
+  margin:0;
+  background:var(--ps-bg)!important;
+  color:var(--ps-text)!important;
+}
+body{overflow-x:hidden!important;transition:background-color .22s ease,color .22s ease}
+*,*:before,*:after{box-sizing:border-box}
+button,input,select,textarea{font:inherit}
+button{color:inherit}
+::selection{background:var(--ps-text);color:var(--ps-bg)}
+
+/* App shell */
+.app{
+  width:min(1500px,100%);
+  margin:0 auto;
+  padding:18px;
+}
+.top{
+  position:sticky!important;
+  top:12px!important;
+  z-index:500!important;
+  width:100%!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:12px!important;
+  min-height:62px;
+  padding:10px 12px!important;
+  overflow:visible!important;
+  border:1px solid var(--ps-line)!important;
+  border-radius:20px!important;
+  background:var(--ps-surface)!important;
+  color:var(--ps-text)!important;
+  box-shadow:var(--ps-shadow)!important;
+  backdrop-filter:blur(22px) saturate(125%)!important;
+  -webkit-backdrop-filter:blur(22px) saturate(125%)!important;
+}
+.brand{flex:0 0 auto;min-width:0;display:flex;align-items:center;gap:9px;color:var(--ps-text)}
+.brand span:last-child{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.logo{
+  flex:0 0 auto;
+  width:40px;height:40px;
+  display:grid;place-items:center;
+  border-radius:13px;
+  background:var(--ps-accent)!important;
+  color:var(--ps-accent-text)!important;
+  text-shadow:none!important;
+}
+.nav{
+  flex:1 1 auto;
+  min-width:0;
+  display:flex!important;
+  align-items:center;
+  gap:4px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  scrollbar-width:none;
+}
+.nav::-webkit-scrollbar{display:none}
+.nav button{
+  flex:0 0 auto;
+  min-height:40px;
+  padding:9px 11px!important;
+  border:1px solid transparent!important;
+  border-radius:12px!important;
+  background:transparent!important;
+  color:var(--ps-muted)!important;
+  white-space:nowrap;
+  cursor:pointer;
+  transition:background .18s ease,color .18s ease,transform .18s ease!important;
+}
+.nav button:hover{background:var(--ps-soft)!important;color:var(--ps-text)!important;transform:none!important}
+.nav button.active{
+  background:var(--ps-accent)!important;
+  color:var(--ps-accent-text)!important;
+  border-color:transparent!important;
+  box-shadow:none!important;
+}
+.nav button:before{display:none!important}
+.tools{display:flex!important;align-items:center;gap:5px;flex:0 0 auto;margin:0!important}
+.iconbtn{
+  width:40px!important;height:40px!important;
+  display:grid!important;place-items:center;
+  padding:0!important;
+  border:1px solid var(--ps-line)!important;
+  border-radius:12px!important;
+  background:var(--ps-soft)!important;
+  color:var(--ps-text)!important;
+  cursor:pointer;
+}
+.iconbtn:hover{background:var(--ps-surface-soft)!important;color:var(--ps-text)!important}
+.mobileMenuBtn{display:none!important}
+
+/* Content grid */
+main{min-width:0;padding-top:16px}
+.view{min-width:0}
+.hero,.cols,.split{min-width:0}
+.hero{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr);gap:16px}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin:14px 0}
+.cols{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr);gap:14px}
+.card{
+  min-width:0;
+  background:var(--ps-surface)!important;
+  color:var(--ps-text)!important;
+  border:1px solid var(--ps-line)!important;
+  border-radius:24px!important;
+  box-shadow:var(--ps-shadow),inset 0 1px rgba(255,255,255,.08)!important;
+  backdrop-filter:blur(18px) saturate(120%)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(120%)!important;
+}
+.card:before,.card:after,.top:after{display:none!important}
+.heroMain,.heroSide,.stat,.action,.row{min-width:0}
+.muted{color:var(--ps-muted)!important}
+.sectionHero{min-width:0}
+.head{min-width:0}
+.head>div{min-width:0}
+.head h2,.head p{overflow-wrap:anywhere}
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.btn,.action{
+  border:1px solid var(--ps-line)!important;
+  background:var(--ps-surface-soft)!important;
+  color:var(--ps-text)!important;
+  box-shadow:none!important;
+}
+.btn.dark{
+  background:var(--ps-accent)!important;
+  color:var(--ps-accent-text)!important;
+  border-color:var(--ps-accent)!important;
+}
+.btn:hover,.action:hover{transform:translateY(-1px)!important;box-shadow:0 9px 24px rgba(0,0,0,.08)!important}
+.action{min-width:0}
+
+/* Forms / data */
+input,select,textarea{
+  width:100%!important;
+  max-width:100%;
+  min-width:0;
+  background:var(--ps-input)!important;
+  color:var(--ps-text)!important;
+  border:1px solid var(--ps-line)!important;
+}
+input::placeholder,textarea::placeholder{color:var(--ps-muted)!important;opacity:.8}
+select option{background:var(--ps-surface-solid);color:var(--ps-text)}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--ps-text)!important;
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--ps-text) 9%,transparent)!important;
+}
+.tableWrap{
+  max-width:100%!important;
+  overflow-x:auto!important;
+  overflow-y:visible;
+  -webkit-overflow-scrolling:touch;
+}
+.table{min-width:720px}
+.table td{background:var(--ps-soft)!important;color:var(--ps-text)!important}
+.table th{color:var(--ps-muted)!important}
+.pill{background:var(--ps-soft)!important;border-color:var(--ps-line)!important;color:var(--ps-text)!important}
+.output,.configBox{max-width:100%;overflow-wrap:anywhere}
+
+/* Modals inherit the active theme instead of being hard-coded dark */
+.modal{
+  background:var(--ps-overlay)!important;
+}
+.modalBox,
+.modalBox[style]{
+  background:var(--ps-surface-solid)!important;
+  color:var(--ps-text)!important;
+  border-color:var(--ps-line)!important;
+}
+
+/* Tablet */
+@media (max-width:980px){
+  .app{width:100%;max-width:none;padding:10px}
+  .top{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    grid-template-rows:auto!important;
+    gap:7px!important;
+    padding:8px!important;
+  }
+  .brand{min-width:0}
+  .tools{grid-column:2;grid-row:1}
+  .mobileMenuBtn{display:grid!important}
+  .top .nav{
+    position:absolute!important;
+    top:calc(100% + 7px)!important;
+    inset-inline:0!important;
+    z-index:700!important;
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:6px!important;
+    width:100%!important;
+    max-height:0!important;
+    padding:0!important;
+    margin:0!important;
+    overflow:hidden!important;
+    opacity:0!important;
+    pointer-events:none!important;
+    transform:translateY(-7px) scale(.985)!important;
+    transform-origin:top center!important;
+    border:1px solid transparent!important;
+    border-radius:18px!important;
+    background:var(--ps-surface)!important;
+    box-shadow:var(--ps-shadow)!important;
+    backdrop-filter:blur(18px)!important;
+    -webkit-backdrop-filter:blur(18px)!important;
+    transition:max-height .20s ease,opacity .15s ease,transform .20s ease,padding .20s ease,border-color .20s ease!important;
+  }
+  .top.menu-open .nav{
+    max-height:min(72vh,540px)!important;
+    padding:8px!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+    transform:translateY(0) scale(1)!important;
+    overflow-y:auto!important;
+    border-color:var(--ps-line)!important;
+  }
+  .nav button{
+    width:100%!important;
+    min-height:42px!important;
+    padding:9px 8px!important;
+    border-radius:12px!important;
+    background:var(--ps-soft)!important;
+    border-color:var(--ps-line)!important;
+    color:var(--ps-text)!important;
+    white-space:normal!important;
+    text-align:center!important;
+  }
+  .nav button.active{background:var(--ps-accent)!important;color:var(--ps-accent-text)!important}
+  main{padding-top:13px}
+  .hero,.cols,.split{grid-template-columns:1fr!important}
+  .grid4{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .form{grid-template-columns:1fr!important}
+  .field.full{grid-column:auto!important}
+  input,select,textarea{min-height:44px!important;font-size:14px!important}
+  .btn{min-height:42px}
+  .card,.top,.modalBox{
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
+  .card{box-shadow:0 12px 34px rgba(0,0,0,.14),inset 0 1px rgba(255,255,255,.06)!important}
+  .ambient,.orb,.dynamicMesh,.glassSheen{display:none!important}
+  .card:hover,.action:hover,.row:hover,.btn:hover{transform:none!important}
+  .sectionHero h1{font-size:32px!important}
+  .heroMain{min-height:185px}
+  .toolbar{gap:6px}
+  #clients .tableWrap{overflow:visible!important;border:0;background:transparent}
+  #clients .table{display:block!important;min-width:0!important;border-spacing:0!important}
+  #clients .table thead{display:none!important}
+  #clients .table tbody{display:grid!important;gap:8px!important}
+  #clients .table tbody tr{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    gap:8px 10px!important;
+    padding:13px!important;
+    border:1px solid var(--ps-line)!important;
+    border-radius:17px!important;
+    background:var(--ps-soft)!important;
+  }
+  #clients .table td{display:block!important;padding:0!important;background:transparent!important;border:0!important;min-width:0}
+  #clients .table td:nth-child(1){grid-column:1;grid-row:1}
+  #clients .table td:nth-child(2){grid-column:1;grid-row:2}
+  #clients .table td:nth-child(3){grid-column:2;grid-row:1/3;align-self:start}
+  #clients .table td:nth-child(4){grid-column:1/-1;grid-row:3;padding-top:3px!important}
+  #clients .table td:nth-child(4) .toolbar{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  #clients .table td:nth-child(4) .btn{width:100%}
+  .modal{
+    align-items:flex-end!important;
+    padding:0!important;
+  }
+  .modalBox,.modalBox[style]{
+    width:100vw!important;
+    max-width:none!important;
+    max-height:calc(100dvh - 10px)!important;
+    margin:0!important;
+    border-radius:24px 24px 0 0!important;
+    background:var(--ps-surface-solid)!important;
+    color:var(--ps-text)!important;
+  }
+}
+
+/* Phone */
+@media (max-width:620px){
+  .app{padding:6px}
+  .top{top:5px!important;border-radius:17px!important}
+  .grid4{grid-template-columns:1fr 1fr!important}
+  .actions{grid-template-columns:1fr!important}
+  h1{font-size:36px!important;line-height:.98!important}
+  .sectionHero h1{font-size:29px!important}
+  .cardPad{padding:14px!important}
+  .head{align-items:flex-start!important}
+  .head .toolbar{width:100%}
+  .head .toolbar .btn{flex:1 1 120px}
+}
+@media (max-width:420px){
+  .app{padding:5px}
+  .top{border-radius:15px!important}
+  .brand{font-size:12px}
+  .logo{width:34px;height:34px}
+  .iconbtn{width:36px!important;height:36px!important}
+  .heroMain{padding:19px!important}
+  .heroSide{padding:15px!important}
+  .cardPad{padding:13px!important}
+}
+
+/* Accessibility / motion */
+@media (prefers-reduced-motion:reduce){
+  *,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}
+}
+
+
+/* =========================================================
+   PARS SPACE v8.3 — FINAL INDEX REPAIR
+   This layer intentionally comes last and neutralizes legacy
+   mobile/dark hard-codes without changing application logic.
+   ========================================================= */
+
+/* ---------- Theme: one source of truth ---------- */
+html[data-theme="light"]{
+  color-scheme:light;
+  --ps-bg:#eef1f5;
+  --ps-bg2:#e5e9ef;
+  --ps-surface:rgba(255,255,255,.84);
+  --ps-surface-solid:#fff;
+  --ps-surface-soft:rgba(238,241,245,.92);
+  --ps-text:#171a1f;
+  --ps-muted:#68707c;
+  --ps-line:rgba(20,25,32,.12);
+  --ps-soft:rgba(20,25,32,.055);
+  --ps-accent:#171a1f;
+  --ps-accent-text:#fff;
+  --ps-shadow:0 18px 55px rgba(20,25,32,.10);
+  --ps-overlay:rgba(10,12,15,.28);
+  --ps-input:#fff;
+}
+html[data-theme="dark"]{
+  color-scheme:dark;
+  --ps-bg:#0b0d10;
+  --ps-bg2:#101318;
+  --ps-surface:rgba(24,27,32,.86);
+  --ps-surface-solid:#181b20;
+  --ps-surface-soft:rgba(255,255,255,.055);
+  --ps-text:#f4f6f8;
+  --ps-muted:#a2a9b3;
+  --ps-line:rgba(255,255,255,.105);
+  --ps-soft:rgba(255,255,255,.055);
+  --ps-accent:#f4f6f8;
+  --ps-accent-text:#0c0e11;
+  --ps-shadow:0 22px 65px rgba(0,0,0,.34);
+  --ps-overlay:rgba(0,0,0,.66);
+  --ps-input:#15181d;
+}
+html,body{
+  width:100%!important;
+  max-width:100%!important;
+  min-height:100%;
+  margin:0!important;
+  background:var(--ps-bg)!important;
+  color:var(--ps-text)!important;
+}
+body{overflow-x:hidden!important}
+.app{width:min(1500px,100%)!important;max-width:1500px!important;margin:0 auto!important}
+
+/* ---------- Desktop shell ---------- */
+.top{
+  position:sticky!important;
+  top:12px!important;
+  z-index:500!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:62px!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:12px!important;
+  padding:10px 12px!important;
+  overflow:visible!important;
+  background:var(--ps-surface)!important;
+  color:var(--ps-text)!important;
+  border:1px solid var(--ps-line)!important;
+  border-radius:20px!important;
+  box-shadow:var(--ps-shadow)!important;
+  backdrop-filter:blur(22px) saturate(125%)!important;
+  -webkit-backdrop-filter:blur(22px) saturate(125%)!important;
+}
+.brand{min-width:0!important;color:var(--ps-text)!important}
+.brand span:last-child{min-width:0;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.logo{background:var(--ps-accent)!important;color:var(--ps-accent-text)!important}
+.nav{
+  flex:1 1 auto!important;
+  min-width:0!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:4px!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+}
+.nav button{
+  flex:0 0 auto!important;
+  min-height:40px!important;
+  padding:9px 11px!important;
+  border:1px solid transparent!important;
+  border-radius:12px!important;
+  background:transparent!important;
+  color:var(--ps-muted)!important;
+  white-space:nowrap!important;
+}
+.nav button:hover{background:var(--ps-soft)!important;color:var(--ps-text)!important}
+.nav button.active{background:var(--ps-accent)!important;color:var(--ps-accent-text)!important}
+.tools{display:flex!important;align-items:center!important;gap:5px!important;flex:0 0 auto!important;margin:0!important}
+.iconbtn{
+  width:40px!important;height:40px!important;
+  display:grid!important;place-items:center!important;
+  padding:0!important;
+  background:var(--ps-soft)!important;
+  color:var(--ps-text)!important;
+  border:1px solid var(--ps-line)!important;
+  border-radius:12px!important;
+}
+.mobileMenuBtn{display:none!important}
+
+/* ---------- Content ---------- */
+main{min-width:0!important}
+.hero,.cols,.split{min-width:0!important}
+.hero{grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr)!important}
+.cols{grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr)!important}
+.grid4{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+.card{
+  min-width:0!important;
+  background:var(--ps-surface)!important;
+  color:var(--ps-text)!important;
+  border:1px solid var(--ps-line)!important;
+  box-shadow:var(--ps-shadow),inset 0 1px rgba(255,255,255,.08)!important;
+  backdrop-filter:blur(18px) saturate(120%)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(120%)!important;
+}
+.card:before,.card:after,.top:after{display:none!important}
+.muted{color:var(--ps-muted)!important}
+.btn,.action{
+  background:var(--ps-surface-soft)!important;
+  color:var(--ps-text)!important;
+  border:1px solid var(--ps-line)!important;
+  box-shadow:none!important;
+}
+.btn.dark{background:var(--ps-accent)!important;color:var(--ps-accent-text)!important;border-color:var(--ps-accent)!important}
+input,select,textarea{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  background:var(--ps-input)!important;
+  color:var(--ps-text)!important;
+  border:1px solid var(--ps-line)!important;
+}
+input::placeholder,textarea::placeholder{color:var(--ps-muted)!important}
+select option{background:var(--ps-surface-solid)!important;color:var(--ps-text)!important}
+.tableWrap{max-width:100%!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch}
+.table td{background:var(--ps-soft)!important;color:var(--ps-text)!important}
+.table th{color:var(--ps-muted)!important}
+.pill{background:var(--ps-soft)!important;color:var(--ps-text)!important;border-color:var(--ps-line)!important}
+
+/* ---------- Modal: NEVER hard-code dark ---------- */
+.modal{
+  background:var(--ps-overlay)!important;
+}
+.modalBox,.modalBox[style]{
+  background:var(--ps-surface-solid)!important;
+  color:var(--ps-text)!important;
+  border:1px solid var(--ps-line)!important;
+}
+
+/* ---------- Tablet / phone ---------- */
+@media (max-width:980px){
+  .app{width:100%!important;max-width:none!important;padding:8px!important}
+  .top{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    gap:7px!important;
+    padding:8px!important;
+  }
+  .tools{grid-column:2!important;grid-row:1!important}
+  .mobileMenuBtn{display:grid!important}
+  .top .nav{
+    position:absolute!important;
+    top:calc(100% + 7px)!important;
+    left:0!important;right:0!important;
+    z-index:700!important;
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:6px!important;
+    width:100%!important;
+    max-height:0!important;
+    padding:0!important;
+    margin:0!important;
+    overflow:hidden!important;
+    opacity:0!important;
+    pointer-events:none!important;
+    transform:translateY(-7px) scale(.985)!important;
+    transform-origin:top center!important;
+    background:var(--ps-surface)!important;
+    border:1px solid transparent!important;
+    border-radius:18px!important;
+    box-shadow:var(--ps-shadow)!important;
+    backdrop-filter:blur(18px)!important;
+    -webkit-backdrop-filter:blur(18px)!important;
+    transition:max-height .20s ease,opacity .15s ease,transform .20s ease,padding .20s ease,border-color .20s ease!important;
+  }
+  .top.menu-open .nav{
+    max-height:min(72vh,540px)!important;
+    padding:8px!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+    transform:translateY(0) scale(1)!important;
+    overflow-y:auto!important;
+    border-color:var(--ps-line)!important;
+  }
+  .nav button{
+    width:100%!important;
+    min-height:42px!important;
+    padding:9px 8px!important;
+    white-space:normal!important;
+    text-align:center!important;
+    background:var(--ps-soft)!important;
+    color:var(--ps-text)!important;
+    border-color:var(--ps-line)!important;
+  }
+  .nav button.active{background:var(--ps-accent)!important;color:var(--ps-accent-text)!important}
+  .hero,.cols,.split{grid-template-columns:1fr!important}
+  .grid4{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .form{grid-template-columns:1fr!important}
+  .field.full{grid-column:auto!important}
+  input,select,textarea{min-height:44px!important;font-size:14px!important}
+  .btn{min-height:42px!important}
+  .card,.top,.modalBox{
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
+  .card{box-shadow:0 12px 34px rgba(0,0,0,.14),inset 0 1px rgba(255,255,255,.06)!important}
+  .ambient,.orb,.dynamicMesh,.glassSheen{display:none!important}
+  .card:hover,.action:hover,.row:hover,.btn:hover{transform:none!important}
+  #clients .tableWrap{overflow:visible!important;border:0!important;background:transparent!important}
+  #clients .table{display:block!important;min-width:0!important;border-spacing:0!important}
+  #clients .table thead{display:none!important}
+  #clients .table tbody{display:grid!important;gap:8px!important}
+  #clients .table tbody tr{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    gap:8px 10px!important;
+    padding:13px!important;
+    border:1px solid var(--ps-line)!important;
+    border-radius:17px!important;
+    background:var(--ps-soft)!important;
+  }
+  #clients .table td{display:block!important;padding:0!important;background:transparent!important;border:0!important;min-width:0!important}
+  #clients .table td:nth-child(1){grid-column:1;grid-row:1}
+  #clients .table td:nth-child(2){grid-column:1;grid-row:2}
+  #clients .table td:nth-child(3){grid-column:2;grid-row:1/3}
+  #clients .table td:nth-child(4){grid-column:1/-1;grid-row:3;padding-top:3px!important}
+  #clients .table td:nth-child(4) .toolbar{width:100%!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #clients .table td:nth-child(4) .btn{width:100%!important}
+  .modal{
+    align-items:flex-end!important;
+    justify-content:center!important;
+    padding:0!important;
+  }
+  .modalBox,.modalBox[style]{
+    width:100vw!important;
+    max-width:none!important;
+    max-height:calc(100dvh - 10px)!important;
+    margin:0!important;
+    border-radius:24px 24px 0 0!important;
+    background:var(--ps-surface-solid)!important;
+    color:var(--ps-text)!important;
+    border-color:var(--ps-line)!important;
+  }
+}
+
+@media (max-width:620px){
+  .app{padding:6px!important}
+  .top{top:5px!important;border-radius:17px!important}
+  .grid4{grid-template-columns:1fr 1fr!important}
+  .actions{grid-template-columns:1fr!important}
+  h1{font-size:36px!important;line-height:.98!important}
+  .sectionHero h1{font-size:29px!important}
+  .cardPad{padding:14px!important}
+  .head{align-items:flex-start!important}
+  .head .toolbar{width:100%!important}
+  .head .toolbar .btn{flex:1 1 120px!important}
+}
+
+@media (max-width:420px){
+  .app{padding:5px!important}
+  .top{border-radius:15px!important}
+  .brand{font-size:12px!important}
+  .logo{width:34px!important;height:34px!important}
+  .iconbtn{width:36px!important;height:36px!important}
+  .heroMain{padding:19px!important}
+  .heroSide{padding:15px!important}
+  .cardPad{padding:13px!important}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+
+</style>
+<script>(function(){try{var t=localStorage.getItem('ps_theme')||'system';if(!['system','light','dark'].includes(t))t='system';var d=t==='system'?(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'):t;document.documentElement.dataset.theme=d;}catch(e){document.documentElement.dataset.theme='light';}})();</script><style>
+/* PARS SPACE v8.5 — SUBSCRIPTION UX + COPY REPAIR */
+.subUsage{
+  position:relative;display:flex;align-items:center;gap:9px;min-width:0;
+  height:34px;margin-top:10px;padding:0 11px;border:1px solid var(--line);
+  border-radius:999px;background:var(--soft);overflow:hidden;isolation:isolate;
+}
+.subUsage .subUsageFill{
+  position:absolute;inset:0 auto 0 0;width:var(--usage-pct,0%);z-index:-1;
+  border-radius:inherit;background:linear-gradient(90deg,var(--gold),var(--gold2));
+  transform-origin:left center;animation:psSubUsageIn .9s cubic-bezier(.2,.8,.2,1) both;
+  box-shadow:0 0 22px rgba(224,187,98,.16);
+}
+.subUsage .subUsageText{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-width:0;font-size:12px;font-weight:700;white-space:nowrap}
+.subUsage .subUsageMain{overflow:hidden;text-overflow:ellipsis;direction:rtl}
+.subUsage .subUsagePct{flex:0 0 auto;font-size:11px;opacity:.86}
+.subUsage.is-unlimited .subUsageFill{width:0!important;animation:none}
+.subCard .toolbar{flex:0 0 auto}
+.subCard .copyData{min-width:94px}
+@keyframes psSubUsageIn{from{width:0;opacity:.45;transform:scaleX(.15)}to{width:var(--usage-pct,0%);opacity:1;transform:scaleX(1)}}
+@media(max-width:980px){
+  .subCard{width:100%!important;box-sizing:border-box!important}
+  .subCard>div:first-child{width:100%!important;min-width:0!important}
+  .subUsage{width:100%;box-sizing:border-box}
+}
+@media(max-width:620px){
+  .subCard .toolbar{width:100%!important;display:grid!important;grid-template-columns:1fr 1fr!important}
+  .subCard .toolbar .btn{width:100%!important}
+  .subUsage{height:32px;padding:0 10px}
+  .subUsage .subUsageText{font-size:11px}
+}
+.glass-radio-group{--count:3;position:relative;display:grid;grid-template-columns:repeat(3,1fr);padding:3px;border:1px solid var(--line);border-radius:14px;background:var(--soft);overflow:hidden;isolation:isolate}.glass-radio-group button{position:relative;z-index:2;border:0;background:transparent;color:var(--muted);padding:10px 12px;border-radius:11px;font:inherit;font-weight:750;cursor:pointer}.glass-radio-group button.active{color:var(--text)}.glass-glider{position:absolute;z-index:1;top:3px;bottom:3px;left:3px;width:calc((100% - 6px)/3);border-radius:11px;background:color-mix(in srgb,var(--accent) 18%,var(--surface));box-shadow:inset 0 1px rgba(255,255,255,.16),0 8px 24px rgba(0,0,0,.14);transform:translateX(calc(var(--theme-index,0)*100%));transition:transform .38s cubic-bezier(.2,.9,.2,1),background .25s}.socialLinks{display:flex;gap:9px;flex-wrap:wrap}.socialLinks a{padding:10px 14px;border:1px solid var(--line);border-radius:13px;background:var(--soft);color:var(--text);text-decoration:none;font-weight:800}.foldBody{display:grid!important;grid-template-rows:0fr;opacity:0;overflow:hidden;padding-top:0;transition:grid-template-rows .24s ease,opacity .18s ease,padding .24s ease}.foldBody>*{min-height:0}.foldBody.open{grid-template-rows:1fr;opacity:1;padding-top:12px}.card,.modalBox,.top{transition:border-color .25s ease,background .25s ease,box-shadow .25s ease}.view{will-change:opacity,transform}
+
+/* ParsSpace global glass-glider navigation */
+.nav{position:relative!important;isolation:isolate}
+.nav .nav-glider{position:absolute;left:0;top:0;width:0;height:0;border-radius:12px;z-index:0;pointer-events:none;opacity:0;background:linear-gradient(135deg,rgba(255,255,255,.28),rgba(255,255,255,.08));border:1px solid rgba(255,255,255,.18);box-shadow:0 8px 24px rgba(0,0,0,.16),inset 0 1px rgba(255,255,255,.28);backdrop-filter:blur(12px) saturate(135%);-webkit-backdrop-filter:blur(12px) saturate(135%);transition:transform .46s cubic-bezier(.22,1.35,.36,1),width .32s cubic-bezier(.2,.8,.2,1),height .32s cubic-bezier(.2,.8,.2,1),opacity .18s ease}
+.nav button{position:relative!important;z-index:1!important}
+.nav button.active{background:transparent!important;color:var(--ps-text)!important;border-color:transparent!important;box-shadow:none!important}
+html[data-theme="light"] .nav .nav-glider{background:linear-gradient(135deg,rgba(255,255,255,.94),rgba(218,218,218,.62));border-color:rgba(0,0,0,.08);box-shadow:0 8px 24px rgba(0,0,0,.10),inset 0 1px #fff}
+@media(max-width:980px){.top.menu-open .nav .nav-glider{opacity:1}.nav .nav-glider{border-radius:12px}.nav button.active{background:transparent!important;color:var(--ps-text)!important}}
+@media(prefers-reduced-motion:reduce){.nav .nav-glider{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="loadingScreen" id="loadingScreen"><div class="loaderCard"><div class="loaderRing"></div><b id="loadingTitle">Pars Space</b><div class="muted" id="loadingText" style="margin-top:7px">در حال آماده‌سازی Pars Space…</div><div class="loaderBar"><i></i></div></div></div><script id="loadingFailSafe">setTimeout(function(){var e=document.getElementById("loadingScreen");if(e)e.classList.add("hide")},1500);</script>
+<div class="ambient"><i class="orb a"></i><i class="orb b"></i></div>
+<div class="app">
+<header class="top">
+ <div class="brand"><span class="logo">P</span><span>PARS SPACE</span></div>
+ <nav class="nav">
+  <span class="nav-glider" id="navGlider" aria-hidden="true"></span>
+  <button class="active" data-view="overview" data-i18n="overview">Overview</button>
+  <button data-view="clients" data-i18n="clients">Users & Config</button>
+  <button data-view="inbounds" data-i18n="inbounds">Inbounds</button>
+  <button data-view="subs" data-i18n="subs">اشتراک‌ها</button><button data-view="multi">مولتی کانفیگ</button>
+  <button data-view="nodes" data-i18n="nodes">Nodes</button>
+  <button data-view="scanner" data-i18n="scanner">Scanner</button>
+  <button data-view="configTest" data-i18n="configTest">Config Test</button>
+  <button data-view="terminal" data-i18n="terminal">Terminal</button>
+  <button data-view="settings" data-i18n="settings">Settings</button>
+ </nav>
+ <div class="tools"><button class="iconbtn mobileMenuBtn" id="mobileMenuBtn" title="Menu">☰</button><button class="iconbtn" id="themeBtn" title="Theme">◐</button><button class="iconbtn" id="langBtn">FA</button></div>
+</header>
+
+<main>
+<section class="view active" id="overview">
+ <div class="hero">
+  <article class="card heroMain"><span class="eyebrow">PARS SPACE CONTROL</span><h1 data-i18n="heroTitle">Everything,<br>under control.</h1><span class="status"><i class="dot"></i><span data-i18n="operational">All systems operational</span></span></article>
+  <article class="card heroSide"><div><span class="muted" data-i18n="traffic">Current traffic</span><div class="big" id="heroTraffic">0 B</div></div><span class="muted" data-i18n="liveData">Live data from panel</span></article>
+ </div>
+ <div class="grid4">
+  <article class="card stat"><span data-i18n="activeUsers">Active users</span><b id="sActive">0</b></article>
+  <article class="card stat"><span data-i18n="connections">Connections</span><b id="sConn">0</b></article>
+  <article class="card stat"><span data-i18n="inbounds">Inbounds</span><b id="sInbound">0</b></article>
+  <article class="card stat"><span data-i18n="subscriptions">Subscriptions</span><b id="sSubs">0</b></article>
+ </div>
+ <div class="cols">
+  <article class="card cardPad"><div class="head"><div><h2 data-i18n="trafficOverview">Traffic overview</h2><p data-i18n="last7">Live panel snapshot</p></div></div><div class="traffic-toolbar"><select id="trafficRange" onchange="loadTraffic()"><option value="hour">ساعت اخیر</option><option value="day" selected>روز اخیر</option><option value="week">هفته اخیر</option><option value="month">ماه اخیر</option></select><span class="muted" id="trafficLive">LIVE</span></div>
+   <div class="chart"><svg id="trafficSvg" viewBox="0 0 800 225" preserveAspectRatio="none"><path id="area" d="M0 190 L800 190 L800 225 L0 225Z" fill="currentColor" opacity=".07"/><path id="trafficLine" d="M0 190 L800 190" fill="none" stroke="currentColor" stroke-width="4"/></svg></div><div class="traffic-meta"><div class="miniStat"><span class="muted">حجم بازه</span><b id="trafficWindowTotal">0 B</b></div><div class="miniStat"><span class="muted">میانگین اتصال فعال</span><b id="trafficAvgConn">0</b></div><div class="miniStat"><span class="muted">اوج اتصال</span><b id="trafficPeakConn">0</b></div></div>
+  </article>
+  <article class="card cardPad"><div class="head"><div><h2 data-i18n="quickActions">Quick actions</h2><p data-i18n="commonOps">Common operations</p></div></div>
+   <div class="actions">
+    <button class="action" onclick="go('clients')"><b data-i18n="addUser">افزودن کاربر</b><br><span class="muted" data-i18n="createConfig">Create config</span></button>
+    <button class="action" onclick="openInbound()"><b data-i18n="addInbound">افزودن اینباند</b><br><span class="muted">VLESS</span></button>
+    <button class="action" onclick="go('configTest')"><b data-i18n="configTest">تست کانفیگ</b><br><span class="muted">بررسی دسترسی</span></button>
+    <button class="action" onclick="go('settings')"><b data-i18n="preferences">تنظیمات</b><br><span class="muted" data-i18n="themeLang">Theme & language</span></button>
+   </div>
+  </article>
+ </div>
+</section>
+
+<section class="view" id="clients">
+ <div class="sectionHero"><div><span class="eyebrow">PARS SPACE · USER CORE</span><h1 style="margin:6px 0 0">کاربرها و کانفیگ‌ها</h1><p class="muted">یک کاربر، چند اینباند، یک اشتراک. محدودیت‌های خالی یعنی نامحدود.</p></div></div>
+ <div class="card cardPad">
+  <div class="head"><div><h2 data-i18n="clientList">Users</h2><p data-i18n="clientListDesc">کاربرها با مصرف، زمان اعتبار و لینک اشتراک مدیریت می‌شوند. کانفیگ فقط در پنجرهٔ جداگانه نمایش داده می‌شود.</p></div><div class="toolbar"><button class="btn" onclick="loadClients()">↻</button><button class="btn dark" onclick="openClientBuilder()" data-i18n="createUserConfig">ایجاد کاربر + کانفیگ</button></div></div>
+  <div class="tableWrap"><table class="table"><thead><tr><th>کاربر</th><th>مصرف</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody id="usersBody"></tbody></table></div>
+ </div>
+</section>
+
+<section class="view" id="inbounds">
+ <div class="sectionHero"><div><span class="eyebrow">PARS SPACE · TRANSPORT CORE</span><h1 style="margin:6px 0 0">اینباندها</h1><p class="muted">هر پروتکل فقط تنظیمات مربوط به خودش را نشان می‌دهد. کمتر گیج شو، انسان.</p></div></div>
+ <div class="card cardPad"><div class="head"><div><h2 data-i18n="inboundTitle">Inbound management</h2><p data-i18n="inboundDesc">Create and manage the actual listener definitions.</p></div><button class="btn dark" onclick="openInbound()" data-i18n="addInbound">افزودن اینباند</button></div><div class="tableWrap"><table class="table"><thead><tr><th>Name</th><th>Protocol</th><th>Network</th><th>Port</th><th>Users</th><th>Status</th><th>Actions</th></tr></thead><tbody id="inboundBody"></tbody></table></div></div>
+</section>
+
+<section class="view" id="subs">
+ <div class="sectionHero"><div><span class="eyebrow">PARS SPACE · SUBSCRIPTION CORE</span><h1 style="margin:6px 0 0">اشتراک‌ها</h1><p class="muted">لینک‌های اشتراک کاربران و Multi Config را ساده و یک‌جا مدیریت کن.</p></div></div>
+ <div class="card cardPad"><div class="head"><div><h2 data-i18n="subTitle">Pars Subscription</h2><p data-i18n="subTitleDesc">گروه اشتراک واقعی</p></div><button class="btn dark" onclick="createSubscription()">ساخت اشتراک</button></div><div id="subList" class="list"></div></div>
+</section>
+
+<section class="view" id="multi">
+ <div class="sectionHero"><div><span class="eyebrow">PARS SPACE · MULTI</span><h1 style="margin:6px 0 0">مولتی کانفیگ</h1><p class="muted">چند VLESS با یک نام و یک لینک اشتراک.</p></div></div>
+ <div class="card cardPad">
+  <div class="head"><div><h2>ساخت مجموعه</h2><p>هر مجموعه یک لینک اشتراک دارد و وضعیت همه کانفیگ‌ها را نشان می‌دهد.</p></div></div>
+  <div class="form">
+   <div class="field"><label>نام کلی</label><input id="multiName" placeholder="Pars Premium"></div>
+   <div class="field"><label>تعداد کانفیگ</label><input id="multiCount" type="number" min="1" max="50" value="3"></div>
+   <div class="field"><label>اینباند</label><select id="multiInbound"><option value="">خودکار</option></select></div>
+   <div class="field"><label>حجم هر کانفیگ (GB)</label><input id="multiTraffic" type="number" min="0" value="0"></div>
+   <div class="field"><label>اعتبار هر کانفیگ (روز)</label><input id="multiExpire" type="number" min="0" value="0"></div>
+   <div class="field"><label>آیدی کانال پشتیبانی</label><input id="multiSupport" placeholder="@support یا ID"></div>
+   <div class="field full"><div id="multiAntiBanSwitch" class="antiSwitch" role="switch" aria-checked="false" tabindex="0" onclick="toggleMultiAntiBan()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleMultiAntiBan()}"><div class="copy"><b>Anti-Ban</b><small>همین تنظیمات روی تمام کانفیگ‌های این Multi اعمال می‌شود.</small></div><span class="iosToggle" aria-hidden="true"></span></div><div id="multiAntiBanOptions" class="presetBox" hidden><span class="miniLabel">روش Anti-Ban</span><select id="multiAntiBanMode"><option value="ff">FinalMask + unsafe (F&F)</option><option value="ech">ECH + chrome</option></select></div></div>
+  </div>
+  <div class="toolbar" style="margin-top:14px"><button class="btn dark" onclick="createMultiConfig()">ساخت مولتی کانفیگ</button><span class="muted" id="multiMsg"></span></div>
+ </div>
+ <div class="card cardPad" style="margin-top:14px"><div class="head"><div><h2>مجموعه‌های ساخته‌شده</h2><p>اتصال لحظه‌ای، مصرف و میانگین ثبت‌شده.</p></div><button class="btn" onclick="loadMultiConfigs()">↻</button></div><div id="multiList" class="list"></div></div>
+</section>
+
+<section class="view" id="nodes">
+ <div class="card cardPad"><div class="head"><div><h2 data-i18n="nodesTitle">Pars Space Nodes</h2><p data-i18n="nodesDesc">Connect Pars Space panels directly through the private Pars Space API.</p></div><div class="toolbar"><button class="btn" onclick="loadNodes()">↻</button><button class="btn dark" onclick="openNode()" data-i18n="addNode">افزودن نود</button></div></div><div id="nodeList" class="list"></div></div>
+</section>
+
+<section class="view" id="configTest">
+ <div class="cols">
+  <article class="card cardPad"><div class="head"><div><h2 data-i18n="configTest">Config Test</h2><p>تست مستقل کانفیگ، جدا از بخش کاربران.</p></div></div>
+   <div class="field"><label>کانفیگ VLESS</label><textarea id="testConfigInput" rows="5" dir="ltr" spellcheck="false" placeholder="vless://..."></textarea></div>
+   <div class="toolbar" style="margin-top:12px"><button class="btn dark" onclick="testConfig()">تست کانفیگ</button><button class="btn" onclick="testSpeed()">تست سرعت</button><span class="muted" id="configTestMsg"></span></div>
+   <div class="output" id="configTestOutput">آماده تست.</div>
+   <div class="field" style="margin-top:16px"><label>تست ساب لینک</label><input id="testSubInput" dir="ltr" placeholder="https://panel.example.com/sub/...."></div>
+   <div class="toolbar" style="margin-top:10px"><button class="btn dark" onclick="testSubscriptionLink()">تست کل ساب</button><span class="muted" id="subTestMsg"></span></div>
+   <div id="subTestResults" class="list" style="margin-top:10px"></div>
+  </article>
+  <article class="card cardPad"><div class="head"><div><h2>Protocol health</h2><p>بررسی ساختار لینک و پروتکل انتخاب‌شده.</p></div></div><div id="protocolHealth" class="list"><div class="empty">یک کانفیگ وارد کنید.</div></div></article>
+ </div>
+</section>
+
+<section class="view" id="scanner">
+ <div class="cols">
+  <article class="card cardPad">
+   <div class="head"><div><h2 data-i18n="ipScanner">IP Scanner</h2><p data-i18n="ipScannerDesc">TCP latency checker for targets you control or are authorized to test.</p></div><button class="btn" onclick="loadSavedScanner('cf')">Load saved</button></div>
+   <div class="field"><label data-i18n="targets">Targets</label><textarea id="scanTargets" rows="8" dir="ltr" placeholder="1.2.3.4:443
+example.com:443"></textarea></div>
+   <div class="toolbar" style="margin-top:12px"><button class="btn dark" onclick="runIpScan()" data-i18n="scan">Scan</button><button class="btn" onclick="loadSavedScanner('cf')">CF saved</button><button class="btn" onclick="loadSavedScanner('railway')">Railway saved</button><span class="muted" id="ipScanMsg"></span></div>
+   <div id="ipScanResults" class="list" style="margin-top:12px"></div>
+  </article>
+  <article class="card cardPad">
+   <div class="head"><div><h2 data-i18n="sniScanner">SNI Scanner</h2><p data-i18n="sniScannerDesc">Loads the SNI list from data/sni_reality_for_scan.txt and checks TLS handshake latency.</p></div><button class="btn" onclick="loadSniList()">↻</button></div>
+   <div class="toolbar"><span class="pill" id="sniCount">0 SNI</span><button class="btn dark" onclick="runSniScan()" data-i18n="scanSni">Scan list</button><button class="btn" onclick="loadFastestSni()" data-i18n="fastest">Fastest</button><button class="btn" onclick="clearSniResults()" data-i18n="clear">Clear</button></div>
+   <div class="output" id="sniStatus">SNI list not loaded.</div>
+   <div id="sniResults" class="list" style="margin-top:12px"></div>
+  </article>
+ </div>
+ <div class="card cardPad" style="margin-top:14px"><div class="head"><div><h2 data-i18n="sniFile">SNI list file</h2><p data-i18n="sniFileDesc">Put one hostname per line in data/sni_reality_for_scan.txt.</p></div></div><div class="output">mkdir -p data && nano data/sni_reality_for_scan.txt</div><div class="muted" style="margin-top:10px">One SNI per line. Lines beginning with # are ignored.</div></div>
+</section>
+
+<section class="view" id="terminal">
+ <div class="card cardPad">
+  <div class="head"><div><h2 data-i18n="terminalTitle">Linux Terminal</h2><p data-i18n="terminalDesc">Authenticated shell running as the panel service user. No sudo/root escalation.</p></div><span class="pill" id="terminalInfo">checking…</span></div>
+  <div class="field"><label>Command</label><textarea id="terminalCommand" rows="4" dir="ltr" spellcheck="false" placeholder="uname -a
+pwd
+ls -la"></textarea></div>
+  <div class="toolbar" style="margin-top:12px"><button class="btn dark" onclick="runTerminal()" data-i18n="run">Run</button><button class="btn" onclick="clearTerminal()" data-i18n="clear">Clear</button><span class="muted" id="terminalCwd"></span></div>
+  <pre class="output" id="terminalOutput" style="white-space:pre-wrap;word-break:break-word;min-height:260px">Pars Space Linux terminal ready.</pre>
+ </div>
+</section>
+
+<section class="view" id="settings">
+ <div class="split">
+  <div class="card cardPad"><div class="head"><div><h2 data-i18n="appearance">Appearance</h2><p data-i18n="appearanceDesc">Theme is saved locally.</p></div></div>
+   <div class="form"><div class="field"><label data-i18n="theme">Theme</label><div class="glass-radio-group" id="themeGlass"><button type="button" data-theme-value="system">System</button><button type="button" data-theme-value="light">Light</button><button type="button" data-theme-value="dark">Dark</button><i class="glass-glider"></i></div><select id="themeSelect" hidden><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></div><div class="field"><label data-i18n="language">Language</label><select id="langSelect"><option value="fa">فارسی</option><option value="en">English</option></select></div></div>
+  </div>
+  <div class="card cardPad"><div class="head"><div><h2 data-i18n="account">Administrator account</h2><p data-i18n="accountDesc">Uses the real credentials endpoint.</p></div></div>
+   <div class="form"><div class="field"><label data-i18n="newUsername">New username</label><input id="adminUser"></div><div class="field"><label data-i18n="currentPassword">Current password</label><input id="adminCurrent" type="password"></div><div class="field"><label data-i18n="newPassword">New password</label><input id="adminNew" type="password"></div></div>
+   <button class="btn dark" style="margin-top:13px" onclick="changeCredentials()" data-i18n="save">Save changes</button>
+  </div>
+  <div class="card cardPad" style="margin-top:14px"><div class="head"><div><h2 data-i18n="panelAlias">نام مستعار پنل</h2><p data-i18n="panelAliasDesc">نامی که در داشبورد و بخش‌های مدیریتی نمایش داده می‌شود.</p></div></div><div class="form"><div class="field full"><label data-i18n="panelAlias">Panel alias</label><input id="panelAlias" placeholder="Pars Space"></div></div><button class="btn dark" style="margin-top:12px" onclick="savePanelAlias()" data-i18n="save">ذخیره</button></div>
+  <div class="card cardPad" id="activityCard" style="margin-top:14px"><div class="head"><div><h2 data-i18n="activityTitle">Activity & Logs</h2><p data-i18n="activityDesc">لاگ‌ها و فعالیت‌های اخیر اینجا نمایش داده می‌شوند.</p></div><div class="toolbar"><button class="btn" onclick="loadActivity()">↻</button><button class="btn" onclick="toggleActivity()">×</button></div></div><div id="activityList" class="list"></div></div>
+  <div class="card cardPad" style="margin-top:14px"><div class="head"><div><h2>Panel network</h2><p>Live public IP and detected location.</p></div><button class="btn small" onclick="loadServerInfo()">↻</button></div><div id="serverInfo" class="list"><div class="empty">Loading…</div></div></div>
+  <div class="card cardPad" style="margin-top:14px"><div class="head"><div><h2>Backup & Restore</h2><p>قبل از تغییرات مهم از دیتای پنل بکاپ بگیرید.</p></div></div><div class="toolbar"><button class="btn dark" onclick="downloadBackup()">Download backup</button><label class="btn" style="cursor:pointer">Restore<input id="restoreFile" type="file" accept="application/json" hidden onchange="restoreBackup(this.files[0])"></label></div></div>
+  <div class="card cardPad" style="margin-top:14px"><div class="head"><div><h2>Panel Update</h2><p>بررسی و دریافت آخرین نسخه از مخزن رسمی؛ دیتای /data حفظ می‌شود.</p></div><span class="pill" id="updateState">Not checked</span></div><div class="toolbar"><button class="btn" onclick="checkUpdate()">Check update</button><button class="btn dark" onclick="applyUpdate()">Backup & Update</button></div><div class="muted" id="updateInfo" style="margin-top:10px"></div></div>
+  <div class="card cardPad" style="margin-top:14px"><div class="head"><div><h2 data-i18n="parsApi">Pars Space API</h2><p data-i18n="parsApiDesc">This is the current panel API key used for node connections.</p></div><button class="btn" onclick="regenerateParsKey()" data-i18n="regenerate">Regenerate</button></div><div class="field"><label>Pars API Key</label><input id="parsApiKey" dir="ltr" readonly value="Loading..." onclick="this.select()"></div><div class="toolbar" style="margin-top:10px"><button class="btn dark" onclick="copyParsKey()" data-i18n="copyKey">Copy API key</button><span class="muted" data-i18n="apiPrefix">Prefix: psp_</span></div></div>
+  <div class="card cardPad" style="margin-top:14px"><div class="head"><div><h2>About ParsSpace</h2><p>Official project pages</p></div></div><div class="socialLinks"><a href="https://github.com/PSP-Support/ParsSpace" target="_blank" rel="noopener">GitHub</a><a href="https://t.me/ParsSpace_channel" target="_blank" rel="noopener">Telegram</a><a href="https://www.youtube.com/@ParsSpacePanel" target="_blank" rel="noopener">YouTube</a></div></div>
+ </div>
+ <button id="activityShow" class="btn dark" style="display:none;margin-top:12px" onclick="toggleActivity()">نمایش لاگ‌ها</button>
+</section>
+</main>
+</div>
+
+<div class="modal" id="clientBuilderModal"><div class="modalBox">
+<button class="close" onclick="closeClientBuilder()">×</button>
+<div class="sectionHero"><div><span class="eyebrow">NEW CONNECTION</span><h2 style="margin:6px 0">ساخت کاربر و کانفیگ</h2><p class="muted">اول چیزهای ضروری، بعد تنظیمات پیشرفته. چند اینباند را همزمان انتخاب کن.</p></div></div>
+<div class="form">
+<div class="field"><label>نام کاربری</label><input id="uName" placeholder="khosrow"></div>
+<div class="field"><label>رمز عبور</label><input id="uPass" placeholder="خالی = تولید خودکار"></div>
+
+<div class="field"><label>محدودیت دستگاه</label><input id="uDeviceLimit" type="number" min="0" value="0" placeholder="0 = نامحدود"></div>
+<div class="field"><label>حجم (GB)</label><input id="uTraffic" type="number" min="0" value="0" placeholder="0 = نامحدود"></div>
+<div class="field"><label>اعتبار (روز)</label><input id="uExpire" type="number" min="0" value="0" placeholder="0 = نامحدود"></div>
+<div class="field full"><label>آیدی کانال پشتیبانی</label><input id="uSupport" placeholder="@support یا ID"><div class="hint">نام Pars Space در Remark با این آیدی جایگزین می‌شود و در انتها PSP اضافه می‌شود.</div></div>
+<div class="field full"><label>اینباند‌ها</label><div id="inboundPicker" class="glassGrid"></div><input type="hidden" id="uInbound"></div>
+</div>
+<div class="card" style="margin-top:14px;background:rgba(0,0,0,.12);box-shadow:none"><button type="button" class="foldToggle" onclick="toggleFold('clientAdvancedBody',this)"><span><b>تنظیمات بیشتر</b><small class="muted" style="display:block;margin-top:3px">SNI، Path و TLS فقط وقتی لازم باشند.</small></span><span class="chev">⌄</span></button><div id="clientAdvancedBody" class="foldBody"><div class="advancedGrid" style="padding-top:12px">
+<div class="field" id="cfNetwork"><label>Network</label><select id="cNetwork" onchange="updateClientProtocolFields()"><option value="ws">WebSocket</option><option value="grpc">gRPC</option><option value="tcp">TCP</option><option value="xhttp">XHTTP</option></select></div>
+<div class="field" id="cfSecurity"><label>Security</label><select id="cSecurity" onchange="updateClientProtocolFields()"><option value="tls">TLS</option><option value="none">None</option><option value="reality">Reality</option></select></div>
+<div class="field" id="cfPort"><label>Port</label><input id="cPort" type="number" value="443"></div>
+<div class="field" id="cfFingerprint"><label>Fingerprint</label><select id="cFingerprint"><option>chrome</option><option>firefox</option><option>safari</option><option>edge</option><option>unsafe</option></select></div>
+<div class="field" id="cfSni"><label>SNI</label><input id="cSni" placeholder="example.com"></div>
+<div class="field" id="cfAlpn"><label>TLS ALPN</label><input id="cAlpn" value="http/1.1"></div>
+<div class="field" id="cfWsPath"><label>WS Path</label><input id="cWsPath" value="/ws/{uuid}"></div>
+<div class="field" id="cfGrpcService"><label>gRPC Service</label><input id="cGrpcService" value="pars-space"></div>
+<div class="field" id="cfRealityDomain"><label>Reality External Host</label><input id="cRealityDomain" placeholder="reality.example.com"></div>
+<div class="field" id="cfRealityPort"><label>Reality External Port</label><input id="cRealityPort" type="number" value="443"></div>
+<div class="field" id="cfRealityDest"><label>Reality Destination</label><input id="cRealityDest" placeholder="is1-ssl.mzstatic.com:443"></div>
+<div class="field" id="cfRealitySid"><label>Reality Short ID</label><input id="cRealitySid" placeholder="auto"></div>
+<div class="field full" id="cfEch"><label>ECH Config List</label><input id="cEch" dir="ltr" placeholder="cloudflare-ech.com+udp://1.1.1.1"><div class="hint">برای ECH؛ با Anti-Ban در حالت ECH خودکار پر می‌شود.</div></div>
+<div class="field full" id="cfFinalMask"><label>Final Mask / Pattern</label><textarea id="cFinalMask" class="finalmask" placeholder='Raw Xray FinalMask JSON'></textarea><div class="toolbar" style="margin-top:7px"><button type="button" class="btn small" onclick="applyFinalMaskPreset()">Preset: tlshello-0-len</button><span class="hint" style="margin:0">پروفایل FinalMask قابل استفاده در کلاینت‌های سازگار.</span></div></div>
+<div class="field full">
+  <div id="antiBanSwitch" class="antiSwitch" role="switch" aria-checked="false" tabindex="0" onclick="toggleAntiBan()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleAntiBan()}">
+    <div class="copy"><b>Anti-Ban</b><small>حالت سازگار Anti-Ban را برای این کاربر و Multi Config فعال می‌کند بدون افزودن پارامترهای ناسازگار به لینک VLESS.</small></div><span class="iosToggle" aria-hidden="true"></span>
+  </div>
+  <div id="antiBanOptions" class="presetBox" hidden>
+    <span class="miniLabel">روش Anti-Ban</span>
+    <select id="antiBanMode" onchange="applyAntiBanPreset()"><option value="ff">FinalMask + unsafe (F&F)</option><option value="ech">ECH + chrome</option></select>
+    <div class="hint">این دو روش همزمان روی یک کانفیگ فعال نمی‌شوند؛ برای جلوگیری از ساخت لینک ناسازگار، یکی را انتخاب می‌کنیم.</div>
+  </div>
+</div>
+<div class="field full" id="cfSniSpoof"><label>SNI Spoof</label><div class="form"><input id="cFakeSni" dir="ltr" placeholder="auth.vercel.com"><input id="cSpoofIp" dir="ltr" placeholder="188.114.96.7"></div><div class="hint">در صورت نیاز می‌توانید SNI و IP جایگزین را به‌صورت دستی تنظیم کنید.</div></div>
+</div></div></div>
+<div class="toolbar" style="margin-top:14px"><button class="btn dark" onclick="createClient()">ساخت و تولید کانفیگ</button><button class="btn" onclick="clearClientForm()">پاک کردن</button><span class="spacer"></span><span class="muted" id="clientMsg"></span></div>
+<div class="configBox"><div class="output" id="clientOut">بعد از ساخت، کانفیگ و لینک اشتراک اینجا می‌آید.</div><div class="configActions"><button class="btn small dark" onclick="copyText($('#clientOut').textContent)">کپی کانفیگ</button><button class="btn small" onclick="copyText($('#clientMsg').textContent)">کپی ساب</button></div></div>
+</div></div>
+<div class="modal" id="configViewModal"><div class="modalBox" style="max-width:760px"><button class="close" onclick="closeConfigView()">×</button><div class="head"><div><h2>کانفیگ کاربر</h2><p class="muted" id="configViewMeta">VLESS</p></div></div><div class="output" id="configViewOutput" style="min-height:120px;max-height:360px"></div><div class="toolbar" style="margin-top:12px"><button class="btn dark" onclick="copyText($('#configViewOutput').textContent)">کپی کانفیگ</button><button class="btn" onclick="closeConfigView()">بستن</button></div></div></div>
+<div class="modal" id="userEditModal"><div class="modalBox"><button class="close" onclick="closeUserEdit()">×</button><div class="head"><div><h2>Edit user</h2><p>تغییر اطلاعات، وضعیت و محدودیت کاربر</p></div></div><input type="hidden" id="editUserId"><div class="form"><div class="field"><label>Username</label><input id="editUsername"></div><div class="field"><label>Status</label><select id="editStatus"><option value="active">Active</option><option value="disabled">Disabled</option><option value="expired">Expired</option></select></div><div class="field"><label>Traffic GB</label><input id="editTraffic" type="number" min="0"></div><div class="field"><label>Expire days</label><input id="editExpire" type="number" min="0"></div><div class="field"><label>Device limit</label><input id="editDeviceLimit" type="number" min="0" value="0"></div><div class="field full"><label>آیدی کانال پشتیبانی</label><input id="editSupport"></div></div><div class="toolbar" style="margin-top:14px"><button class="btn dark" onclick="saveUserEdit()">Save</button><button class="btn" onclick="resetUserTrafficFromEdit()">ریست حجم + زمان</button></div></div></div>
+<div class="modal" id="userQrModal"><div class="modalBox" style="max-width:430px;text-align:center"><button class="close" onclick="closeUserQR()">×</button><h2>Pars Space QR</h2><img id="userQrImage" style="width:280px;max-width:90%;border-radius:18px;background:#fff;padding:10px" alt="QR"><div class="output" id="userQrLink" style="margin-top:12px"></div><div class="toolbar" style="justify-content:center;margin-top:10px"><button class="btn dark" onclick="copyText($('#userQrLink').textContent)">Copy subscription</button></div></div></div>
+<div class="modal" id="inboundModal"><div class="modalBox">
+<button class="close" onclick="closeInbound()">×</button><input type="hidden" id="ibEditId">
+<div class="sectionHero"><div><span class="eyebrow">TRANSPORT BUILDER</span><h2 id="ibModalTitle">ساخت اینباند</h2><p class="muted">تنظیمات VLESS را مشخص کن.</p></div></div>
+<div class="form"><div class="field"><label>نام</label><input id="ibName" placeholder="Main VLESS"></div><input type="hidden" id="ibProtocol" value="vless"></div>
+<div class="card" style="margin-top:14px;background:rgba(0,0,0,.12);box-shadow:none"><div id="ibDynamic" class="advancedGrid" style="padding:12px"></div></div>
+<div class="toolbar" style="margin-top:15px"><button class="btn dark" onclick="createInbound()">ذخیره اینباند</button><button class="btn" onclick="closeInbound()">لغو</button><span class="muted" id="ibTestMsg"></span></div>
+</div></div>
+<div class="modal" id="nodeModal"><div class="modalBox"><button class="close" onclick="closeNode()">×</button><h2 data-i18n="connectNode">Connect Pars Space panel</h2><p class="muted" data-i18n="connectNodeDesc">Enter the HTTPS address and Pars API key from the remote Pars Space panel.</p><div class="form" style="margin-top:15px"><div class="field"><label data-i18n="nodeName">Node name</label><input id="nodeName" placeholder="Amsterdam Panel"></div><div class="field"><label data-i18n="nodeUrl">Panel URL</label><input id="nodeUrl" dir="ltr" placeholder="https://panel.example.com"></div><div class="field full"><label>Panel API Key</label><input id="nodeKey" dir="ltr" placeholder="psp_xxxxxxxxx"></div></div><div class="toolbar" style="margin-top:15px"><button class="btn dark" onclick="connectNode()" data-i18n="connect">Connect</button><button class="btn" onclick="closeNode()" data-i18n="cancel">Cancel</button></div></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+let lang=localStorage.getItem('ps_lang')||'fa', theme=localStorage.getItem('ps_theme')||'system';
+if(!['system','light','dark'].includes(theme))theme='system';
+const T={
+fa:{overview:'نمای کلی',configTest:'تست کانفیگ',clients:'کاربر و کانفیگ',inbounds:'اینباندها',subs:'اشتراک‌ها',nodes:'نودها',scanner:'اسکنر',terminal:'ترمینال',activity:'فعالیت',settings:'تنظیمات',ipScanner:'اسکنر IP',ipScannerDesc:'بررسی TCP برای مقصدهایی که مجاز به تست آن‌ها هستید.',sniScanner:'اسکنر SNI',sniScannerDesc:'لیست SNI را از فایل پنل می‌خواند و زمان Handshake را بررسی می‌کند.',targets:'مقصدها',scan:'اسکن',scanSni:'اسکن لیست',fastest:'سریع‌ترین',sniFile:'فایل SNI',sniFileDesc:'هر hostname در یک خط از data/sni_reality_for_scan.txt',terminalTitle:'ترمینال لینوکس',terminalDesc:'شل احراز هویت‌شده با کاربر سرویس پنل، بدون sudo/root.',run:'اجرا',
+heroTitle:'همه‌چیز،<br>تحت کنترل.',operational:'همه سیستم‌ها فعال هستند',traffic:'ترافیک فعلی',liveData:'داده زنده از پنل',activeUsers:'کاربران فعال',connections:'اتصالات',subscriptions:'اشتراک‌ها',
+trafficOverview:'نمای ترافیک',last7:'وضعیت زنده پنل',quickActions:'دسترسی سریع',commonOps:'عملیات پرکاربرد',addUser:'＋ افزودن کاربر',createConfig:'ساخت کانفیگ',addInbound:'＋ افزودن اینباند',newSub:'＋ اشتراک جدید',subDesc:'لینک اختصاصی پنل',preferences:'⚙ تنظیمات',themeLang:'تم و زبان',
+usersConfig:'کاربر و Config Builder',usersConfigDesc:'ساخت کاربر و کانفیگ در یک فرآیند واحد.',username:'نام کاربری',password:'رمز عبور',protocol:'پروتکل',inbound:'اینباند',trafficLimit:'محدودیت ترافیک (GB)',expireDays:'مدت اعتبار (روز)',server:'سرور',sni:'SNI',path:'Path',createUserConfig:'ساخت کاربر + کانفیگ',clear:'پاک کردن',clientList:'لیست کاربران',clientListDesc:'کاربران واقعی از /api/users',
+inboundTitle:'مدیریت اینباند',inboundDesc:'ساخت و مدیریت Listenerهای واقعی پنل',subTitle:'Pars Subscription',subTitleDesc:'گروه اشتراک واقعی با endpoint /sub-group',nodesTitle:'نودهای Pars Space',nodesDesc:'اتصال مستقیم پنل‌های Pars Space با API اختصاصی',activityTitle:'فعالیت',activityDesc:'رویدادهای اخیر پنل',addNode:'＋ افزودن نود',connectNode:'اتصال پنل Pars Space',connectNodeDesc:'آدرس HTTPS و کلید API پنل مقصد را وارد کنید.',nodeName:'نام نود',nodeUrl:'آدرس پنل',connect:'اتصال',parsApi:'Pars Space API',parsApiDesc:'کلید API پنل برای اتصال نود مقصد.',regenerate:'ساخت کلید جدید',copyKey:'کپی API Key',apiPrefix:'پیشوند: psp_',
+appearance:'ظاهر',appearanceDesc:'تنظیمات ظاهری روی همین دستگاه ذخیره می‌شود.',theme:'تم',language:'زبان',account:'حساب Administrator',accountDesc:'تغییر رمز عبور از endpoint واقعی پنل انجام می‌شود.',newUsername:'نام کاربری جدید',currentPassword:'رمز فعلی',newPassword:'رمز جدید',save:'ذخیره تغییرات',
+createInbound:'ساخت اینباند',createInboundDesc:'فقط تنظیمات مربوط به پروتکل انتخاب‌شده نمایش داده می‌شود.',protocolSettings:'تنظیمات پروتکل',protocolSettingsDesc:'اگر Inbound روی Auto / dedicated باشد، این تنظیمات برای ساخت Inbound استفاده می‌شوند.',name:'نام',network:'Network',security:'Security',port:'Port',externalPort:'External Port',domain:'Domain',wsPath:'WS Path',create:'ساخت',cancel:'لغو',noData:'داده‌ای وجود ندارد',copy:'کپی',delete:'حذف',online:'فعال'},
+en:{overview:'Overview',configTest:'Config Test',clients:'Users & Config',inbounds:'Inbounds',subs:'Subscriptions',nodes:'Nodes',scanner:'Scanner',terminal:'Terminal',activity:'Activity',settings:'Settings',ipScanner:'IP Scanner',ipScannerDesc:'TCP latency checker for authorized targets.',sniScanner:'SNI Scanner',sniScannerDesc:'Check TLS handshake latency for your SNI list.',targets:'Targets',scan:'Scan',scanSni:'Scan list',fastest:'Fastest',sniFile:'SNI list file',sniFileDesc:'One hostname per line in data/sni_reality_for_scan.txt.',terminalTitle:'Linux Terminal',terminalDesc:'Authenticated shell as the panel service user. No sudo/root escalation.',run:'Run',
+heroTitle:'Everything,<br>under control.',operational:'All systems operational',traffic:'Current traffic',liveData:'Live data from panel',activeUsers:'Active users',connections:'Connections',subscriptions:'Subscriptions',
+trafficOverview:'Traffic overview',last7:'Live panel snapshot',quickActions:'Quick actions',commonOps:'Common operations',addUser:'افزودن کاربر',createConfig:'Create config',addInbound:'افزودن اینباند',newSub:'＋ New subscription',subDesc:'Custom panel link',preferences:'تنظیمات',themeLang:'Theme & language',
+usersConfig:'Users & Config Builder',usersConfigDesc:'User creation and config generation are one workflow.',username:'Username',password:'Password',protocol:'Protocol',inbound:'Inbound',trafficLimit:'Traffic limit (GB)',expireDays:'Expire days',server:'Server',sni:'SNI',path:'Path',createUserConfig:'Create user + config',clear:'Clear',clientList:'Client list',clientListDesc:'Real users from /api/users',
+inboundTitle:'Inbound management',inboundDesc:'Create and manage real listeners.',subTitle:'Pars Subscription',subTitleDesc:'Real subscription groups using /sub-group.',nodesTitle:'Pars Space Nodes',nodesDesc:'Connect Pars Space panels through the private API.',activityTitle:'Activity & Logs',activityDesc:'Recent panel events.',panelAlias:'Panel alias',panelAliasDesc:'A friendly display name for this panel.',helpTitle:'Panel guide',helpDesc:'Quick guide to users, protocols, SNI, subscriptions and settings.',addNode:'افزودن نود',connectNode:'Connect Pars Space panel',connectNodeDesc:'Enter the HTTPS address and Panel API key from the remote panel.',nodeName:'Node name',nodeUrl:'Panel URL',connect:'Connect',parsApi:'Pars Space API',parsApiDesc:'Panel API key used to connect a remote panel node.',regenerate:'Regenerate',copyKey:'Copy API key',apiPrefix:'Prefix: psp_',
+appearance:'Appearance',appearanceDesc:'Appearance settings are saved locally.',theme:'Theme',language:'Language',account:'Administrator account',accountDesc:'Password changes use the real panel endpoint.',newUsername:'New username',currentPassword:'Current password',newPassword:'New password',save:'Save changes',
+createInbound:'Create inbound',createInboundDesc:'Only settings relevant to the selected protocol are shown.',protocolSettings:'Protocol settings',protocolSettingsDesc:'When Inbound is Auto / dedicated, these settings are used to create the matching inbound.',name:'Name',network:'Network',security:'Security',port:'Port',externalPort:'External port',domain:'Domain',wsPath:'WS path',create:'Create',cancel:'Cancel',noData:'No data',copy:'Copy',delete:'Delete',online:'Online',panelAlias:'Panel alias',panelAliasDesc:'A friendly display name for this panel.',helpTitle:'Panel guide',helpDesc:'Quick guide to users, protocols, SNI, subscriptions and settings.'}
+};
+function tr(k){return (T[lang]||T.fa)[k]||k}
+function applyI18n(){document.documentElement.lang=lang;document.documentElement.dir=lang==='fa'?'rtl':'ltr';$$('[data-i18n]').forEach(e=>e.innerHTML=tr(e.dataset.i18n));$('#langBtn').textContent=lang==='fa'?'EN':'FA';$('#langSelect').value=lang}
+function applyTheme(){
+  if(!['system','light','dark'].includes(theme))theme='system';
+  const resolved=theme==='system'
+    ?(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light')
+    :theme;
+  document.documentElement.dataset.theme=resolved;
+  document.documentElement.style.colorScheme=resolved;
+  const select=$('#themeSelect');if(select)select.value=theme;syncThemeGlass();
+  const btn=$('#themeBtn');
+  if(btn){
+    btn.setAttribute('aria-label',resolved==='dark'?'Switch to light mode':'Switch to dark mode');
+    btn.title=resolved==='dark'?'Light mode':'Dark mode';
+  }
+}
+function setLang(x){lang=x;localStorage.setItem('ps_lang',x);applyI18n();toast(x==='fa'?'زبان فارسی فعال شد':'English enabled')}
+function setTheme(x){theme=['system','light','dark'].includes(x)?x:'system';localStorage.setItem('ps_theme',theme);applyTheme();toast(lang==='fa'?'تم تغییر کرد':'Theme updated')}
+$('#langBtn').onclick=()=>setLang(lang==='fa'?'en':'fa');
+$('#themeBtn').onclick=()=>setTheme(theme==='dark'?'light':'dark');
+if(window.matchMedia){
+  const psTheme=window.matchMedia('(prefers-color-scheme:dark)');
+  const onSystemThemeChange=()=>{if(theme==='system')applyTheme()};
+  if(psTheme.addEventListener)psTheme.addEventListener('change',onSystemThemeChange);
+  else if(psTheme.addListener)psTheme.addListener(onSystemThemeChange);
+}$('#langSelect').onchange=e=>setLang(e.target.value);$('#themeSelect').onchange=e=>setTheme(e.target.value);
+function syncNavGlider(animate=true){
+  const nav=$('.nav'), glider=$('#navGlider'), active=$('.nav button.active');
+  if(!nav||!glider||!active)return;
+  const nr=nav.getBoundingClientRect(), ar=active.getBoundingClientRect();
+  if(!animate)glider.style.transition='none';
+  glider.style.width=ar.width+'px';glider.style.height=ar.height+'px';
+  glider.style.transform=`translate(${ar.left-nr.left+nav.scrollLeft}px,${ar.top-nr.top+nav.scrollTop}px)`;
+  glider.style.opacity='1';
+  if(!animate)requestAnimationFrame(()=>glider.style.transition='');
+}
+$$('.nav button').forEach(b=>b.onclick=()=>go(b.dataset.view));
+window.addEventListener('resize',()=>requestAnimationFrame(()=>syncNavGlider(false)));
+$('.nav')?.addEventListener('scroll',()=>requestAnimationFrame(()=>syncNavGlider(false)),{passive:true});
+function go(id){
+  const view=$('#'+id);if(!view)return;
+  $$('.view').forEach(v=>v.classList.remove('active'));view.classList.add('active');
+  $$('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));
+  requestAnimationFrame(()=>syncNavGlider(true));
+  const compact=window.innerWidth<=980;
+  window.scrollTo({top:0,behavior:compact?'auto':'smooth'});
+  if(compact) closeMobileMenu();
+  if(id==='clients')loadClients();if(id==='inbounds')loadInbounds();if(id==='nodes')loadNodes();if(id==='subs')loadSubs();if(id==='multi'){loadMultiInboundOptions();loadMultiConfigs();}if(id==='scanner'){loadSniList();loadSniResults()}if(id==='terminal')loadTerminalInfo();if(id==='settings'){loadSettingsPanel();loadActivity()}
+}
+requestAnimationFrame(()=>syncNavGlider(false));
+setTimeout(()=>syncNavGlider(false),180);
+let timer;function toast(m){let e=$('#toast');e.textContent=m;e.classList.add('show');clearTimeout(timer);timer=setTimeout(()=>e.classList.remove('show'),1900)}
+async function api(url,opt={}){let r=await fetch(url,{credentials:'same-origin',...opt,headers:{'Content-Type':'application/json',...(opt.headers||{})}});if(r.status===401){location.href='/login';throw Error('AUTH')}let txt=await r.text();let data;try{data=JSON.parse(txt)}catch{data=txt}if(!r.ok)throw Error(data?.detail||data?.message||txt||('HTTP '+r.status));return data}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function loadTraffic(){try{let range=$('#trafficRange')?.value||'day';let d=await api('/api/dashboard/traffic?range='+encodeURIComponent(range));$('#trafficWindowTotal').textContent=d.total_fmt||'0 B';$('#trafficAvgConn').textContent=String(d.average_connections??0);$('#trafficPeakConn').textContent=String(d.peak_connections??0);let pts=d.points||[];if(!pts.length)pts=[{bytes:0,connections:0}];let max=Math.max(1,...pts.map(x=>Number(x.bytes)||0));let coords=pts.map((x,i)=>{let xx=pts.length===1?400:i*800/(pts.length-1);let yy=205-(Number(x.bytes)||0)/max*170;return [xx,yy]});let line=coords.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');let area=line+' L 800 225 L 0 225 Z';$('#trafficLine').setAttribute('d',line);$('#area').setAttribute('d',area);$('#trafficLive').textContent='LIVE · '+new Date().toLocaleTimeString();}catch(e){}}
+
+async function loadOverview(){try{let s=await api('/api/server/stats');$('#sActive').textContent=s.active_users??s.total_users??0;$('#sConn').textContent=s.active_connections??0;let ib=await api('/api/inbounds');$('#sInbound').textContent=(ib.inbounds||[]).length;let q=await api('/api/pars/v1/subscriptions');$('#sSubs').textContent=(q.subs||q.subscriptions||[]).length;$('#heroTraffic').textContent=(s.total_traffic_used_gb||0)+' GB';loadTraffic()}catch(e){console.warn(e)}}
+let liveOverviewTimer=null;function startLiveOverview(){if(liveOverviewTimer)clearInterval(liveOverviewTimer);loadOverview();liveOverviewTimer=setInterval(loadOverview,10000)}
+async function loadClients(){
+ try{
+  const d=await api('/api/users'); const users=Array.isArray(d?.users)?d.users:[]; const body=$('#usersBody'); if(!body)return;
+  body.innerHTML=users.length?users.map(u=>{
+   const used=Number(u.traffic_used_bytes||0), limit=Number(u.traffic_limit_bytes||0);
+   const traffic=limit>0?(esc(u.traffic_used_fmt||formatBytes(used))+' / '+esc(u.traffic_limit_fmt||formatBytes(limit))):esc(u.traffic_used_fmt||formatBytes(used))+' / ∞';
+   const status=String(u.status||'active').toLowerCase(); const expires=u.expire_at?new Date(u.expire_at).toLocaleString(): '∞';
+   return `<tr><td><b>${esc(u.username||u.user_id)}</b><div class="muted">VLESS · ${esc(u.inbound_name||'Auto')}</div></td><td><div>${traffic}</div><div class="muted">${esc(String(u.connections||0))} اتصال · ${esc(expires)}</div></td><td><span class="pill ${status==='active'?'onlinePill':''}">${esc(status)}</span></td><td><div class="toolbar"><button class="btn small" onclick="viewUserConfig('${esc(u.config_uuid||u.user_id)}')">کانفیگ</button><button class="btn small" onclick="showUserQR('${esc(u.user_id)}')">QR</button><button class="btn small" onclick="editUser('${esc(u.user_id)}')">ویرایش</button><button class="btn small" onclick="toggleUser('${esc(u.user_id)}')">${status==='active'?'غیرفعال':'فعال'}</button><button class="btn small danger" onclick="deleteUser('${esc(u.user_id)}')">حذف</button></div></td></tr>`;
+  }).join(''):`<tr><td colspan="4"><div class="empty">${tr('noData')}</div></td></tr>`;
+  const count=$('#sActive'); if(count)count.textContent=users.filter(u=>String(u.status||'active').toLowerCase()==='active').length;
+ }catch(e){const body=$('#usersBody');if(body)body.innerHTML=`<tr><td colspan="4"><div class="empty">${esc(e.message||'خطا')}</div></td></tr>`;toast(e.message||'خطا')}
+}
+function formatBytes(bytes){
+ const n=Number(bytes)||0;
+ if(n<=0)return '0 B';
+ const units=['B','KB','MB','GB','TB'];
+ const i=Math.min(Math.floor(Math.log(n)/Math.log(1024)),units.length-1);
+ return (n/Math.pow(1024,i)).toFixed(i?2:0)+' '+units[i];
+}
+
+async function loadInbounds(){try{let d=await api('/api/inbounds');let a=d.inbounds||[];$('#inboundBody').innerHTML=a.length?a.map(x=>`<tr><td><b>${esc(x.name||x.inbound_id)}</b><div class="muted">${esc((x.protocol||'').toUpperCase())}</div></td><td><span class="pill">${esc(x.protocol||'-')}</span></td><td>${esc(x.network||'-')}</td><td>${esc(x.external_port||x.port||'-')}</td><td>${x.users_count??0}</td><td><span class="pill">${tr('online')}</span></td><td><button class="btn small" onclick="editInbound('${esc(x.inbound_id)}')">ویرایش</button></td></tr>`).join(''):`<tr><td colspan="7"><div class="empty">${tr('noData')}</div></td></tr>`;renderInboundPicker(a)}catch(e){toast(e.message)}}
+function renderInboundPicker(a){const box=$('#inboundPicker');if(!box)return;const selected=new Set((box.dataset.selected||'').split(',').filter(Boolean));box.innerHTML='<div class="glassChoice '+(!selected.size?'active':'')+'" data-id="" onclick="selectInboundCard(this,\'\')"><b>Auto / Default</b><span>پیش‌فرض مدیریت‌شده</span></div>'+a.filter(x=>x.protocol!=='node').map(x=>`<div class="glassChoice ${selected.has(String(x.inbound_id))?'active':''}" data-id="${esc(x.inbound_id)}" onclick="selectInboundCard(this,'${esc(x.inbound_id)}')"><b>${esc(x.name||x.inbound_id)}</b><span>${esc((x.protocol||'').toUpperCase())} · ${esc(x.network||'tcp')} · ${esc(x.external_port||x.port||'-')}</span></div>`).join('');syncInboundPicker()}
+function selectInboundCard(el,id){if(!id){$$('#inboundPicker .glassChoice').forEach(x=>x.classList.remove('active'));el.classList.add('active');$('#inboundPicker').dataset.selected='';syncInboundPicker();return}$('#inboundPicker .glassChoice[data-id=""]').classList.remove('active');el.classList.toggle('active');let ids=$$('[data-id]').filter(x=>x.classList.contains('active')).map(x=>x.dataset.id).filter(Boolean);$('#inboundPicker').dataset.selected=ids.join(',');syncInboundPicker()}
+function syncInboundPicker(){const ids=($('#inboundPicker')?.dataset.selected||'').split(',').filter(Boolean);$('#uInbound').value=ids[0]||'';$('#uInbound').dataset.ids=ids.join(',')}
+function openClientBuilder(){ $('#clientBuilderModal').classList.add('open'); loadInbounds(); updateClientProtocolFields(); }
+function closeClientBuilder(){ $('#clientBuilderModal').classList.remove('open'); }
+async function viewUserConfig(uuid){try{let d=await api('/api/users/config/'+encodeURIComponent(uuid));let u=await api('/api/users/'+encodeURIComponent(uuid));let cfg=(u.config||'').trim();if(!cfg){let sub=await api('/api/users/'+encodeURIComponent(uuid)+'/subscription');cfg=(sub.configs||[])[0]||sub.config||''}$('#configViewOutput').textContent=cfg||'کانفیگ پیدا نشد';$('#configViewMeta').textContent=(u.username||'کاربر')+' · VLESS · فقط مشاهده';$('#configViewModal').classList.add('open')}catch(e){toast(e.message)}}
+function closeConfigView(){$('#configViewModal').classList.remove('open')}
+function updateClientProtocolFields(){
+ const net=$('#cNetwork')?.value||'ws';
+ const show=(id,on)=>{const e=$(id);if(e)e.style.display=on?'grid':'none'};
+ show('#cfNetwork',true);show('#cfSecurity',true);show('#cfPort',true);show('#cfFingerprint',true);show('#cfSni',true);show('#cfAlpn',true);show('#cfWsPath',net==='ws');show('#cfGrpcService',net==='grpc');
+ show('#cfRealityDomain',false);show('#cfRealityPort',false);show('#cfRealityDest',false);show('#cfRealitySid',false);show('#cfEch',true);show('#cfFinalMask',true);show('#cfSniSpoof',true);
+}
+
+function toggleFold(id,btn){const e=$('#'+id);if(!e)return;e.classList.toggle('open');btn.classList.toggle('open',e.classList.contains('open'))}
+function parseFinalMask(raw){const s=String(raw||'').trim();if(!s)return {};try{const o=JSON.parse(s);if(!o||typeof o!=='object'||Array.isArray(o))throw Error();return o}catch(e){toast(lang==='fa'?'JSON نامعتبر است':'Invalid JSON');return {}}}
+function setAntiBanVisual(on){const sw=$('#antiBanSwitch'),opts=$('#antiBanOptions');if(sw){sw.classList.toggle('on',!!on);sw.setAttribute('aria-checked',String(!!on))}if(opts)opts.hidden=!on}
+function toggleAntiBan(){const on=!$('#antiBanSwitch')?.classList.contains('on');setAntiBanVisual(on);if(on)applyAntiBanPreset()}
+function applyFinalMaskPreset(){const fm={tcp:[{type:'fragment',settings:{packets:'tlshello',lengths:['3-5','6-8','10-20'],delays:['10-20'],maxSplit:'3-6'}}]};$('#cFinalMask').value=JSON.stringify(fm);}
+function applyAntiBanPreset(){if(!$('#antiBanSwitch')?.classList.contains('on'))return;const mode=$('#antiBanMode')?.value||'ff';if(mode==='ech'){
+ $('#cFingerprint').value='chrome';$('#cEch').value='cloudflare-ech.com+udp://1.1.1.1';$('#cFinalMask').value='';
+}else{
+ $('#cFingerprint').value='unsafe';$('#cEch').value='';applyFinalMaskPreset();
+}
+ $('#cFakeSni').value='auth.vercel.com';$('#cSpoofIp').value='188.114.96.7';}
+async function createClient(){try{
+ const ids=($('#uInbound')?.dataset.ids||'').split(',').filter(Boolean);
+ const body={username:$('#uName').value.trim(),password:$('#uPass').value,protocol:'vless',traffic_limit_gb:Number($('#uTraffic').value||0),expire_days:Number($('#uExpire').value||0),concurrent_connections:Number($('#uDeviceLimit').value||0),sni:$('#cSni').value.trim(),path:$('#cWsPath').value||'',support_channel_id:$('#uSupport').value.trim(),client_fingerprint:$('#cFingerprint').value||'',client_ech:$('#cEch').value.trim(),client_finalmask:parseFinalMask($('#cFinalMask').value),anti_ban_enabled:$('#antiBanSwitch')?.classList.contains('on')||false,anti_ban_mode:$('#antiBanMode')?.value||'ff',sni_spoof_v2box:$('#antiBanSwitch')?.classList.contains('on')||false,fake_sni:$('#cFakeSni').value.trim(),spoof_ip:$('#cSpoofIp').value.trim()};
+ if(ids.length)body.inbound_ids=ids;
+ const d=await api('/api/pars/v1/users',{method:'POST',body:JSON.stringify(body)}); const link=d.config||d.vless_link||''; $('#clientOut').textContent=link||'کانفیگ تولید نشد'; $('#clientMsg').textContent=d.subscription_url||''; toast('کاربر ساخته شد'); await loadClients(); loadOverview();
+ }catch(e){toast(e.message)}}
+function clearClientForm(){['uName','uPass','uSni','cSshHost','cSshUser','cSshPass','uSupport','cEch','cFakeSni','cSpoofIp'].forEach(id=>{if($(id))$('#'+id).value=''});$('#cFinalMask').value='';$('#uTraffic').value=0;$('#uExpire').value=0;$('#uDeviceLimit').value=0;$('#cFingerprint').value='chrome';setAntiBanVisual(false);if($('#inboundPicker'))$('#inboundPicker').dataset.selected='';syncInboundPicker();$('#clientOut').textContent='بعد از ساخت، کانفیگ اینجا می‌آید.'}
+function openInbound(){$('#ibEditId').value='';$('#ibModalTitle').textContent=tr('createInbound');$('#inboundModal').classList.add('open');renderInboundProtocolFields();let e=$('#ibProtocolBody'),b=e?.previousElementSibling;if(e){e.classList.remove('open');b?.classList.remove('open')}}function closeInbound(){$('#inboundModal').classList.remove('open')}
+function renderInboundProtocolFields(){const h=`<div class="field"><label>Network</label><select id="ibNetwork"><option value="ws">WebSocket</option><option value="grpc">gRPC</option><option value="tcp">TCP</option><option value="xhttp">XHTTP</option></select></div><div class="field"><label>Security</label><select id="ibSecurity"><option value="tls">TLS</option><option value="none">None</option></select></div><div class="field"><label>Port</label><input id="ibPort" type="number" value="443"></div><div class="field"><label>Server Host</label><input id="ibDomain" placeholder="example.com"></div><div class="field"><label>SNI</label><input id="ibSni" placeholder="example.com"></div><div class="field"><label>Fingerprint</label><select id="ibFp"><option>chrome</option><option>firefox</option><option>safari</option><option>edge</option><option>unsafe</option></select></div><div class="field"><label>ALPN</label><input id="ibAlpn" value="http/1.1"></div><div class="field"><label>WS Path</label><input id="ibPath" value="/ws/{uuid}"></div><div class="field"><label>gRPC Service</label><input id="ibGrpcService" value="pars-space"></div><div class="field full"><label>XHTTP Path</label><input id="ibXPath2" value="/xhttp"></div>`;$('#ibDynamic').innerHTML=h}
+async function editInbound(id){try{let d=await api('/api/inbounds');let ib=(d.inbounds||[]).find(x=>String(x.inbound_id)===String(id));if(!ib)throw Error('Inbound not found');$('#ibEditId').value=id;$('#ibModalTitle').textContent='ویرایش اینباند';$('#ibName').value=ib.name||'';$('#ibProtocol').value=(ib.protocol||'vless').toLowerCase();renderInboundProtocolFields();setTimeout(()=>{let set=(id,v)=>{let e=$(id);if(e&&v!==undefined)e.value=v};let ss=ib.ssh_settings||{};set('#ibSshHost',ss.host||ib.domain||'');set('#ibSshPort',ss.port||ib.port||22);set('#ibSshUser',ss.username||'');set('#ibSshPass',ss.password||'');set('#ibSshAuth','password');set('#ibNetwork',ib.network||'ws');set('#ibSecurity',ib.security||'tls');set('#ibPort',ib.port||443);set('#ibExtPort',ib.external_port||443);set('#ibDomain',ib.domain||'');set('#ibExtDomain',ib.external_domain||'');set('#ibSni',ib.sni||'');set('#ibFp',ib.fingerprint||'chrome');set('#ibPath',(ib.ws_settings||{}).path||ib.path||'/ws/{uuid}');set('#ibGrpcService',(ib.grpc_settings||{}).serviceName||'pars-space');set('#ibXPath2',(ib.xhttp_settings||{}).path||'/xhttp');set('#ibXPath',(ib.xhttp_settings||{}).path||'/');set('#ibDest',(ib.reality_settings||{}).dest||'is1-ssl.mzstatic.com:443');set('#ibSid',(ib.reality_settings||{}).short_id||'');set('#ibAlpn',(ib.tls_settings||{}).alpn||'http/1.1');},0);$('#inboundModal').classList.add('open')}catch(e){toast(e.message)}}
+async function testInboundSSH(){try{const host=$('#ibSshHost').value.trim(),port=Number($('#ibSshPort').value||22);const d=await api('/api/tools/test-ssh',{method:'POST',body:JSON.stringify({host,port})});$('#ibTestMsg').textContent=d.ok?`✓ ${d.latency_ms} ms`:`✕ ${d.message}`;toast(d.ok?'پورت SSH قابل دسترسی است':'پورت SSH در دسترس نیست')}catch(e){toast(e.message)}}
+async function createInbound(){try{const body={name:$('#ibName').value.trim(),protocol:'vless',network:$('#ibNetwork').value,security:$('#ibSecurity').value,port:Number($('#ibPort').value||443),domain:$('#ibDomain').value.trim(),sni:$('#ibSni').value.trim(),fingerprint:$('#ibFp').value,tls_settings:{alpn:$('#ibAlpn').value||'http/1.1'},ws_settings:{path:$('#ibPath').value||'/ws/{uuid}'},grpc_settings:{serviceName:$('#ibGrpcService').value||'pars-space'},xhttp_settings:{path:$('#ibXPath2').value||'/xhttp',mode:'stream-up'}};const editId=$('#ibEditId').value.trim();const d=await api('/api/inbounds'+(editId?'/'+encodeURIComponent(editId):''),{method:editId?'PATCH':'POST',body:JSON.stringify(body)});closeInbound();toast(editId?'اینباند ویرایش شد':'اینباند ساخته شد');loadInbounds();loadOverview()}catch(e){toast(e.message)}}
+async function loadSubs(){
+ try{
+  const [ud,sd]=await Promise.all([api('/api/users'),api('/api/pars/v1/subscriptions')]);
+  const users=ud.users||[];
+  const groups=sd.subs||sd.subscriptions||[];
+  let html='';
+  for(const u of users){
+   const used=Number(u.traffic_used_bytes||0),limit=Number(u.traffic_limit_bytes||0);
+   const pct=limit?Math.min(100,Math.max(0,used/limit*100)):0;
+   const usedLabel=esc(u.traffic_used_fmt||formatBytes(used));
+   const limitLabel=limit?esc(u.traffic_limit_fmt||formatBytes(limit)):'∞';
+   const usageText=limit?`${usedLabel} / ${limitLabel}`:`${usedLabel} / ∞`;
+   const subUrl=String(u.subscription_url||'');
+   const userId=String(u.user_id||'');
+   const userName=String(u.username||'');
+   html+=`<div class="row subCard">
+    <div style="min-width:0;flex:1">
+      <b>${esc(userName||userId)}</b>
+      <div class="muted">VLESS · ${esc(subUrl)}</div>
+      <div class="subUsage ${limit?'':'is-unlimited'}" style="--usage-pct:${pct}%" aria-label="${esc(usageText)}">
+        <i class="subUsageFill"></i>
+        <div class="subUsageText"><span class="subUsageMain">${usageText}</span><span class="subUsagePct">${limit?Math.round(pct)+'%':'∞'}</span></div>
+      </div>
+    </div>
+    <div class="toolbar">
+      <button class="btn small dark copyData" data-copy="${esc(subUrl)}">کپی ساب</button>
+      <button class="btn small dailyData" data-id="${esc(userId)}" data-name="${esc(userName)}">مصرف ۳۱ روز</button>
+    </div>
+   </div>`;
+  }
+  for(const g of groups){
+   const subUrl=String(g.sub_url||'');
+   html+=`<div class="row subCard">
+    <div style="min-width:0;flex:1">
+      <b>${esc(g.name||'Subscription')}</b>
+      <div class="muted">${g.kind==='multi'?'Multi Config':'گروهی'} · ${g.links_count??0} لینک · ${esc(g.total_used_fmt||'0 B')}</div>
+      <div class="output" style="margin-top:8px;min-height:0;padding:9px" dir="ltr">${esc(subUrl)}</div>
+    </div>
+    <div class="toolbar"><button class="btn small dark copyData" data-copy="${esc(subUrl)}">کپی لینک</button></div>
+   </div>`;
+  }
+  $('#subList').innerHTML=html||`<div class="empty">${tr('noData')}</div>`;
+  $$('#subList .copyData').forEach(b=>b.onclick=()=>copyText(b.dataset.copy||''));
+  $$('#subList .dailyData').forEach(b=>b.onclick=()=>loadUserDaily(b.dataset.id||'',b.dataset.name||''));
+ }catch(e){toast(e.message)}
+}
+async function loadUserDaily(id,name){try{const d=await api('/api/users/'+encodeURIComponent(id)+'/traffic-history');const days=d.days||[];const total=days.reduce((a,x)=>a+Number(x.bytes||0),0);$('#subList').insertAdjacentHTML('afterbegin',`<div class="card cardPad" id="dailyTemp"><div class="head"><div><h2>${esc(name||'کاربر')} · ۳۱ روز اخیر</h2><p class="muted">مجموع این بازه: ${esc(formatBytes(total))}</p></div><button class="btn" onclick="$('#dailyTemp')?.remove()">×</button></div><div class="dailyBars">${days.map(x=>`<div class="dailyBar"><span title="${esc(x.date+' · '+x.fmt)}" style="height:${Math.max(4,Math.min(100,Number(x.bytes||0)/Math.max(1,...days.map(y=>Number(y.bytes||0)))*100))}%"></span><small>${esc(x.date.slice(5))}</small></div>`).join('')}</div></div>`)}catch(e){toast(e.message)}}
+async function createSubscription(){
+ let name=prompt(lang==='fa'?'نام اشتراک:':'Subscription name:','Pars Subscription');if(name===null)return;
+ let desc=prompt(lang==='fa'?'توضیح:':'Description:','Personal subscription')??'';
+ try{
+  const d=await api('/api/pars/v1/subscriptions',{method:'POST',body:JSON.stringify({name,desc})});
+  const sub=d.sub||d.subscription||d;
+  const users=await api('/api/pars/v1/users');
+  for(const u of (users.users||[])){
+   if(u.config_uuid) await api('/api/subs/'+encodeURIComponent(sub.sub_id)+'/links',{method:'POST',body:JSON.stringify({link_id:u.config_uuid,action:'add'})});
+  }
+  await loadSubs();await loadOverview();
+  const url=sub.sub_url||sub.public_url||'';
+  $('#subList').insertAdjacentHTML('afterbegin',`<div class="output" style="margin-bottom:10px">${esc(url)}</div>`);
+  await copyText(url);toast(lang==='fa'?'اشتراک ساخته شد، کاربران اضافه شدند و لینک کپی شد':'Subscription created, users assigned and link copied');
+ }catch(e){toast(e.message)}
+}
+
+async function loadSavedScanner(type){try{let d=await api('/api/scanner/ips/'+encodeURIComponent(type));$('#scanTargets').value=(d.ips||[]).join('\n');$('#ipScanMsg').textContent=(d.ips||[]).length+' saved';}catch(e){toast(e.message)}}
+async function runIpScan(){try{let raw=$('#scanTargets').value.split(/[\s,]+/).map(x=>x.trim()).filter(Boolean).slice(0,150);if(!raw.length)throw Error('Enter at least one IP or host:port');$('#ipScanMsg').textContent='Scanning…';let d=await api('/api/scanner/ping-batch',{method:'POST',body:JSON.stringify({targets:raw,timeout:2})});let r=d.results||[];$('#ipScanResults').innerHTML=r.map(x=>`<div class="row"><span dir="ltr"><b>${esc(x.target)}</b></span><span class="pill">${x.ok?esc(x.latency_ms+' ms'):'offline'}</span></div>`).join('')||'<div class="empty">No results</div>';let good=r.filter(x=>x.ok).map(x=>x.target);if(good.length)await api('/api/scanner/save',{method:'POST',body:JSON.stringify({type:'cf',ips:good,replace:false,seq:(await api('/api/scanner/ips/cf')).seq||0})});$('#ipScanMsg').textContent=`${r.filter(x=>x.ok).length}/${r.length} reachable`; }catch(e){$('#ipScanMsg').textContent=e.message;toast(e.message)}}
+async function loadSniList(){try{let d=await api('/api/scanner/sni-scan-list');$('#sniCount').textContent=(d.count||0)+' SNI';$('#sniStatus').textContent=(d.snis||[]).join('\n');}catch(e){toast(e.message)}}
+async function loadSniResults(){try{let d=await api('/api/scanner/sni-results');renderSniResults(d.results||[])}catch(e){toast(e.message)}}
+function renderSniResults(a){$('#sniResults').innerHTML=a.length?a.map((x,i)=>`<div class="row"><span dir="ltr"><b>#${i+1} ${esc(x.sni)}</b></span><span class="pill">${esc(x.latency_ms)} ms</span></div>`).join(''):'<div class="empty">No saved SNI results</div>'}
+async function runSniScan(){try{let d=await api('/api/scanner/sni-scan-list');let snis=(d.snis||[]);if(!snis.length)throw Error('SNI list is empty');$('#sniStatus').textContent='Scanning '+snis.length+' hosts…';let out=[];for(let i=0;i<snis.length;i+=16){let batch=snis.slice(i,i+10);let rs=await Promise.all(batch.map(async s=>{try{return await api('/api/scanner/sni-check?host='+encodeURIComponent(s)+'&port=443')}catch{return {ok:false,sni:s}}}));out.push(...rs);$('#sniStatus').textContent=`${Math.min(i+16,snis.length)}/${snis.length}`;}let good=out.filter(x=>x.ok).sort((a,b)=>a.latency_ms-b.latency_ms).slice(0,10).map(x=>({sni:x.sni,latency_ms:x.latency_ms}));renderSniResults(good);if(good.length)await api('/api/scanner/sni-save-results',{method:'POST',body:JSON.stringify({results:good,top:10})});$('#sniStatus').textContent=good.length+' reachable SNI saved';}catch(e){$('#sniStatus').textContent=e.message;toast(e.message)}}
+async function clearSniResults(){try{await api('/api/scanner/sni-clear-results',{method:'POST'});renderSniResults([]);toast('SNI results cleared')}catch(e){toast(e.message)}}
+async function loadMultiConfigs(){try{const d=await api('/api/multi-configs');const a=d.multi||[];$('#multiList').innerHTML=a.length?a.map(x=>`<div class="row"><div style="min-width:0;flex:1"><b>${esc(x.name)}</b><div class="muted">${x.count} کانفیگ · ${esc(x.status)} · ${esc(x.total_used_fmt)} · ${x.connections} اتصال</div><div class="output" style="margin-top:8px;min-height:0;padding:8px">${esc(x.sub_url)}</div></div><div class="toolbar"><button class="btn small dark copyData" data-copy="${esc(x.sub_url||'')}">کپی ساب</button><button class="btn small detailData" data-id=${JSON.stringify(x.sub_id||'')}>مشاهده بیشتر</button></div></div>`).join(''):`<div class="empty">هنوز Multi Config ساخته نشده.</div>`;$$('#multiList .copyData').forEach(b=>b.onclick=()=>copyText(b.getAttribute('data-copy')||''));$$('#multiList .detailData').forEach(b=>b.onclick=()=>showMultiDetails(b.dataset.id||''));}catch(e){toast(e.message)}}
+async function loadMultiInboundOptions(){try{const d=await api('/api/inbounds');const a=d.inbounds||[];const el=$('#multiInbound');if(el)el.innerHTML='<option value="">خودکار</option>'+a.filter(x=>x.protocol==='vless').map(x=>`<option value="${esc(x.inbound_id)}">${esc(x.name||x.inbound_id)} · ${esc(x.external_port||x.port||'')}</option>`).join('')}catch(e){}}
+function setMultiAntiBanVisual(on){const sw=$('#multiAntiBanSwitch'),opts=$('#multiAntiBanOptions');if(sw){sw.classList.toggle('on',!!on);sw.setAttribute('aria-checked',String(!!on))}if(opts)opts.hidden=!on}
+function toggleMultiAntiBan(){setMultiAntiBanVisual(!$('#multiAntiBanSwitch')?.classList.contains('on'))}
+async function createMultiConfig(){try{const body={name:$('#multiName').value.trim(),count:Number($('#multiCount').value||1),inbound_id:$('#multiInbound').value,traffic_limit_gb:Number($('#multiTraffic').value||0),expire_days:Number($('#multiExpire').value||0),support_channel_id:$('#multiSupport').value.trim(),anti_ban_enabled:$('#multiAntiBanSwitch')?.classList.contains('on')||false,anti_ban_mode:$('#multiAntiBanMode')?.value||'ff'};const d=await api('/api/multi-configs',{method:'POST',body:JSON.stringify(body)});$('#multiMsg').textContent=d.sub_url||'';await copyText(d.sub_url||'');toast('Multi Config ساخته شد');loadMultiConfigs()}catch(e){toast(e.message)}}
+async function showMultiDetails(id){try{const d=await api('/api/multi-configs/'+encodeURIComponent(id));const rows=d.items||[];const box=rows.map(x=>`<div class="row"><div><b>${esc(x.name)}</b><div class="muted">مصرف ${esc(x.used_fmt)}</div></div><div class="toolbar"><span class="pill">لحظه‌ای ${x.connections}</span><span class="pill">میانگین ${x.average_connections}</span></div></div>`).join('');$('#multiList').insertAdjacentHTML('afterbegin',`<div class="card cardPad" id="multiDetail"><div class="head"><div><h2>${esc(d.name)} · جزئیات</h2><p class="muted">وضعیت: ${esc(d.status)} · ${esc(d.total_used_fmt)}</p></div><button class="btn" onclick="$('#multiDetail')?.remove()">×</button></div>${box||'<div class="empty">داده‌ای نیست</div>'}</div>`)}catch(e){toast(e.message)}}
+
+async function loadFastestSni(){try{let d=await api('/api/scanner/sni-fastest');if(!d.ok)throw Error('No SNI result');$('#sniStatus').textContent=d.sni+' · '+d.latency_ms+' ms';await copyText(d.sni)}catch(e){toast(e.message)}}
+async function loadTerminalInfo(){try{let d=await api('/api/terminal/info');$('#terminalInfo').textContent=d.enabled?(d.user+' · '+d.shell):'disabled';$('#terminalCwd').textContent=d.cwd||''}catch(e){$('#terminalInfo').textContent='error'}}
+async function runTerminal(){try{let command=$('#terminalCommand').value.trim();if(!command)return;$('#terminalOutput').textContent='Running…';let d=await api('/api/terminal/exec',{method:'POST',body:JSON.stringify({command})});$('#terminalCwd').textContent=d.cwd||'';$('#terminalOutput').textContent=(d.output||'(no output)')+`\n\n[exit ${d.code??'?'}${d.timed_out?' · timeout':''}]`; }catch(e){$('#terminalOutput').textContent=e.message}}
+function clearTerminal(){$('#terminalCommand').value='';$('#terminalOutput').textContent='Pars Space Linux terminal ready.'}
+$('#terminalCommand')?.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();runTerminal()}});
+async function toggleUser(id){try{await api('/api/users/'+encodeURIComponent(id)+'/toggle',{method:'PATCH'});await loadClients();await loadOverview();toast('Status updated')}catch(e){toast(e.message)}}
+async function deleteUser(id){if(!confirm(lang==='fa'?'این کاربر و کانفیگش حذف شود؟':'Delete this user and its config?'))return;try{await api('/api/users/'+encodeURIComponent(id),{method:'DELETE'});await loadClients();await loadOverview();toast(lang==='fa'?'کاربر حذف شد':'User deleted')}catch(e){toast(e.message)}}
+async function showUserQR(id){try{const u=await api('/api/users/'+encodeURIComponent(id));$('#userQrImage').src=u.qr_url+'?t='+Date.now();$('#userQrLink').textContent=u.subscription_url||'';$('#userQrModal').classList.add('open')}catch(e){toast(e.message)}}
+function closeUserQR(){$('#userQrModal').classList.remove('open')}
+async function editUser(id){try{const u=await api('/api/users/'+encodeURIComponent(id));$('#editUserId').value=id;$('#editUsername').value=u.username||'';$('#editStatus').value=u.status||'active';$('#editTraffic').value=u.traffic_limit_bytes?Math.round(u.traffic_limit_bytes/1024**3*100)/100:0;let days=Number(u.duration_days||0);if(!days&&u.expire_at){days=Math.max(0,Math.ceil((new Date(u.expire_at)-Date.now())/86400000))}$('#editExpire').value=days;$('#editDeviceLimit').value=u.concurrent_connections||0;$('#editSupport').value=u.support_channel_id||'';$('#userEditModal').classList.add('open')}catch(e){toast(e.message)}}
+function closeUserEdit(){$('#userEditModal').classList.remove('open')}
+async function saveUserEdit(){try{const id=$('#editUserId').value;await api('/api/users/'+encodeURIComponent(id),{method:'PATCH',body:JSON.stringify({username:$('#editUsername').value.trim(),status:$('#editStatus').value,traffic_limit_gb:Number($('#editTraffic').value||0),expire_days:Number($('#editExpire').value||0),concurrent_connections:Number($('#editDeviceLimit').value||0),support_channel_id:$('#editSupport')?.value.trim()||''})});closeUserEdit();await loadClients();await loadOverview();toast('User updated')}catch(e){toast(e.message)}}
+async function resetUserTrafficFromEdit(){try{const id=$('#editUserId').value;await api('/api/users/'+encodeURIComponent(id)+'/reset',{method:'PATCH',body:JSON.stringify({reset_time:true})});toast('حجم و زمان ریست شد');await loadClients()}catch(e){toast(e.message)}}
+async function loadNodes(){try{let d=await api('/api/nodes');let a=d.nodes||[];$('#nodeList').innerHTML=a.length?a.map(n=>`<div class="row"><div><b>${esc(n.name||n.node_id)}</b><div class="muted" dir="ltr">${esc(n.url||'')}</div></div><div class="toolbar"><span class="pill">${esc(n.status||'unknown')}</span><button class="btn small" onclick="pingNode('${esc(n.node_id)}')">Ping</button><button class="btn small" onclick="syncNode('${esc(n.node_id)}')">Sync</button><button class="btn small danger" onclick="deleteNode('${esc(n.node_id)}')">${tr('delete')}</button></div></div>`).join(''):`<div class="empty">${tr('noData')}</div>`}catch(e){$('#nodeList').innerHTML='<div class="empty">'+esc(e.message)+'</div>'}}
+function openNode(){$('#nodeModal').classList.add('open')}
+function closeNode(){$('#nodeModal').classList.remove('open')}
+async function connectNode(){try{let name=$('#nodeName').value.trim(),url=$('#nodeUrl').value.trim(),key=$('#nodeKey').value.trim();if(!url||!key)throw Error('Panel URL and API key are required');if(!/^psp_/.test(key))throw Error('Panel API key must start with psp_');await api('/api/pars/v1/nodes/connect',{method:'POST',body:JSON.stringify({name,url,domain:url,api_key:key})});closeNode();toast(lang==='fa'?'پنل متصل شد':'Panel connected');$('#nodeName').value='';$('#nodeUrl').value='';$('#nodeKey').value='';loadNodes()}catch(e){toast(e.message)}}
+async function pingNode(id){try{let r=await api('/api/nodes/'+encodeURIComponent(id)+'/health');toast(r.ok?(lang==='fa'?'نود آنلاین است':'Node online'):(lang==='fa'?'نود آفلاین است':'Node offline'));loadNodes()}catch(e){toast(e.message)}}
+async function syncNode(id){try{let r=await api('/api/nodes/sync-all',{method:'POST'});toast((lang==='fa'?'همگام‌سازی انجام شد: ':'Sync complete: ')+(r.synced??r.count??0));loadNodes()}catch(e){toast(e.message)}}
+async function deleteNode(id){if(!confirm(lang==='fa'?'این نود حذف شود؟':'Delete this node?'))return;try{await api('/api/nodes/'+encodeURIComponent(id),{method:'DELETE'});loadNodes();toast(lang==='fa'?'نود حذف شد':'Node removed')}catch(e){toast(e.message)}}
+async function loadServerInfo(){try{let d=await api('/api/server-info');$('#serverInfo').innerHTML=`<div class="row"><span>Public IP</span><b dir="ltr">${esc(d.public_ip||'--')}</b></div><div class="row"><span>Location</span><b>${esc((d.country_flag||'🌐')+' '+(d.country||d.country_code||'Unknown'))}</b></div><div class="row"><span>Panel host</span><b dir="ltr">${esc(d.host||location.host)}</b></div>`}catch(e){$('#serverInfo').innerHTML='<div class="empty">'+esc(e.message)+'</div>'}}
+async function testConfig(){try{let v=$('#testConfigInput').value.trim();if(!/^vless:\/\//i.test(v))throw Error(lang==='fa'?'فقط کانفیگ VLESS پشتیبانی می‌شود':'Only VLESS configs are supported');let d=await api('/api/tools/test-config',{method:'POST',body:JSON.stringify({config:v})});$('#configTestOutput').textContent=JSON.stringify(d,null,2);$('#configTestMsg').textContent=(d.ok?'✓ ':'✕ ')+(d.message||((d.latency_ms||0)+' ms'));renderProtocolHealth(v,d)}catch(e){$('#configTestOutput').textContent=e.message;toast(e.message)}}
+async function testSubscriptionLink(){try{const v=$('#testSubInput').value.trim();if(!v)throw Error('لینک ساب را وارد کنید');$('#subTestMsg').textContent='در حال تست...';const d=await api('/api/tools/test-subscription',{method:'POST',body:JSON.stringify({url:v})});const rows=d.results||[];$('#subTestResults').innerHTML=rows.length?rows.map(x=>`<div class="row"><div><b>${esc(x.remark||x.host||'VLESS')}</b><div class="muted" dir="ltr">${esc(x.host||'')}</div></div><div class="toolbar"><span class="pill">${x.ok?'فعال':'Timeout / خطا'}</span><span>${esc(String(x.latency_ms??'--'))} ms</span></div></div>`).join(''):`<div class="empty">کانفیگی پیدا نشد.</div>`;$('#subTestMsg').textContent=`${d.ok_count||0} فعال · ${d.total||0} کل`; }catch(e){$('#subTestMsg').textContent='';toast(e.message)}}
+function renderProtocolHealth(v,d){const p=(v.match(/^([a-z0-9-]+):\/\//i)||[])[1]||'?';$('#protocolHealth').innerHTML=`<div class="row"><b>Protocol</b><span class="pill">${esc(p.toUpperCase())}</span></div><div class="row"><b>Result</b><span class="pill">${d.ok?'reachable / valid':'failed'}</span></div><div class="row"><b>Latency</b><span>${esc(String(d.latency_ms??'--'))} ms</span></div>`}
+async function testSpeed(){try{let bytes=2*1024*1024,t=performance.now(),r=await fetch('/api/tools/speed-test?bytes='+bytes+'&ts='+Date.now(),{cache:'no-store'});if(!r.ok)throw Error('Speed test failed');await r.arrayBuffer();let sec=(performance.now()-t)/1000,mbps=(bytes*8/sec)/1e6;$('#speedValue').textContent=mbps.toFixed(2)+' Mbps';$('#speedFill').style.width=Math.min(100,mbps/100*100)+'%';$('#speedMeta').textContent=sec.toFixed(2)+' s · '+(bytes/1048576).toFixed(0)+' MB';toast((lang==='fa'?'سرعت تقریبی: ':'Approx speed: ')+mbps.toFixed(2)+' Mbps')}catch(e){toast(e.message)}}
+async function loadParsApi(){try{let d=await api('/api/pars/v1/credentials');$('#parsApiKey').value=d.api_key||''}catch(e){$('#parsApiKey').value=''}}
+async function copyParsKey(){await copyText($('#parsApiKey').value)}
+async function regenerateParsKey(){if(!confirm(lang==='fa'?'کلید قبلی دیگر معتبر نباشد و کلید جدید ساخته شود؟':'Regenerate the Pars API key?'))return;try{let d=await api('/api/pars/v1/credentials/regenerate',{method:'POST'});$('#parsApiKey').value=d.api_key||'';toast(lang==='fa'?'کلید جدید ساخته شد':'New key generated')}catch(e){toast(e.message)}}
+async function loadSettingsPanel(){
+  try{
+    let d=await api('/api/settings');
+    const alias=d.panel_alias||localStorage.getItem('ps_panel_alias')||'Pars Space';
+    if($('#panelAlias'))$('#panelAlias').value=alias;
+    await applyPanelAlias(alias);
+    protocolDefaults=d.protocol_defaults||{};
+    renderServerAdvancedSettings();
+  }catch(e){
+    await applyPanelAlias(localStorage.getItem('ps_panel_alias')||'Pars Space');
+  }
+}
+async function applyPanelAlias(v){
+  v=String(v||'Pars Space').trim()||'Pars Space';
+  document.title=v;
+  const b=$('.brand span:last-child');if(b)b.textContent=v.toUpperCase();
+  localStorage.setItem('ps_panel_alias',v);
+}
+async function savePanelAlias(){
+  try{
+    let v=$('#panelAlias').value.trim()||'Pars Space';
+    await api('/api/settings',{method:'POST',body:JSON.stringify({panel_alias:v})});
+    await applyPanelAlias(v);
+    toast(lang==='fa'?'نام مستعار ذخیره شد':'Alias saved');
+  }catch(e){toast(e.message)}
+}
+async function loadActivity(){try{let d=await api('/api/activity');let a=d.activity||d.activities||d.logs||[];$('#activityList').innerHTML=a.length?a.slice(0,30).map(x=>`<div class="row"><span>${esc(x.message||x.action||x.event||JSON.stringify(x))}</span><span class="muted">${esc(x.created_at||x.time||'')}</span></div>`).join(''):`<div class="empty">${tr('noData')}</div>`}catch(e){toast(e.message)}}
+function decodeCopyValue(v){
+  const t=document.createElement('textarea');
+  t.innerHTML=String(v??'');
+  return t.value;
+}
+async function copyText(v){
+  v=decodeCopyValue(v);
+  if(!v)return toast(lang==='fa'?'چیزی برای کپی نیست':'Nothing to copy');
+  try{
+    if(navigator.clipboard&&window.isSecureContext){
+      await navigator.clipboard.writeText(v);
+    }else{
+      const ta=document.createElement('textarea');
+      ta.value=v;ta.style.position='fixed';ta.style.opacity='0';
+      document.body.appendChild(ta);ta.focus();ta.select();document.execCommand('copy');ta.remove();
+    }
+    toast(lang==='fa'?'کپی شد':'Copied');
+  }catch{
+    const ta=document.createElement('textarea');
+    ta.value=v;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.focus();ta.select();
+    try{document.execCommand('copy')}finally{ta.remove()}
+    toast(lang==='fa'?'کپی شد':'Copied');
+  }
+}
+async function downloadBackup(){try{const r=await fetch('/api/settings/backup',{credentials:'same-origin'});if(!r.ok)throw Error('Backup failed');const b=await r.blob();const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='pars-space-backup.json';a.click();URL.revokeObjectURL(a.href);toast('Backup downloaded')}catch(e){toast(e.message)}}
+async function restoreBackup(file){if(!file)return;if(!confirm('Restore backup and replace current panel data?'))return;try{const txt=await file.text();const r=await fetch('/api/settings/restore',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:txt});const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.detail||'Restore failed');toast('Backup restored');setTimeout(()=>location.reload(),700)}catch(e){toast(e.message)}}
+async function checkUpdate(){try{const d=await api('/api/settings/update/check');$('#updateState').textContent=d.update_available?'Update available':'Up to date';$('#updateInfo').textContent='Latest: '+String(d.latest_sha||'').slice(0,12)+(d.current_sha?' · Installed: '+String(d.current_sha).slice(0,12):'')}catch(e){toast(e.message)}}
+async function applyUpdate(){if(!confirm('A backup will be created, then panel files will be updated. Continue?'))return;try{$('#updateState').textContent='Updating…';const d=await api('/api/settings/update/apply',{method:'POST'});$('#updateState').textContent='Updated';$('#updateInfo').textContent='Update applied. Restart the panel process to load the new version. Backup: '+(d.backup||'');toast('Update applied — restart required')}catch(e){$('#updateState').textContent='Failed';toast(e.message)}}
+function syncThemeGlass(){const g=$('#themeGlass');if(!g)return;const vals=['system','light','dark'];const i=Math.max(0,vals.indexOf(theme));g.style.setProperty('--theme-index',i);g.querySelectorAll('button').forEach((b,n)=>b.classList.toggle('active',n===i))}
+$('#themeGlass')?.querySelectorAll('button').forEach(b=>b.onclick=()=>setTheme(b.dataset.themeValue));
+async function changeCredentials(){try{await api('/api/change-credentials',{method:'POST',body:JSON.stringify({username:$('#adminUser').value.trim(),current_password:$('#adminCurrent').value,new_password:$('#adminNew').value})});toast(lang==='fa'?'رمز عبور تغییر کرد':'Password updated')}catch(e){toast(e.message)}}
+async function boot(){
+  try{applyI18n();applyTheme();}catch(e){console.warn(e)}
+  try{const me=await api('/api/me');if(me.username&&$('#adminUser'))$('#adminUser').value=me.username}catch(e){console.warn('session bootstrap',e)}
+  // UI must never depend on an API call to leave the loading screen.
+  $('#loadingScreen')?.classList.add('hide');
+  Promise.allSettled([loadOverview(),loadInbounds(),loadParsApi(),loadServerInfo(),loadSettingsPanel()]);
+}
+window.setTimeout(()=>$('#loadingScreen')?.classList.add('hide'),1200);
+
+let protocolDefaults={};
+function renderServerAdvancedSettings(){return;}
+async function saveProtocolDefaults(){return;}
+function toggleActivity(){const c=$('#activityCard'),b=$('#activityShow');const hidden=c.style.display==='none';c.style.display=hidden?'':'none';b.style.display=hidden?'none':'inline-flex'}
+renderServerAdvancedSettings();updateClientProtocolFields();
+const mobileMenuBtn=$('#mobileMenuBtn');
+function closeMobileMenu(){const top=document.querySelector('.top');if(!top)return;top.classList.remove('menu-open');if(mobileMenuBtn)mobileMenuBtn.textContent='☰';}
+function openMobileMenu(){const top=document.querySelector('.top');if(!top)return;top.classList.add('menu-open');if(mobileMenuBtn)mobileMenuBtn.textContent='×';}
+if(mobileMenuBtn){mobileMenuBtn.onclick=()=>{const top=document.querySelector('.top');if(!top)return;top.classList.toggle('menu-open');mobileMenuBtn.textContent=top.classList.contains('menu-open')?'×':'☰';};}
+$$('.nav button').forEach(b=>b.addEventListener('click',()=>{if(window.innerWidth<=980)closeMobileMenu();}));
+document.addEventListener('click',e=>{const top=document.querySelector('.top');if(!top||!top.classList.contains('menu-open'))return;if(!top.contains(e.target))closeMobileMenu();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMobileMenu();});
+window.addEventListener('resize',()=>{if(window.innerWidth>980)closeMobileMenu();});
+
+boot();
+</script>
+
+<script>
+(()=>{
+  return; // lightweight mobile/desktop layout, no pointer tilt
+  let raf=0,last=null;
+  document.addEventListener('pointermove',e=>{
+    last=e;if(raf)return;
+    raf=requestAnimationFrame(()=>{
+      raf=0; const el=last.target?.closest?.('.card'); if(!el)return;
+      const r=el.getBoundingClientRect(); if(r.width<180||r.height<90)return;
+      const x=(last.clientX-r.left)/r.width-.5,y=(last.clientY-r.top)/r.height-.5;
+      el.style.transform=`perspective(1100px) rotateX(${(-y*1.6).toFixed(2)}deg) rotateY(${(x*1.6).toFixed(2)}deg) translateY(-2px)`;
+    });
+  },{passive:true});
+  document.addEventListener('pointerout',e=>{const el=e.target?.closest?.('.card');if(el&&!el.contains(e.relatedTarget))el.style.transform='';},{passive:true});
+})();
+</script>
+</body>
+</html>
