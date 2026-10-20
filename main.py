@@ -557,7 +557,7 @@ SETTINGS = {
         "public_key": "",
         "private_key": "",
         "short_id": "5a3ff5a13d",
-        "spiderx": "/",
+        "padding_path": "/",
         "fingerprint": "chrome",
         "external_domain": "",
         "external_port": 443,
@@ -843,7 +843,7 @@ def _gen_reality_settings() -> dict:
             "private_key": priv,
             "public_key": pub,
             "short_id": secrets.token_hex(5)[:10],
-            "spiderx": "/",
+            "padding_path": "/",
             "dest": "is1-ssl.mzstatic.com:443",
             "mldsa65_seed": seed,
             "mldsa65_verify": verify,
@@ -857,14 +857,14 @@ def _gen_reality_settings() -> dict:
             "private_key": priv_key,
             "public_key": pub_key,
             "short_id": secrets.token_hex(5)[:10],
-            "spiderx": "/",
+            "padding_path": "/",
             "dest": "is1-ssl.mzstatic.com:443",
             # ML-DSA is optional; do not persist a synthetic keypair.
         }
     except ImportError:
         return {
             "private_key": "", "public_key": "", "short_id": "5a3ff5a13d",
-            "spiderx": "/", "dest": "is1-ssl.mzstatic.com:443",
+            "padding_path": "/", "dest": "is1-ssl.mzstatic.com:443",
             # ML-DSA is optional; do not persist a synthetic keypair.
         }
 
@@ -1342,7 +1342,7 @@ async def startup():
             _changed = True
         else:
             _rs["short_id"] = _sid
-        _rs.setdefault("spiderx", "/")
+        _rs.setdefault("padding_path", "/")
         _rs.setdefault("dest", "is1-ssl.mzstatic.com:443")
         _rs.setdefault("sni", "is1-ssl.mzstatic.com")
         # Internal and external ports are intentionally separate.
@@ -2669,7 +2669,7 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
         if not re.fullmatch(r"[0-9a-f]{2,16}", sid or "") or len(sid) % 2:
             logger.warning("Skipping Reality config for user %s: invalid short_id %r", user_id, sid)
             return ""
-        spx = str(rs.get("spiderx") or gs.get("spiderx") or "/").strip() or "/"
+        spx = str(rs.get("padding_path") or gs.get("padding_path") or "/").strip() or "/"
         fp = inbound.get("fingerprint") or rs.get("fingerprint") or gs.get("fingerprint") or "chrome"
         sni = inbound.get("sni") or rs.get("sni") or gs.get("sni") or "is1-ssl.mzstatic.com"
         xs = inbound.get("xhttp_settings") or {}
@@ -2799,7 +2799,7 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
                   f"&fp=chrome&alpn=h2,http/1.1&mode={xmode}&extra={extra}")
     elif transport == "grpc":
         gs = (inbound.get("grpc_settings") or {}) if inbound else {}
-        service = str(gs.get("serviceName") or gs.get("service_name") or "spider").strip() or "spider"
+        service = str(gs.get("serviceName") or gs.get("service_name") or "parsspace").strip() or "parsspace"
         params = (f"encryption=none&security={security}&type=grpc"
                   f"&serviceName={quote(service)}&sni={quote(host)}"
                   f"&fp=chrome&alpn=h2,http/1.1")
@@ -4666,7 +4666,7 @@ async def create_inbound(request: Request, auth=Depends(require_replication_auth
         _pub = _xray_x25519_public_key(str(reality_settings.get("private_key") or ""))
         if _pub:
             reality_settings["public_key"] = _pub
-        reality_settings.setdefault("spiderx", "/")
+        reality_settings.setdefault("padding_path", "/")
         if fresh.get("mldsa65_seed"):
             reality_settings.setdefault("mldsa65_seed", fresh["mldsa65_seed"])
         if fresh.get("mldsa65_verify"):
@@ -4810,7 +4810,7 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
                 rs.setdefault("mldsa65_verify", fresh["mldsa65_verify"])
             if not rs.get("short_id"):
                 rs["short_id"] = secrets.token_hex(5)[:10]
-            rs.setdefault("spiderx", "/")
+            rs.setdefault("padding_path", "/")
             rs.setdefault("dest", "is1-ssl.mzstatic.com:443")
             rs.setdefault("sni", "is1-ssl.mzstatic.com")
             ib["sni"] = "is1-ssl.mzstatic.com"
@@ -4896,7 +4896,7 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
                 rs["short_id"] = secrets.token_hex(5)
             else:
                 rs["short_id"] = _sid
-            rs.setdefault("spiderx", "/")
+            rs.setdefault("padding_path", "/")
             _sni_final = str(ib.get("sni") or rs.get("sni") or "is1-ssl.mzstatic.com").strip() or "is1-ssl.mzstatic.com"
             rs["sni"] = _sni_final
             if not str(rs.get("dest") or "").strip() or "sni" in body:
@@ -4981,7 +4981,7 @@ async def update_inbound(inbound_id: str, request: Request, _=Depends(require_au
 
 @app.post("/api/inbounds/{inbound_id}/generate-reality-keys")
 async def generate_inbound_reality_keys(inbound_id: str, _=Depends(require_auth)):
-    """Generate Reality x25519 key pair + short_id + spiderx for an inbound."""
+    """Generate Reality x25519 key pair + short_id + padding_path for an inbound."""
     async with INBOUNDS_LOCK:
         ib = INBOUNDS.get(inbound_id)
         if not ib:
@@ -4990,7 +4990,7 @@ async def generate_inbound_reality_keys(inbound_id: str, _=Depends(require_auth)
             rs = ib.setdefault("reality_settings", {})
             rs["private_key"], rs["public_key"] = _xray_x25519_keypair()
             rs["short_id"] = secrets.token_hex(5)[:10]
-            rs.setdefault("spiderx", "/")
+            rs.setdefault("padding_path", "/")
             rs.setdefault("dest", "is1-ssl.mzstatic.com:443")
             ib["security"] = "reality"
             ib["protocol"] = "reality"
@@ -5006,7 +5006,7 @@ async def generate_inbound_reality_keys(inbound_id: str, _=Depends(require_auth)
         "public_key": rs["public_key"],
         "private_key": rs["private_key"],
         "short_id": rs["short_id"],
-        "spiderx": rs.get("spiderx", "/"),
+        "padding_path": rs.get("padding_path", "/"),
     }
 
 
@@ -5368,7 +5368,7 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
                     reality.setdefault("short_id", secrets.token_hex(4)[:10])
                     reality.setdefault("dest", "is1-ssl.mzstatic.com:443")
                     reality.setdefault("sni", "is1-ssl.mzstatic.com")
-                    reality.setdefault("spiderx", "/")
+                    reality.setdefault("padding_path", "/")
                     reality.setdefault("fingerprint", "chrome")
                     reality.setdefault("external_port", 443)
                     SETTINGS["reality"] = reality
@@ -6506,7 +6506,7 @@ async def get_reality_settings(_=Depends(require_auth)):
         "sni": reality.get("sni", host),
         "public_key": reality.get("public_key", ""),
         "short_id": reality.get("short_id", "6ba85179e30d4fc2"),
-        "spiderx": reality.get("spiderx", "/"),
+        "padding_path": reality.get("padding_path", "/"),
         "fingerprint": reality.get("fingerprint", "chrome"),
         "dest": reality.get("dest", "is1-ssl.mzstatic.com:443"),
         "external_domain": reality.get("external_domain", host),
@@ -6531,8 +6531,8 @@ async def set_reality_settings(request: Request, _=Depends(require_auth)):
             reality["public_key"] = str(body.get("public_key", ""))
         if "short_id" in body:
             reality["short_id"] = str(body.get("short_id", "6ba85179e30d4fc2"))
-        if "spiderx" in body:
-            reality["spiderx"] = str(body.get("spiderx", "/"))
+        if "padding_path" in body:
+            reality["padding_path"] = str(body.get("padding_path", "/"))
         if "external_domain" in body:
             reality["external_domain"] = str(body.get("external_domain", get_host()))
         if "external_port" in body:
@@ -12631,6 +12631,7 @@ def _bot_cfg() -> dict:
     sell = cfg["sell"]
     sell.setdefault("enabled", False)
     sell.setdefault("admin_chat_id", "")
+    sell.setdefault("admins", [])
     sell.setdefault("support_username", "")
     sell.setdefault("support_text", "💬 برای پشتیبانی با مدیر فروش تماس بگیرید.")
     sell.setdefault("payment_url", "")
@@ -12934,6 +12935,8 @@ def _normalize_plan_input(data: dict, existing: dict | None = None) -> dict:
         "expire_days": expire_days,
         "inbound_id": inbound_id,
         "username_prefix": prefix,
+        "user_limit": max(1, min(100, int(data.get("user_limit", old.get("user_limit", 1)) or 1))),
+        "is_trial": bool(data.get("is_trial", old.get("is_trial", False))),
         "enabled": bool(data.get("enabled", old.get("enabled", True))),
         "created_at": str(old.get("created_at") or datetime.now().isoformat()),
         "updated_at": datetime.now().isoformat(),
@@ -12998,7 +13001,7 @@ async def _channel_bot_run_once() -> dict:
     qr_png = _subscription_qr_bytes(sub_url)
     channel_link = _html_tag_link(channel_label or "Channel", channel_url)
     caption = (
-        f"<b>🕷 Pars Space</b>\n"
+        f"<b>Pars Space</b>\n"
         f"👤 <code>{username}</code>\n"
         f"🔗 {_html_tag_link('لینک ساب', sub_url)}\n"
         f"📣 {channel_link}"
@@ -13117,12 +13120,12 @@ def _sell_main_menu_markup():
     return {"inline_keyboard": [
         [{"text": "🟢 اعتبار من", "callback_data": "sell:account"},
          {"text": "🛍 محصولات", "callback_data": "sell:products"}],
-        [{"text": "💬 پشتیبانی", "callback_data": "sell:support"}],
+        [{"text": "🎁 تست رایگان", "callback_data": "sell:trial"}, {"text": "💬 پشتیبانی", "callback_data": "sell:support"}],
     ]}
 
 
 async def _sell_bot_send_main_menu(token: str, chat_id, welcome: str | None = None):
-    text = str(welcome or "🕷 <b>Pars Space Shop</b>\n\nیکی از بخش‌های زیر را انتخاب کنید:")
+    text = str(welcome or "<b>Pars Space Shop</b>\n\nیکی از بخش‌های زیر را انتخاب کنید:")
     sent = await _telegram_send_message(token, chat_id, text, reply_markup=_sell_main_menu_markup())
     return await _sell_bot_track_customer_message(chat_id, sent, "menu")
 
@@ -13463,7 +13466,8 @@ async def _sell_bot_admin_handle_text(token: str, msg: dict) -> bool:
     from_user = msg.get("from") or {}
     admin_id = str(from_user.get("id") or "")
     sell = _bot_cfg().get("sell") or {}
-    if not admin_id or admin_id != str(sell.get("admin_chat_id") or "").strip():
+    _admin_ids = {str(sell.get("admin_chat_id") or "").strip()} | {str(x.get("id") or "").strip() for x in (sell.get("admins") or []) if isinstance(x, dict)}
+    if not admin_id or admin_id not in _admin_ids:
         return False
     if str((msg.get("chat") or {}).get("type") or "") != "private":
         return False
@@ -13543,7 +13547,7 @@ async def _find_active_sell_order(chat_id: int | str):
     cid = str(chat_id)
     async with BOT_ORDERS_LOCK:
         for oid, order in BOT_ORDERS.items():
-            if str(order.get("chat_id")) == cid and str(order.get("status")) in {"awaiting_payment", "payment_submitted", "processing"}:
+            if str(order.get("chat_id")) == cid and str(order.get("status")) in {"awaiting_payment", "payment_submitted", "receipt_queued", "processing"}:
                 return oid, dict(order)
     return None, None
 
@@ -13591,90 +13595,37 @@ async def _activate_sell_order(order_id: str, admin_chat_id) -> dict:
                 activation_applied = False
 
         if not activation_applied:
-            sell = _bot_cfg().get("sell") or {}
-            customer_users = sell.setdefault("customer_users", {})
+            # Every approved order gets its own panel user. This prevents a second
+            # purchase/plan from mutating the buyer's previous configuration.
+            body = {
+                "username": _make_bot_username(username_prefix),
+                "traffic_limit_gb": traffic_gb,
+                "expire_days": expire_days,
+                "inbound_id": inbound_id or None,
+                "inbound_ids": [inbound_id] if inbound_id else [],
+                "protocol": "vless",
+                "transport_type": "ws",
+                "server": "ParsSpace Bot",
+                "concurrent_connections": max(1, min(100, int(plan.get("user_limit") or 1))),
+            }
+            user = await _create_bot_user(body)
+            user_id = str(user.get("user_id") or "")
+            if not user_id:
+                raise RuntimeError("created user did not return user_id")
             async with USERS_LOCK:
-                existing_id = str(customer_users.get(customer_key) or "").strip()
-                if existing_id and existing_id in USERS:
-                    user_id = existing_id
-                    user = USERS[existing_id]
-                elif not existing_id:
-                    # Recover the mapping if state was imported without the customer index.
-                    for candidate_id, candidate in USERS.items():
-                        if str(candidate.get("telegram_chat_id") or "") == customer_key:
-                            user_id = str(candidate_id)
-                            user = candidate
-                            break
-
-                if user is not None:
-                    now = datetime.now()
-                    _mapped_exp = str(user.get("expire_at") or "").strip()
-                    try:
-                        _mapped_expired = bool(_mapped_exp and now >= datetime.fromisoformat(_mapped_exp)) or user.get("status") == "expired"
-                    except Exception:
-                        _mapped_expired = user.get("status") == "expired"
-                    if _mapped_expired:
-                        user = None
-                        if existing_id:
-                            customer_users.pop(customer_key, None)
-                if user is not None:
-                    current_limit = int(user.get("traffic_limit_bytes") or 0)
-                    add_limit = int(traffic_gb * 1024**3) if traffic_gb > 0 else 0
-                    if add_limit <= 0:
-                        # An unlimited plan upgrades the account to unlimited.
-                        user["traffic_limit_bytes"] = 0
-                    elif current_limit > 0:
-                        user["traffic_limit_bytes"] = current_limit + add_limit
-                    else:
-                        # Existing unlimited users remain unlimited.
-                        user["traffic_limit_bytes"] = 0
-                    current_exp = None
-                    try:
-                        if user.get("expire_at"):
-                            current_exp = datetime.fromisoformat(str(user.get("expire_at")))
-                    except Exception:
-                        current_exp = None
-                    if expire_days <= 0 or (user.get("expire_at") in (None, "") and str(user.get("status") or "active") == "active"):
-                        # Keep an already-unlimited active account unlimited.
-                        user["expire_at"] = None
-                    else:
-                        base = current_exp if current_exp and current_exp > now else now
-                        user["expire_at"] = (base + timedelta(days=expire_days)).isoformat()
-                    if inbound_id and inbound_id in INBOUNDS:
-                        ids = [str(x) for x in (user.get("inbound_ids") or []) if str(x).strip()]
-                        if inbound_id not in ids:
-                            ids.append(inbound_id)
-                        user["inbound_ids"] = ids
-                        user["inbound_id"] = inbound_id
-                    user["status"] = "active"
-                    user["telegram_chat_id"] = customer_key
-                    user["telegram_username"] = customer_name or str(user.get("telegram_username") or "")
-                    user.setdefault("sell_plan_history", []).append({"order_id": order_id, "plan_id": plan.get("id"), "at": datetime.now().isoformat()})
-                else:
-                    user = None
-
-            if user is None:
-                body = {
-                    "username": _make_bot_username(username_prefix),
-                    "traffic_limit_gb": traffic_gb,
-                    "expire_days": expire_days,
-                    "inbound_id": inbound_id or None,
-                    "inbound_ids": [inbound_id] if inbound_id else [],
-                    "protocol": "vless",
-                    "transport_type": "ws",
-                    "server": "Sell Bot",
-                }
-                user = await _create_bot_user(body)
-                user_id = str(user.get("user_id") or "")
-                if not user_id:
-                    raise RuntimeError("created user did not return user_id")
-                async with USERS_LOCK:
-                    local = USERS.get(user_id)
-                    if local is not None:
-                        local["telegram_chat_id"] = customer_key
-                        local["telegram_username"] = customer_name
-                        local.setdefault("sell_plan_history", []).append({"order_id": order_id, "plan_id": plan.get("id"), "at": datetime.now().isoformat()})
-                        user = local
+                local = USERS.get(user_id)
+                if local is not None:
+                    local["telegram_chat_id"] = customer_key
+                    local["telegram_username"] = customer_name
+                    local["sell_order_id"] = order_id
+                    local["sell_plan_id"] = str(plan.get("id") or "")
+                    local["concurrent_connections"] = max(1, min(100, int(plan.get("user_limit") or 1)))
+                    local["usage_80_notified"] = False
+                    local["expiry_grace_until"] = ""
+                    user = local
+            sell = _bot_cfg().get("sell") or {}
+            sell.setdefault("customer_users", {})[customer_key] = user_id
+            sell.setdefault("customer_user_ids", {}).setdefault(customer_key, []).append(user_id)
             activation_applied = True
             # Persist the activation marker BEFORE external delivery. This makes retry idempotent.
             sell = _bot_cfg().get("sell") or {}
@@ -13732,6 +13683,7 @@ async def _activate_sell_order(order_id: str, admin_chat_id) -> dict:
         except Exception as admin_notify_error:
             logger.warning("Sell Bot admin completion notification failed: %s", admin_notify_error)
         asyncio.create_task(save_state())
+        await _sell_bot_dispatch_next_receipt(token)
         return {"ok": True, "user": dict(user), "subscription_url": sub_url}
     except Exception:
         async with BOT_ORDERS_LOCK:
@@ -13739,6 +13691,27 @@ async def _activate_sell_order(order_id: str, admin_chat_id) -> dict:
                 BOT_ORDERS[order_id]["status"] = "payment_submitted"
         raise
 
+
+async def _sell_bot_dispatch_next_receipt(token: str):
+    sell=_bot_cfg().get("sell") or {}; admin_id=str(sell.get("admin_chat_id") or "").strip()
+    if not admin_id: return
+    async with BOT_ORDERS_LOCK:
+        if any(o.get("status") in {"payment_submitted","processing"} for o in BOT_ORDERS.values()): return
+        queued=[(oid,o) for oid,o in BOT_ORDERS.items() if o.get("status")=="receipt_queued"]
+        if not queued: return
+        oid,o=sorted(queued,key=lambda x:str(x[1].get("receipt_queued_at") or ""))[0]
+        plan=dict(o.get("plan_snapshot") or {}); kind=o.get("payment_media_kind"); fid=o.get("payment_file_id"); caption=o.get("payment_caption") or ""
+    admin_caption=f"🧾 <b>رسید پرداخت جدید</b>\\n🆔 سفارش: <code>{oid}</code>\\n👤 کاربر: <code>{o.get('customer_username') or 'بدون یوزرنیم'}</code>\\n💬 Telegram ID: <code>{o.get('telegram_user_id') or o.get('chat_id')}</code>\\n📦 Plan: <b>{plan.get('name')}</b>\\n💰 مبلغ: <b>{plan.get('price')}</b>"
+    if caption: admin_caption+=f"\\n📝 توضیح خریدار: {caption}"
+    markup={"inline_keyboard":[[{"text":"✅ تأیید و فعال‌سازی","callback_data":f"sell:approve:{oid}"},{"text":"❌ رد رسید","callback_data":f"sell:reject:{oid}"}]]}
+    sent=await (_telegram_send_photo_id(token,admin_id,fid,admin_caption,reply_markup=markup) if kind=="photo" else _telegram_send_document_id(token,admin_id,fid,admin_caption,reply_markup=markup))
+    if sent and int(sent.get("message_id") or 0):
+        async with BOT_ORDERS_LOCK:
+            if oid in BOT_ORDERS:
+                BOT_ORDERS[oid]["status"]="payment_submitted"; BOT_ORDERS[oid]["admin_message_id"]=int(sent.get("message_id") or 0); BOT_ORDERS[oid]["payment_submitted_at"]=datetime.now().isoformat()
+        try: await _telegram_send_message(token,o.get("chat_id"),f"🧾 رسید سفارش <code>{oid}</code> اکنون برای بررسی ادمین ارسال شد.")
+        except Exception: pass
+        asyncio.create_task(save_state())
 
 async def _sell_bot_reject_order(token: str, order_id: str, admin_chat_id):
     order_id = str(order_id or "").strip().upper()
@@ -13757,6 +13730,7 @@ async def _sell_bot_reject_order(token: str, order_id: str, admin_chat_id):
     if customer_id:
         await _sell_bot_send_main_menu(token, customer_id, f"❌ سفارش <code>{order_id}</code> رد شد. می‌توانید دوباره از «محصولات» خرید کنید.")
     asyncio.create_task(save_state())
+    await _sell_bot_dispatch_next_receipt(token)
 
 
 async def _sell_bot_send_payment_prompt(token: str, chat_id, order_id: str, plan: dict):
@@ -13792,7 +13766,8 @@ async def _sell_bot_handle_message(token: str, msg: dict):
     if not bool(sell.get("enabled")):
         return
     from_user = msg.get("from") or {}
-    is_admin = str(from_user.get("id") or "") == str(sell.get("admin_chat_id") or "").strip()
+    _admin_ids = {str(sell.get("admin_chat_id") or "").strip()} | {str(x.get("id") or "").strip() for x in (sell.get("admins") or []) if isinstance(x, dict)}
+    is_admin = str(from_user.get("id") or "") in _admin_ids
     text_value = str(msg.get("text") or "").strip()
     command, _, arg = text_value.partition(" ")
     command = command.split("@", 1)[0].lower() if command else ""
@@ -13804,6 +13779,31 @@ async def _sell_bot_handle_message(token: str, msg: dict):
     if is_admin and str(chat.get("type") or "") == "private" and command in {"/cancel"}:
         if await _sell_bot_admin_handle_text(token, msg):
             return
+
+    # Support ticket session: relay text/photo/document/voice/video/audio/sticker to sales admin.
+    ticket_sessions = sell.setdefault("ticket_sessions", {})
+    ticket_session = ticket_sessions.get(str(from_user.get("id") or chat_id)) or {}
+    if ticket_session.get("active"):
+        if text_value.lower() in {"/done", "/close", "/end"}:
+            ticket_session["active"] = False; ticket_session["closed_at"] = datetime.now().isoformat(); asyncio.create_task(save_state())
+            await _telegram_send_message(token, chat_id, "✅ تیکت بسته شد.", reply_markup=_sell_main_menu_markup())
+            return
+        admin_id=str(sell.get("admin_chat_id") or "").strip()
+        if not admin_id:
+            await _telegram_send_message(token, chat_id, "❌ پشتیبانی هنوز تنظیم نشده است. پیام شما ارسال نشد.")
+            return
+        tid=ticket_session.get("ticket_id") or ("TKT-"+secrets.token_hex(3).upper()); ticket_session["ticket_id"]=tid
+        try:
+            await _telegram_send_message(token, admin_id, f"🎫 <b>تیکت {tid}</b> · <code>{from_user.get('id') or chat_id}</code> · @{from_user.get('username') or '-'}")
+            if text_value:
+                await _telegram_send_message(token, admin_id, text_value)
+            else:
+                await _telegram_api(token, "copyMessage", data={"chat_id":admin_id,"from_chat_id":chat_id,"message_id":msg.get("message_id")}, timeout=20)
+            ticket_session["last_message_at"]=datetime.now().isoformat(); asyncio.create_task(save_state())
+            await _telegram_send_message(token, chat_id, f"✅ پیام شما در تیکت <code>{tid}</code> برای پشتیبانی ارسال شد.")
+        except Exception:
+            await _telegram_send_message(token, chat_id, "❌ پیام تیکت ارسال نشد. لطفاً دوباره تلاش کنید.")
+        return
 
     # Payment receipt: photo or document is forwarded to the configured admin.
     if msg.get("photo") or msg.get("document"):
@@ -13832,6 +13832,13 @@ async def _sell_bot_handle_message(token: str, msg: dict):
             await _telegram_send_message(token, chat_id, "❌ فایل رسید قابل تشخیص نبود. دوباره ارسال کنید.")
             return
         caption = str(msg.get("caption") or "").strip()[:1000]
+        receipt_fp = _receipt_fingerprint(msg)
+        if receipt_fp:
+            async with BOT_ORDERS_LOCK:
+                duplicate = next((oid for oid,o in BOT_ORDERS.items() if oid != order_id and str(o.get("receipt_fingerprint") or "") == receipt_fp), None)
+            if duplicate:
+                await _telegram_send_message(token, chat_id, f"❌ این رسید قبلاً برای سفارش <code>{duplicate}</code> ثبت شده و دوباره قابل استفاده نیست.")
+                return
         admin_id = str(sell.get("admin_chat_id") or "").strip()
         if not admin_id:
             await _telegram_send_message(token, chat_id, "❌ ادمین فروش هنوز تنظیم نشده است.")
@@ -13851,15 +13858,30 @@ async def _sell_bot_handle_message(token: str, msg: dict):
             {"text": "✅ تأیید و فعال‌سازی", "callback_data": f"sell:approve:{order_id}"},
             {"text": "❌ رد رسید", "callback_data": f"sell:reject:{order_id}"},
         ]]}
+        async with BOT_ORDERS_LOCK:
+            busy = any(oid != order_id and o.get("status") in {"payment_submitted","processing"} for oid,o in BOT_ORDERS.items())
+            queue_pos = 1 + sum(1 for oid,o in BOT_ORDERS.items() if oid != order_id and o.get("status")=="receipt_queued")
+            if busy:
+                current=BOT_ORDERS.get(order_id)
+                if current:
+                    current.update({"status":"receipt_queued","receipt_fingerprint":receipt_fp,"payment_file_id":payment_file_id,"payment_media_kind":media_kind,"payment_message_id":int(msg.get("message_id") or 0),"payment_caption":caption,"receipt_queued_at":datetime.now().isoformat(),"customer_username":str(from_user.get("username") or current.get("customer_username") or "")})
+        if busy:
+            await _telegram_send_message(token, chat_id, f"⏳ رسید شما ثبت شد و در صف بررسی قرار گرفت.\n🧾 سفارش: <code>{order_id}</code>\n🔢 جایگاه صف: {queue_pos}")
+            asyncio.create_task(save_state())
+            return
         if media_kind == "photo":
             sent = await _telegram_send_photo_id(token, admin_id, payment_file_id, admin_caption, reply_markup=markup)
         else:
             sent = await _telegram_send_document_id(token, admin_id, payment_file_id, admin_caption, reply_markup=markup)
+        if not sent or not int((sent or {}).get("message_id") or 0):
+            await _telegram_send_message(token, chat_id, "❌ رسید به ادمین ارسال نشد. لطفاً چند لحظه بعد دوباره تلاش کنید؛ سفارش شما تغییری نکرده است.")
+            return
         async with BOT_ORDERS_LOCK:
             order = BOT_ORDERS.get(order_id)
             if order:
                 order.update({
                     "status": "payment_submitted",
+                    "receipt_fingerprint": receipt_fp,
                     "payment_file_id": payment_file_id,
                     "payment_media_kind": media_kind,
                     "payment_message_id": int(msg.get("message_id") or 0),
@@ -13973,7 +13995,33 @@ async def _sell_bot_handle_callback(token: str, callback: dict):
             return
         if action == "support":
             await _telegram_answer_callback(token, callback_id)
-            await _sell_bot_send_support(token, chat_id)
+            sell.setdefault("ticket_sessions", {})[str(user_id)] = {"active": True, "opened_at": datetime.now().isoformat()}
+            asyncio.create_task(save_state())
+            await _telegram_send_message(token, chat_id, "🎫 <b>تیکت پشتیبانی</b>\n\nپیام، عکس، فایل یا ویس خود را ارسال کنید. توضیح/Caption عکس و فایل هم منتقل می‌شود.\nبرای پایان تیکت /done را بفرستید.", reply_markup={"inline_keyboard":[[{"text":"🏠 منوی اصلی","callback_data":"sell:menu"}]]})
+            return
+        if action == "trial":
+            await _telegram_answer_callback(token, callback_id, "در حال بررسی…")
+            trial = dict(sell.get("trial_plan") or {})
+            claims = sell.setdefault("trial_claims", {})
+            key = str(user_id)
+            if not trial.get("enabled", True):
+                await _telegram_send_message(token, chat_id, "ℹ️ پلن تست در حال حاضر غیرفعال است.")
+                return
+            if key in claims:
+                await _telegram_send_message(token, chat_id, "❌ هر Telegram ID فقط یک‌بار می‌تواند پلن تست دریافت کند.")
+                return
+            inbound_id=str(trial.get("inbound_id") or _bot_default_inbound_id())
+            body={"username":_make_bot_username("trial"),"traffic_limit_gb":float(trial.get("traffic_gb") or 1),"expire_days":int(trial.get("expire_days") or 1),"inbound_id":inbound_id,"inbound_ids":[inbound_id] if inbound_id else [],"protocol":"vless","transport_type":"ws","server":"ParsSpace Bot","concurrent_connections":max(1,int(trial.get("user_limit") or 1))}
+            user=await _create_bot_user(body); uid=str(user.get("user_id") or "")
+            async with USERS_LOCK:
+                local=USERS.get(uid)
+                if local is not None:
+                    local["telegram_chat_id"]=key; local["telegram_username"]=str(from_user.get("username") or ""); local["is_trial"]=True
+            claims[key]={"user_id":uid,"claimed_at":datetime.now().isoformat()}
+            await save_state()
+            sub=str(user.get("subscription_url") or "") or _bot_public_subscription_url(str(user.get("config_uuid") or ""))
+            qr=_subscription_qr_bytes(sub)
+            await _telegram_send_photo(token,chat_id,qr,f"🎁 <b>پلن تست ParsSpace فعال شد</b>\n👤 <code>{user.get('username','')}</code>\n🔗 {_html_tag_link('لینک ساب',sub)}",reply_markup=_sell_main_menu_markup())
             return
         if action == "join":
             sub = args[0] if args else "check"
@@ -14230,48 +14278,59 @@ async def _sell_bot_handle_callback(token: str, callback: dict):
 
 
 async def _sell_bot_expiry_loop():
-    """Remove expired panel users and notify Telegram-linked customers."""
+    """Usage alerts + 72h expiry grace, then permanent removal."""
     await asyncio.sleep(20)
     while True:
         try:
             now = datetime.now()
-            expired = []
+            token = str(_bot_cfg().get("token") or "").strip()
+            delete_ids = []
+            changed = False
             async with USERS_LOCK:
-                for uid, user in list(USERS.items()):
-                    exp = str(user.get("expire_at") or "").strip()
-                    if not exp or user.get("status") == "disabled":
-                        continue
-                    try:
-                        if now >= datetime.fromisoformat(exp):
-                            expired.append((str(uid), dict(user)))
-                    except Exception:
-                        continue
-            for uid, user in expired[:100]:
+                snapshot = [(str(uid), dict(u)) for uid,u in USERS.items()]
+            for uid, user in snapshot:
                 chat_id = str(user.get("telegram_chat_id") or "").strip()
-                try:
-                    await _delete_bot_user(uid)
-                except Exception as e:
-                    logger.warning("Expired user delete failed uid=%s: %s", uid, e)
+                limit_b = int(user.get("traffic_limit_bytes") or 0)
+                used_b = int(user.get("traffic_used_bytes") or 0)
+                if chat_id and limit_b > 0 and used_b >= int(limit_b * .80) and not user.get("usage_80_notified"):
+                    if token:
+                        try:
+                            await _telegram_send_message(token, chat_id, "⚠️ <b>۸۰٪ حجم سرویس شما مصرف شده است.</b>\nبرای جلوگیری از قطع سرویس، می‌توانید از بخش محصولات تمدید یا سرویس جدید تهیه کنید.", reply_markup=_sell_main_menu_markup())
+                        except Exception as e: logger.warning("80%% notify failed: %s", e)
+                    async with USERS_LOCK:
+                        if uid in USERS: USERS[uid]["usage_80_notified"] = True
+                    changed = True
+                exp = str(user.get("expire_at") or "").strip()
+                if not exp: continue
+                try: expired_at = datetime.fromisoformat(exp)
+                except Exception: continue
+                if now < expired_at: continue
+                grace_until = expired_at + timedelta(hours=72)
+                if now < grace_until:
+                    async with USERS_LOCK:
+                        if uid in USERS and USERS[uid].get("status") != "disabled":
+                            USERS[uid]["status"] = "disabled"
+                            USERS[uid]["expiry_grace_until"] = grace_until.isoformat()
+                            changed = True
+                    if token and chat_id and not user.get("expiry_grace_notified"):
+                        try: await _telegram_send_message(token, chat_id, "⏸ <b>اشتراک شما تمام شده و سرویس موقتاً غیرفعال شد.</b>\nتا ۷۲ ساعت فرصت تمدید دارید؛ پس از آن سرویس حذف می‌شود.", reply_markup=_sell_main_menu_markup())
+                        except Exception: pass
+                        async with USERS_LOCK:
+                            if uid in USERS: USERS[uid]["expiry_grace_notified"] = True
                     continue
-                sell = _bot_cfg().get("sell") or {}
-                if chat_id and str((sell.get("customer_users") or {}).get(chat_id) or "") == uid:
-                    sell.setdefault("customer_users", {}).pop(chat_id, None)
-                token = str(_bot_cfg().get("token") or "").strip()
+                delete_ids.append((uid, chat_id))
+            for uid, chat_id in delete_ids[:100]:
+                try: await _delete_bot_user(uid)
+                except Exception as e:
+                    logger.warning("Grace-expired user delete failed %s: %s", uid, e); continue
+                changed = True
                 if token and chat_id:
-                    try:
-                        await _telegram_send_message(
-                            token, chat_id,
-                            "⛔ <b>اعتبار اشتراک شما تمام شد.</b>\nاکانت شما از پنل حذف شد. برای خرید مجدد به بخش «محصولات» بروید.",
-                            reply_markup=_sell_main_menu_markup(),
-                        )
-                    except Exception as e:
-                        logger.warning("Expired user Telegram notify failed chat=%s: %s", chat_id, e)
-            if expired:
-                asyncio.create_task(save_state())
-        except asyncio.CancelledError:
-            raise
-        except Exception as e:
-            logger.warning("Expiry sweep failed: %s", e)
+                    try: await _telegram_send_message(token, chat_id, "🗑 مهلت ۷۲ ساعته تمدید تمام شد و سرویس منقضی‌شده حذف شد.", reply_markup=_sell_main_menu_markup())
+                    except Exception: pass
+            if changed:
+                asyncio.create_task(_xray_apply()); asyncio.create_task(save_state())
+        except asyncio.CancelledError: raise
+        except Exception as e: logger.warning("Expiry/usage sweep failed: %s", e)
         await asyncio.sleep(60)
 
 
@@ -14360,7 +14419,7 @@ async def bot_status(_=Depends(require_auth)):
         "sell": sell_public,
         "plans": plans,
         "orders": {
-            "pending": sum(1 for x in BOT_ORDERS.values() if x.get("status") in {"awaiting_payment", "payment_submitted", "processing"}),
+            "pending": sum(1 for x in BOT_ORDERS.values() if x.get("status") in {"awaiting_payment", "payment_submitted", "receipt_queued", "processing"}),
             "payment_submitted": sum(1 for x in BOT_ORDERS.values() if x.get("status") == "payment_submitted"),
             "approved": sum(1 for x in BOT_ORDERS.values() if x.get("status") == "approved"),
             "rejected": sum(1 for x in BOT_ORDERS.values() if x.get("status") == "rejected"),
@@ -14452,6 +14511,15 @@ async def bot_config_save(request: Request, _=Depends(require_auth)):
             sell["admin_chat_id"] = _validate_admin_id(incoming_admin)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    if isinstance(sell_in.get("admins"), list):
+        admins=[]
+        for item in sell_in.get("admins")[:50]:
+            if not isinstance(item, dict): continue
+            aid=str(item.get("id") or "").strip()
+            if not aid.isdigit(): continue
+            perms=[str(x).strip() for x in (item.get("permissions") or []) if str(x).strip() in {"orders","plans","tickets","stats","settings"}]
+            admins.append({"id":aid,"permissions":perms})
+        sell["admins"]=admins
     sell["support_username"] = str(sell_in.get("support_username", sell.get("support_username") or "")).strip()[:64]
     sell["support_text"] = str(sell_in.get("support_text", sell.get("support_text") or "")).strip()[:1000]
     sell["payment_url"] = str(sell_in.get("payment_url", sell.get("payment_url") or "")).strip()[:500]
@@ -14533,6 +14601,94 @@ async def bot_channel_run(_=Depends(require_auth)):
         ch["last_error"] = str(e)[:400]
         asyncio.create_task(save_state())
         raise HTTPException(status_code=400, detail=str(e))
+
+
+
+
+# ── ParsSpace Bot extensions: trials, tickets, analytics, proxy registry ─────
+def _bot_trial_claims():
+    sell = _bot_cfg().setdefault("sell", {})
+    return sell.setdefault("trial_claims", {})
+
+def _receipt_fingerprint(msg: dict) -> str:
+    obj = None
+    if msg.get("photo"): obj = (msg.get("photo") or [{}])[-1]
+    elif msg.get("document"): obj = msg.get("document") or {}
+    if not obj: return ""
+    return str(obj.get("file_unique_id") or obj.get("file_id") or "").strip()
+
+@app.get("/api/bot/analytics")
+async def bot_analytics(_=Depends(require_auth)):
+    approved=[dict(o,order_id=k) for k,o in BOT_ORDERS.items() if o.get("status")=="approved"]
+    counts={}; revenue=0.0
+    for o in approved:
+        p=o.get("plan_snapshot") or {}; name=str(p.get("name") or "بدون نام")
+        counts[name]=counts.get(name,0)+1
+        raw=re.sub(r"[^0-9.]","",str(p.get("price") or ""))
+        try: revenue+=float(raw or 0)
+        except: pass
+    ranked=sorted(counts.items(), key=lambda x:(-x[1],x[0]))
+    return {"ok":True,"sales":len(approved),"revenue":revenue,"popular":ranked[:5],"least":sorted(counts.items(),key=lambda x:(x[1],x[0]))[:5],"orders_total":len(BOT_ORDERS)}
+
+@app.post("/api/bot/trial")
+async def bot_trial_create(request: Request, _=Depends(require_auth)):
+    body=await request.json(); sell=_bot_cfg().setdefault("sell",{})
+    inbound_id=str(body.get("inbound_id") or _bot_default_inbound_id())
+    if inbound_id not in INBOUNDS: raise HTTPException(400,"اینباند تست معتبر نیست")
+    sell["trial_plan"]={"enabled":bool(body.get("enabled",True)),"name":"تست رایگان","price":"0","traffic_gb":max(0.01,float(body.get("traffic_gb") or 1)),"expire_days":max(1,int(body.get("expire_days") or 1)),"inbound_id":inbound_id,"user_limit":max(1,int(body.get("user_limit") or 1)),"is_trial":True}
+    await save_state(); return {"ok":True,"trial_plan":sell["trial_plan"]}
+
+@app.get("/api/bot/orders")
+async def bot_orders_list(_=Depends(require_auth)):
+    async with BOT_ORDERS_LOCK:
+        rows=[dict(v,order_id=k) for k,v in BOT_ORDERS.items()]
+    rows.sort(key=lambda x:str(x.get("created_at") or x.get("payment_submitted_at") or ""), reverse=True)
+    return {"ok":True,"orders":rows}
+
+@app.get("/api/bot/tickets")
+async def bot_tickets_list(_=Depends(require_auth)):
+    sessions=(_bot_cfg().get("sell") or {}).get("ticket_sessions") or {}
+    return {"ok":True,"tickets":[dict(v,telegram_id=k) for k,v in sessions.items() if isinstance(v,dict)]}
+
+PARS_PROXY_REGISTRY = SETTINGS.setdefault("proxy_registry", [])
+
+@app.get("/api/proxies")
+async def pars_proxy_list(_=Depends(require_auth)):
+    return {"ok":True,"proxies":PARS_PROXY_REGISTRY}
+
+@app.post("/api/proxies")
+async def pars_proxy_add(request: Request, _=Depends(require_auth)):
+    body=await request.json(); host=str(body.get("host") or body.get("ip") or "").strip(); port=int(body.get("port") or 0); country=str(body.get("country") or "Unknown").strip()[:64]
+    if not host or not (1<=port<=65535): raise HTTPException(400,"IP/Host یا Port نامعتبر است")
+    t0=time.monotonic(); ok=False; err=""
+    try:
+        r,w=await asyncio.wait_for(asyncio.open_connection(host,port),timeout=4); ok=True; w.close(); await w.wait_closed()
+    except Exception as e: err=str(e)[:180]
+    latency=round((time.monotonic()-t0)*1000) if ok else None
+    pid="px_"+secrets.token_hex(4); iid="proxy-"+pid
+    rec={"id":pid,"host":host,"port":port,"country":country,"status":"online" if ok else "offline","ping_ms":latency,"created_at":datetime.now().isoformat(),"inbound_id":iid}
+    PARS_PROXY_REGISTRY.append(rec)
+    async with INBOUNDS_LOCK:
+        INBOUNDS[iid]={"name":f"ParsSpace Proxy · {country}","protocol":"proxy","inbound_type":"upstream_proxy","port":port,"external_domain":host,"external_port":port,"country":country,"enabled":ok,"created_at":datetime.now().isoformat()}
+    await save_state(); return {"ok":True,"proxy":rec,"connected":ok,"error":err}
+
+@app.post("/api/proxies/{proxy_id}/test")
+async def pars_proxy_test(proxy_id: str, _=Depends(require_auth)):
+    rec=next((x for x in PARS_PROXY_REGISTRY if str(x.get("id"))==proxy_id),None)
+    if not rec: raise HTTPException(404,"پروکسی پیدا نشد")
+    t0=time.monotonic(); ok=False; err=""
+    try:
+        r,w=await asyncio.wait_for(asyncio.open_connection(rec["host"],int(rec["port"])),timeout=4); ok=True; w.close(); await w.wait_closed()
+    except Exception as e: err=str(e)[:180]
+    rec["status"]="online" if ok else "offline"; rec["ping_ms"]=round((time.monotonic()-t0)*1000) if ok else None; rec["last_test_at"]=datetime.now().isoformat(); await save_state()
+    return {"ok":ok,"proxy":rec,"error":err}
+
+@app.post("/api/proxies/web-telegram")
+async def pars_web_proxy_add(request: Request, _=Depends(require_auth)):
+    body=await request.json(); url=str(body.get("url") or "").strip()
+    if not re.match(r"^https?://",url): raise HTTPException(400,"آدرس وب پروکسی باید با http/https شروع شود")
+    sell=_bot_cfg().setdefault("sell",{}); sell.setdefault("telegram_web_proxies",[]).append({"id":"web_"+secrets.token_hex(4),"url":url,"title":str(body.get("title") or "ParsSpace Web Proxy")[:80],"created_at":datetime.now().isoformat()}); await save_state()
+    return {"ok":True,"items":sell["telegram_web_proxies"]}
 
 
 # ══════════════════════════════════════════════════════════════════════════════

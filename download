@@ -2,7 +2,7 @@ __pycache__/
 *.pyc
 .venv/
 .env
-/data/spider_state.json
+/data/parsspace_state.json
 /data/*.json
 /xray/
 *.log
