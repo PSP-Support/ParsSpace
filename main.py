@@ -2579,7 +2579,11 @@ def _default_ws_address(inbound: dict | None, panel_domain: str = "") -> str:
     fallback for migrated state.
     """
     inbound = inbound or {}
-    return _safe_host(panel_domain, SETTINGS.get("domain"), inbound.get("external_domain"), inbound.get("domain"), get_host())
+    # Railway's canonical public hostname is a useful mobile-safe dial address:
+    # some DDNS/custom domains resolve differently on mobile networks. Host/SNI
+    # remain the panel domain below, so TLS and routing still target ParsSpace.
+    railway_host = _safe_host(os.getenv("RAILWAY_PUBLIC_DOMAIN", ""))
+    return _safe_host(railway_host, panel_domain, SETTINGS.get("domain"), inbound.get("external_domain"), inbound.get("domain"), get_host())
 
 def _ws_fingerprint(managed: bool = False) -> str:
     """Portable TLS fingerprint for generated WS links."""
@@ -7511,35 +7515,39 @@ async def _node_heartbeat_loop():
 
 
 async def _node_identity(host: str) -> dict:
-    """Resolve a host/IP to public IP + country metadata."""
-    ip = ""
-    flag = ""
-    cc = ""
-    country_name = ""
+    """Resolve a host/IP to public IP + country metadata with provider fallback."""
+    target = str(host or "").strip(); ip = ""; cc = ""; country_name = ""
+    ac = http_client or httpx.AsyncClient(timeout=httpx.Timeout(8.0, connect=4.0))
+    own_client = http_client is None
     try:
-        target = str(host or "").strip()
-        ac = http_client or httpx.AsyncClient(timeout=httpx.Timeout(8.0, connect=4.0))
-        own_client = http_client is None
-        try:
-            r = await ac.get(f"https://ipinfo.io/{target}/json", timeout=6)
-            if r.status_code == 200:
+        providers = [
+            (f"https://ipinfo.io/{target}/json", "ipinfo"),
+            (f"https://ipapi.co/{target}/json/", "ipapi"),
+            (f"https://ipwho.is/{target}", "ipwho"),
+        ]
+        for url, kind in providers:
+            try:
+                r = await ac.get(url, timeout=6)
+                if r.status_code != 200: continue
                 j = r.json() or {}
-                ip = str(j.get("ip") or "")
-                cc = str(j.get("country") or "").strip().upper()
-                country_name = str(j.get("country_name") or j.get("countryName") or "").strip()
-                if not country_name and cc:
-                    try:
-                        import pycountry
-                        country_name = pycountry.countries.get(alpha_2=cc).name if pycountry.countries.get(alpha_2=cc) else ""
-                    except Exception:
-                        country_name = ""
-                flag = _code_to_flag(cc) if cc else ""
-        finally:
-            if own_client:
-                await ac.aclose()
-    except Exception:
-        pass
-    return {"host": host, "ip": ip, "flag": flag, "country_code": cc, "country_name": country_name}
+                if kind == "ipinfo":
+                    ip = str(j.get("ip") or ip); cc = str(j.get("country") or cc).strip().upper(); country_name = str(j.get("country_name") or country_name).strip()
+                elif kind == "ipapi":
+                    ip = str(j.get("ip") or ip); cc = str(j.get("country_code") or cc).strip().upper(); country_name = str(j.get("country_name") or country_name).strip()
+                else:
+                    if j.get("success") is False: continue
+                    ip = str(j.get("ip") or ip); cc = str(j.get("country_code") or cc).strip().upper(); country_name = str(j.get("country") or country_name).strip()
+                if ip and cc: break
+            except Exception:
+                continue
+    finally:
+        if own_client: await ac.aclose()
+    if not country_name and cc:
+        try:
+            import pycountry
+            obj=pycountry.countries.get(alpha_2=cc); country_name=obj.name if obj else ""
+        except Exception: pass
+    return {"host": host, "ip": ip, "flag": _code_to_flag(cc) if cc else "", "country_code": cc, "country_name": country_name}
 
 
 _main = None
@@ -12848,7 +12856,7 @@ async def _create_bot_user(body: dict) -> dict:
             client = httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=8.0), follow_redirects=True)
         try:
             r = await client.post(
-                "http://127.0.0.1:8080/api/users",
+                f"http://127.0.0.1:{int(os.getenv('PORT', '8080'))}/api/users",
                 json=body,
                 cookies={SESSION_COOKIE: token},
                 headers={"X-Pars-Bot": "1"},
@@ -12877,7 +12885,7 @@ async def _delete_bot_user(user_id: str) -> None:
             client = httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=8.0), follow_redirects=True)
         try:
             r = await client.delete(
-                f"http://127.0.0.1:8080/api/users/{quote(str(user_id), safe='')}",
+                f"http://127.0.0.1:{int(os.getenv('PORT', '8080'))}/api/users/{quote(str(user_id), safe='')}",
                 cookies={SESSION_COOKIE: token},
                 headers={"X-Pars-Bot": "1"},
                 timeout=30.0,
@@ -14580,9 +14588,11 @@ async def bot_config_save(request: Request, _=Depends(require_auth)):
                 continue
         if normalized:
             sell["plans"] = normalized
-    asyncio.create_task(save_state())
+    # Persist before returning. This prevents a fast browser refresh from racing
+    # the background save and making the Bot API token/settings appear lost.
+    await save_state()
     BOT_WAKE.set()
-    return {"ok": True, "token_masked": _mask_bot_token(cfg.get("token")), "channel": ch, "sell": sell, "plans": sell.get("plans") or []}
+    return {"ok": True, "token_configured": bool(cfg.get("token")), "token_masked": _mask_bot_token(cfg.get("token")), "channel": ch, "sell": sell, "plans": sell.get("plans") or []}
 
 
 @app.post("/api/bot/test")
@@ -14683,6 +14693,41 @@ async def bot_orders_list(_=Depends(require_auth)):
 async def bot_tickets_list(_=Depends(require_auth)):
     sessions=(_bot_cfg().get("sell") or {}).get("ticket_sessions") or {}
     return {"ok":True,"tickets":[dict(v,telegram_id=k) for k,v in sessions.items() if isinstance(v,dict)]}
+
+@app.post("/api/bot/tickets/{telegram_id}/reply")
+async def bot_ticket_reply(telegram_id: str, request: Request, _=Depends(require_auth)):
+    body = await request.json()
+    text_value = str(body.get("text") or "").strip()
+    if not text_value:
+        raise HTTPException(400, "متن پاسخ خالی است")
+    cfg = _bot_cfg(); token = str(cfg.get("token") or "").strip()
+    if not token:
+        raise HTTPException(400, "توکن ربات تنظیم نشده است")
+    sessions = (cfg.get("sell") or {}).setdefault("ticket_sessions", {})
+    session = sessions.get(str(telegram_id))
+    if not isinstance(session, dict):
+        raise HTTPException(404, "تیکت پیدا نشد")
+    tid = str(session.get("ticket_id") or "تیکت")
+    try:
+        await _telegram_send_message(token, str(telegram_id), f"🎫 <b>پاسخ پشتیبانی · {tid}</b>\n\n{text_value}")
+    except Exception as e:
+        raise HTTPException(502, f"ارسال پاسخ به تلگرام ناموفق بود: {str(e)[:180]}")
+    session["last_admin_reply_at"] = datetime.now().isoformat()
+    session["last_admin_reply"] = text_value[:500]
+    if bool(body.get("close")):
+        session["active"] = False; session["closed_at"] = datetime.now().isoformat()
+    await save_state()
+    return {"ok": True, "ticket_id": tid, "active": bool(session.get("active"))}
+
+@app.post("/api/bot/tickets/{telegram_id}/toggle")
+async def bot_ticket_toggle(telegram_id: str, request: Request, _=Depends(require_auth)):
+    body = await request.json(); sessions=(_bot_cfg().get("sell") or {}).setdefault("ticket_sessions", {})
+    session=sessions.get(str(telegram_id))
+    if not isinstance(session,dict): raise HTTPException(404,"تیکت پیدا نشد")
+    session["active"] = bool(body.get("active", True))
+    if session["active"]: session.pop("closed_at", None)
+    else: session["closed_at"] = datetime.now().isoformat()
+    await save_state(); return {"ok":True,"active":session["active"]}
 
 PARS_PROXY_REGISTRY = SETTINGS.setdefault("proxy_registry", [])
 
