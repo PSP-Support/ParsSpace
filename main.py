@@ -1,4 +1,5 @@
 import asyncio
+import ipaddress
 import json
 import os
 import re
@@ -66,17 +67,16 @@ PANEL_PORT = 8080
 
 
 def _env_port(default: int = PANEL_PORT) -> int:
-    """Return the canonical Pars Space listen port.
-
-    Provider-injected PORT values are intentionally ignored. The panel itself
-    always listens on 8080; a platform reverse proxy may still expose another
-    public port/domain in front of it.
-    """
-    return PANEL_PORT
+    """Return the runtime listen port (Railway injects PORT)."""
+    try:
+        port = int(str(os.environ.get("PORT") or default).strip())
+        return port if 1 <= port <= 65535 else int(default)
+    except (TypeError, ValueError):
+        return int(default)
 
 
 CONFIG = {
-    "port": PANEL_PORT,
+    "port": _env_port(),
     "secret": os.environ.get("SECRET_KEY", "pars-space-secret-key-v2"),
     # Public host is discovered at runtime. Never use localhost as a public
     # endpoint or as a value embedded in client configs.
@@ -2570,6 +2570,28 @@ def _client_extra_query(user: dict | None, inbound: dict | None, *, allow_ech: b
         fp = "chrome"
     return "&fp=" + quote(fp, safe="")
 
+
+def _default_ws_address(inbound: dict | None, panel_domain: str = "") -> str:
+    """Return the public connect host for managed TLS+WS links.
+
+    Never invent localhost or an internal Railway address. For the managed relay
+    the public panel hostname is authoritative; an inbound domain is only a
+    fallback for migrated state.
+    """
+    inbound = inbound or {}
+    return _safe_host(panel_domain, SETTINGS.get("domain"), inbound.get("external_domain"), inbound.get("domain"), get_host())
+
+def _ws_fingerprint(managed: bool = False) -> str:
+    """Portable TLS fingerprint for generated WS links."""
+    return "chrome"
+
+def _default_tls_ws_feature_params() -> str:
+    """Extra URI parameters for the managed relay.
+
+    Keep the share URI standards-compatible; panel-only anti-ban/final-mask
+    settings are intentionally not serialized as non-standard VLESS params.
+    """
+    return ""
 
 def _url_authority_host(host: str) -> str:
     """Wrap IPv6 addresses in brackets when building URI authorities."""
@@ -13227,30 +13249,42 @@ async def _sell_bot_require_joins(token: str, chat_id, user_id) -> bool:
 
 
 async def _sell_bot_get_customer_user(chat_id):
+    """Return the newest customer service without deleting it on expiry.
+
+    Expired services are disabled immediately and are removed only by the
+    72-hour expiry worker. This keeps account views from bypassing the grace
+    period.
+    """
     sell = _bot_cfg().get("sell") or {}
     key = str(chat_id)
-    uid = str((sell.get("customer_users") or {}).get(key) or "").strip()
-    async with USERS_LOCK:
-        user = dict(USERS.get(uid) or {}) if uid else None
-    if user is None:
-        return None
-    exp = str(user.get("expire_at") or "").strip()
-    expired = False
-    if exp:
-        try:
-            expired = datetime.now() >= datetime.fromisoformat(exp)
-        except Exception:
-            expired = False
-    if expired or user.get("status") == "expired":
-        try:
-            await _delete_bot_user(uid)
-        except Exception as e:
-            logger.warning("Sell customer expired account delete failed uid=%s: %s", uid, e)
-            return "expired_pending"
-        sell.setdefault("customer_users", {}).pop(key, None)
-        asyncio.create_task(save_state())
-        return "expired"
-    return user
+    ids = [str(x) for x in ((sell.get("customer_user_ids") or {}).get(key) or []) if str(x).strip()]
+    latest = str((sell.get("customer_users") or {}).get(key) or "").strip()
+    if latest and latest not in ids:
+        ids.append(latest)
+    for uid in reversed(ids):
+        async with USERS_LOCK:
+            user = dict(USERS.get(uid) or {})
+        if not user:
+            continue
+        exp = str(user.get("expire_at") or "").strip()
+        expired = False
+        expired_at = None
+        if exp:
+            try:
+                expired_at = datetime.fromisoformat(exp)
+                expired = datetime.now() >= expired_at
+            except Exception:
+                pass
+        if expired or user.get("status") == "expired":
+            grace_until = (expired_at or datetime.now()) + timedelta(hours=72)
+            async with USERS_LOCK:
+                if uid in USERS:
+                    USERS[uid]["status"] = "disabled"
+                    USERS[uid].setdefault("expiry_grace_until", grace_until.isoformat())
+                    user = dict(USERS[uid])
+            asyncio.create_task(save_state())
+        return user
+    return None
 
 
 async def _sell_bot_send_account(token: str, chat_id):
