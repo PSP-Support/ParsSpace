@@ -2780,10 +2780,15 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
     # The managed TLS+WS relay and proxy inbounds can share a configurable
     # connect address while keeping Host/SNI on the panel's current domain.
     if str((inbound or {}).get("proxy_id") or "").strip():
-        # Proxy inbounds always use the panel's current hostname. The saved
-        # inbound metadata can predate a domain change.
+        # ParsSpace V14.2 mobile engine (reference-compatible): the client may
+        # dial a Cloudflare edge IP directly while TLS SNI + WS Host stay on
+        # the public panel domain. This mirrors the mobile-safe URI shape:
+        # VLESS -> edge IP:443 -> TLS(SNI=domain) -> WS(Host=domain) -> /px/...
         panel_domain = _safe_host(SETTINGS.get("domain"), get_host())
-        host = addr_ip or _default_ws_address(inbound, panel_domain)
+        edge_candidates = _read_scanned_ips("cf")
+        saved_edge = str((inbound or {}).get("connect_address") or "").strip()
+        edge_host = saved_edge or (str(edge_candidates[0]).strip() if edge_candidates else "")
+        host = addr_ip or edge_host or _default_ws_address(inbound, panel_domain)
         port = addr_port or "443"
         transport = "ws"
         security = "tls"
@@ -2852,7 +2857,7 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
         is_tls_ws_default_or_proxy = is_default_tls_ws_inbound(inbound) or bool((inbound or {}).get("proxy_managed"))
         params = (f"encryption=none&security={security}&type=ws"
                   f"&host={quote(tls_host, safe='')}&path={quote(ws_path, safe='')}&sni={quote(tls_host, safe='')}"
-                  f"&fp={_ws_fingerprint(is_tls_ws_default_or_proxy)}&alpn=http/1.1")
+                  f"&fp={_ws_fingerprint(is_tls_ws_default_or_proxy)}&alpn={quote('http/1.1', safe='')}")
     if is_default_tls_ws_inbound(inbound) or bool((inbound or {}).get("proxy_managed")):
         params += _default_tls_ws_feature_params()
     return f"vless://{config_uuid}@{_url_authority_host(host)}:{port}?{params}#{remark}"
@@ -14799,8 +14804,32 @@ async def pars_proxy_add(request: Request, _=Depends(require_auth)):
     pid="px_"+secrets.token_hex(4); iid="proxy-"+pid
     rec={"id":pid,"host":host,"port":port,"country":country,"status":"online" if ok else "offline","ping_ms":latency,"created_at":datetime.now().isoformat(),"inbound_id":iid}
     PARS_PROXY_REGISTRY.append(rec)
+    # A proxy entry is an outbound relay choice, while the client-facing side
+    # remains ParsSpace TLS+WS on :443. Store explicit managed-relay metadata so
+    # config generation and WS authorization agree on the same inbound.
+    cf_edges = _read_scanned_ips("cf")
+    connect_address = str(body.get("connect_address") or "").strip() or (str(cf_edges[0]).strip() if cf_edges else "")
     async with INBOUNDS_LOCK:
-        INBOUNDS[iid]={"name":f"ParsSpace Proxy · {country}","protocol":"proxy","inbound_type":"upstream_proxy","port":port,"external_domain":host,"external_port":port,"country":country,"enabled":ok,"created_at":datetime.now().isoformat()}
+        INBOUNDS[iid]={
+            "name":f"ParsSpace Proxy · {country}",
+            "protocol":"vless",
+            "inbound_type":"upstream_proxy",
+            "network":"ws",
+            "security":"tls",
+            "port":443,
+            "external_domain":_safe_host(SETTINGS.get("domain"), get_host()),
+            "external_port":443,
+            "country":country,
+            "enabled":ok,
+            "proxy_managed":True,
+            "proxy_id":pid,
+            "proxy":f"{host}:{port}",
+            "path":f"/px/{pid}/{{uuid}}",
+            "ws_settings":{"path":f"/px/{pid}/{{uuid}}"},
+            "connect_address":connect_address,
+            "fingerprint":"chrome",
+            "created_at":datetime.now().isoformat(),
+        }
     await save_state(); return {"ok":True,"proxy":rec,"connected":ok,"error":err}
 
 @app.post("/api/proxies/{proxy_id}/test")
