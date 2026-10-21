@@ -2182,9 +2182,9 @@ def normalize_relay_links() -> int:
         if not inbound_ids and user.get("inbound_id"):
             inbound_ids = [user.get("inbound_id")]
         primary = user.get("inbound_id") or (inbound_ids[0] if inbound_ids else None)
-        # Relay is enabled if the user selected the exact default TLS+WS inbound
-        # anywhere in the selected inbound list, not only as primary inbound.
-        relay = bool(default_iid and default_iid in inbound_ids)
+        # Default TLS+WS and managed proxy inbounds share the FastAPI WS relay.
+        managed_relay_iid = next((iid for iid in inbound_ids if iid in INBOUNDS and (iid == default_iid or bool((INBOUNDS.get(iid) or {}).get("proxy_managed")))), None)
+        relay = bool(managed_relay_iid)
         link = LINKS.get(cuuid)
         if link is None:
             continue
@@ -2192,7 +2192,7 @@ def normalize_relay_links() -> int:
             "user_id": uid,
             "inbound_id": primary,
             "relay_enabled": relay,
-            "relay_inbound_id": default_iid if relay else None,
+            "relay_inbound_id": managed_relay_iid if relay else None,
         }
         if relay:
             desired["protocol"] = "vless-ws"
@@ -2200,9 +2200,15 @@ def normalize_relay_links() -> int:
             if link.get(key) != value:
                 link[key] = value
                 changed += 1
-        if relay and link.get("path") != f"/ws/{cuuid}":
-            link["path"] = f"/ws/{cuuid}"
-            changed += 1
+        if relay:
+            _rib = INBOUNDS.get(managed_relay_iid) or {}
+            _tpl = str(_rib.get("path") or ((_rib.get("ws_settings") or {}).get("path") or "/ws/{uuid}"))
+            _desired_path = _tpl.replace("{uuid}", cuuid)
+            if not _desired_path.startswith("/"):
+                _desired_path = "/" + _desired_path
+            if link.get("path") != _desired_path:
+                link["path"] = _desired_path
+                changed += 1
     return changed
 
 
@@ -2650,11 +2656,20 @@ def generate_user_config(user_id: str, user: dict, inbound_id: str = None, addr:
     addr_ip, addr_port = None, None
     if addr:
         addr = addr.strip()
-        if ":" in addr:
-            addr_ip, _, addr_port = addr.rpartition(":")
+        if addr.startswith("[") and "]" in addr:
+            close = addr.find("]")
+            addr_ip = addr[1:close].strip()
+            rest = addr[close + 1:].strip()
+            addr_port = rest[1:].strip() if rest.startswith(":") else "443"
         else:
-            addr_ip, addr_port = addr, "443"
-        addr_ip, addr_port = addr_ip.strip(), addr_port.strip()
+            try:
+                ipaddress.ip_address(addr)
+                addr_ip, addr_port = addr, "443"
+            except ValueError:
+                if addr.count(":") == 1:
+                    addr_ip, addr_port = [x.strip() for x in addr.rsplit(":", 1)]
+                else:
+                    addr_ip, addr_port = addr, "443"
 
     # ── WORKER (multi-location via Cloudflare Worker) ──
     if proto == "worker":
@@ -5444,7 +5459,8 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
         primary_inbound_network = (primary_inbound.get("network") if primary_inbound else "").lower()
         worker_selected = any(((INBOUNDS.get(iid) or {}).get("protocol") or "").lower() == "worker" for iid in inbound_ids)
         relay_default_id = find_default_tls_ws_inbound_id()
-        relay_enabled = bool(relay_default_id and relay_default_id in inbound_ids)
+        relay_inbound_id = next((iid for iid in inbound_ids if iid in INBOUNDS and (iid == relay_default_id or bool((INBOUNDS.get(iid) or {}).get("proxy_managed")))), None)
+        relay_enabled = bool(relay_inbound_id)
 
         if primary_inbound_proto == "worker" or worker_selected:
             # Managed Worker owns this exact route; never let a custom/legacy path diverge.
@@ -5550,7 +5566,7 @@ async def create_user(request: Request, auth=Depends(require_replication_auth)):
             "protocol": "vless-ws" if relay_enabled else link_protocol,
             "transport_type": transport_type, "xhttp_settings": link_xhttp, "path": _path,
             "user_id": user_id, "inbound_id": inbound_id, "relay_enabled": relay_enabled,
-            "relay_inbound_id": relay_default_id if relay_enabled else None,
+            "relay_inbound_id": relay_inbound_id if relay_enabled else None,
         }
         # Register uuid in PATH_INDEX for backward compat (old random-path clients)
         # config_uuid IS the path under /ws/{config_uuid}
@@ -5784,13 +5800,14 @@ async def edit_user(user_id: str, request: Request, _=Depends(require_auth)):
         # Keep the relay link exactly in sync with the selected inbound list.
         _relay_iid = find_default_tls_ws_inbound_id()
         _selected_iids = list(u.get("inbound_ids") or [])
-        _relay_on = bool(_relay_iid and _relay_iid in _selected_iids)
+        _managed_relay_iid = next((iid for iid in _selected_iids if iid in INBOUNDS and (iid == _relay_iid or bool((INBOUNDS.get(iid) or {}).get("proxy_managed")))), None)
+        _relay_on = bool(_managed_relay_iid)
         _link = LINKS.get(u.get("config_uuid"))
         if _link is not None:
             _link["user_id"] = user_id
             _link["inbound_id"] = (u.get("inbound_id") or (_selected_iids[0] if _selected_iids else None))
             _link["relay_enabled"] = _relay_on
-            _link["relay_inbound_id"] = _relay_iid if _relay_on else None
+            _link["relay_inbound_id"] = _managed_relay_iid if _relay_on else None
             if _relay_on:
                 _link["protocol"] = "vless-ws"
                 _link["path"] = f"/ws/{u.get('config_uuid')}"
