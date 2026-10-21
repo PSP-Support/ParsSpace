@@ -4394,6 +4394,21 @@ async def ws_uuid_handler(ws: WebSocket, uuid: str):
     await websocket_tunnel(ws, uuid)
 
 
+# Managed proxy inbound route. The proxy token is used only as the outbound
+# relay override; Host/SNI remain on the panel TLS domain.
+@app.websocket("/px/{proxy_id}/{uuid}")
+async def ws_proxy_uuid_handler(ws: WebSocket, proxy_id: str, uuid: str):
+    proxy_entry = ""
+    # Prefer the proxy record referenced by the inbound; fall back to the raw
+    # path token for backward compatibility with older generated links.
+    for _ib in INBOUNDS.values():
+        if str(_ib.get("proxy_id") or "") == str(proxy_id):
+            proxy_entry = str(_ib.get("proxy") or _ib.get("proxy_url") or _ib.get("proxy_address") or "").strip()
+            if proxy_entry:
+                break
+    await websocket_tunnel(ws, uuid, proxy_override=proxy_entry or proxy_id)
+
+
 # Tunnel path: /tunnel/{uuid} — user → Railway (here) → Cloudflare Worker → site.
 # Railway accepts the client's TLS+WS, then relays raw VLESS bytes to the Worker
 # over an outbound WSS connection to /{uuid} on the worker domain. The Worker
@@ -8334,11 +8349,10 @@ def _ws_client_ip(ws: WebSocket) -> str:
     return ws.client.host if ws.client else "نامشخص"
 
 async def parse_vless_header(chunk: bytes, expected_uuid: str | None = None):
-    if len(chunk) < 24:
+    """Parse a VLESS CONNECT header without assuming one-WS-frame delivery."""
+    if len(chunk) < 18:
         raise ValueError("chunk too small")
 
-    # The UUID is carried inside the VLESS request header. Validate it against
-    # the UUID in /ws/{uuid} (or the XHTTP URL) so path/UUID can never diverge.
     header_uuid = chunk[1:17]
     if expected_uuid:
         try:
@@ -8351,18 +8365,31 @@ async def parse_vless_header(chunk: bytes, expected_uuid: str | None = None):
             raise ValueError("invalid expected uuid") from exc
 
     pos = 17
-    addon_len = chunk[pos]; pos += 1 + addon_len
+    if len(chunk) <= pos:
+        raise ValueError("incomplete vless header")
+    addon_len = chunk[pos]
+    pos += 1
+    if len(chunk) < pos + addon_len + 4:
+        raise ValueError("incomplete vless header")
+    pos += addon_len
     command = chunk[pos]; pos += 1
+    if command != 1:
+        raise ValueError(f"unsupported vless command: {command}")
     port = int.from_bytes(chunk[pos:pos+2], "big"); pos += 2
     addr_type = chunk[pos]; pos += 1
     if addr_type == 1:
+        if len(chunk) < pos + 4: raise ValueError("incomplete vless header")
         address = ".".join(str(b) for b in chunk[pos:pos+4]); pos += 4
     elif addr_type == 2:
+        if len(chunk) <= pos: raise ValueError("incomplete vless header")
         dlen = chunk[pos]; pos += 1
-        address = chunk[pos:pos+dlen].decode("utf-8", errors="ignore"); pos += dlen
+        if len(chunk) < pos + dlen: raise ValueError("incomplete vless header")
+        address = chunk[pos:pos+dlen].decode("utf-8"); pos += dlen
     elif addr_type == 3:
+        if len(chunk) < pos + 16: raise ValueError("incomplete vless header")
         ab = chunk[pos:pos+16]; pos += 16
-        address = ":".join(f"{ab[i]:02x}{ab[i+1]:02x}" for i in range(0, 16, 2))
+        import ipaddress
+        address = str(ipaddress.IPv6Address(ab))
     else:
         raise ValueError(f"unknown addr type: {addr_type}")
     return command, address, port, chunk[pos:]
@@ -8447,15 +8474,20 @@ async def websocket_tunnel(ws: WebSocket, uuid: str, proxy_override: str = None)
 
     default_relay_id = find_default_tls_ws_inbound_id()
     relay_inbound_id = link.get("relay_inbound_id") if link else None
-    relay_allowed = bool(
-        link
-        and link.get("relay_enabled")
-        and default_relay_id
-        and relay_inbound_id == default_relay_id
-        and is_default_tls_ws_inbound(m.INBOUNDS.get(default_relay_id))
-    )
+    # V14.2 mobile relay engine: authorize every managed TLS+WS link that
+    # resolves to this relay, not only the hard-coded default inbound. Proxy
+    # inbounds are management variants of the same relay and previously timed
+    # out because their WS handshake was accepted and then rejected here.
+    relay_ib = m.INBOUNDS.get(relay_inbound_id) if relay_inbound_id else None
+    relay_allowed = bool(link and (
+        (link.get("relay_enabled") and default_relay_id and
+         relay_inbound_id == default_relay_id and
+         is_default_tls_ws_inbound(m.INBOUNDS.get(default_relay_id)))
+        or (relay_ib and bool(relay_ib.get("proxy_managed")) and
+            str(relay_ib.get("network") or "ws").lower() == "ws")
+    ))
     if not relay_allowed:
-        logger.warning(f"WS rejected uuid={uuid[:8]}…: relay is only enabled for {DEFAULT_TLS_WS_INBOUND_NAME}")
+        logger.warning(f"WS rejected uuid={uuid[:8]}…: no managed TLS+WS relay is assigned")
         await ws.close(code=1008, reason="relay unavailable for this inbound")
         return
 
@@ -8484,14 +8516,34 @@ async def websocket_tunnel(ws: WebSocket, uuid: str, proxy_override: str = None)
     writer = None
 
     try:
-        first_msg = await asyncio.wait_for(ws.receive(), timeout=15.0)
-        if first_msg["type"] == "websocket.disconnect":
-            return
-        first_chunk = first_msg.get("bytes") or (first_msg.get("text") or "").encode()
-        if not first_chunk:
-            return
-
-        command, address, port, payload = await parse_vless_header(first_chunk, uuid)
+        # Mobile clients are allowed to fragment the initial VLESS request over
+        # multiple WebSocket frames. The old engine assumed the full header was
+        # in frame #1 and therefore produced intermittent phone timeouts. Buffer
+        # only the handshake (bounded) and parse as soon as it is complete.
+        first_chunk = b""
+        deadline = asyncio.get_running_loop().time() + 15.0
+        while True:
+            remaining = deadline - asyncio.get_running_loop().time()
+            if remaining <= 0:
+                raise asyncio.TimeoutError("VLESS handshake timeout")
+            first_msg = await asyncio.wait_for(ws.receive(), timeout=remaining)
+            if first_msg["type"] == "websocket.disconnect":
+                return
+            piece = first_msg.get("bytes") or (first_msg.get("text") or "").encode()
+            if not piece:
+                continue
+            first_chunk += piece
+            if len(first_chunk) > 16384:
+                raise ValueError("VLESS handshake too large")
+            try:
+                command, address, port, payload = await parse_vless_header(first_chunk, uuid)
+                break
+            except (IndexError, UnicodeDecodeError):
+                continue
+            except ValueError as exc:
+                if str(exc) in ("chunk too small", "incomplete vless header"):
+                    continue
+                raise
 
         if not await check_and_use(uuid, len(first_chunk)):
             await ws.close(code=1008, reason="quota/disabled")
